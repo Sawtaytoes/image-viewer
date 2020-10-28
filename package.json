@@ -5,10 +5,12 @@
   "license": "MIT",
   "main": "index.js",
   "scripts": {
-    "start": "nodemon app.js"
+    "start": "electron ."
   },
   "devDependencies": {
-    "electron": "^11.0.0-beta.17",
-    "nodemon": "^2.0.6"
+    "electron": "^10.1.5"
+  },
+  "dependencies": {
+    "rxjs": "^6.6.3"
   }
 }
