@@ -6,6 +6,12 @@
 		content="script-src 'self' 'unsafe-inline';"
 		http-equiv="Content-Security-Policy"
 	/>
+	<meta
+		content="max-age=604800"
+		httpEquiv="cache-control"
+		/>
+	<meta name="viewport" content="width=device-width initial-scale=1" />
+
 
 	<title>Image Viewer</title>
 
@@ -18,11 +24,27 @@
 
 		body {
 			background-color: white;
+			margin: 0;
+		}
+
+		.dropZone {
+			height: 100%;
+			width: 100%;
+		}
+
+		#imageGallery {
+			display: flex;
+			flex-wrap: wrap;
+			width: 100%;
 		}
 	</style>
 </head>
 <body>
-	<div id="react-root"></div>
+	<div class="dropZone">
+	  Drag your file here
+	</div>
+
+	<div id="imageGallery"></div>
 
 	<script src="script.js"></script>
 </body>

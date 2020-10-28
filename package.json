@@ -11,6 +11,7 @@
     "electron": "^10.1.5"
   },
   "dependencies": {
-    "rxjs": "^6.6.3"
+    "rxjs": "^6.6.3",
+    "yargs": "^16.1.0"
   }
 }
