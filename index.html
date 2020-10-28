@@ -1,9 +1,29 @@
 <!DOCTYPE html>
 <html>
 <head>
+	<meta charset="UTF-8">
+	<meta
+		content="script-src 'self' 'unsafe-inline';"
+		http-equiv="Content-Security-Policy"
+	/>
+
 	<title>Image Viewer</title>
+
+	<style>
+		*,
+		*::before,
+		*::after {
+			box-sizing: border-box;
+		}
+
+		body {
+			background-color: white;
+		}
+	</style>
 </head>
 <body>
 	<div id="react-root"></div>
+
+	<script src="script.js"></script>
 </body>
 </html>
