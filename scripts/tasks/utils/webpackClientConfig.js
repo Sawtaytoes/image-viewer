@@ -1,8 +1,7 @@
 const config = require('config')
 const os = require('os')
 const webpack = require('webpack')
-const WebpackBuildNotifierPlugin = require('webpack-build-notifier')
-// const { CleanWebpackPlugin } = require('clean-webpack-plugin')
+const { CleanWebpackPlugin } = require('clean-webpack-plugin')
 
 const getAbsolutePath = require('../../../config/utils/getAbsolutePath')
 
@@ -89,13 +88,7 @@ const webpackClientConfig = {
 				'global.renderEnvironment': 'client',
 			}),
 			new webpack.ProgressPlugin(),
-			// new WebpackBuildNotifierPlugin({
-			// 	suppressSuccess: 'always',
-			// 	title: 'Renderer Shell',
-			// }),
-			// new CleanWebpackPlugin({
-			// 	// cleanStaleWebpackAssets: false,
-			// }),
+			new CleanWebpackPlugin(),
 		])
 	),
 	resolve: {
