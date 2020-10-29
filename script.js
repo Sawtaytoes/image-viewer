@@ -1,3 +1,4 @@
+const config = require('config')
 const fs = require('fs')
 const path = require('path')
 const yargs = require('yargs')
@@ -15,14 +16,22 @@ const { remote } = require('electron')
 // window.addEventListener('blur', () => { isFocused = false })
 
 const getThumbnailCanvas = (original, canvasWidth) => {
-  const canvas = document.createElement("canvas");
+	const canvas = document.createElement("canvas");
 
-  canvas.width = canvasWidth;
-  canvas.height = original.height / original.width * canvasWidth;
+	canvas.width = canvasWidth;
+	canvas.height = original.height / original.width * canvasWidth;
 
-  canvas.getContext("2d").drawImage(original, 0, 0, canvas.width, canvas.height);
+	canvas
+	.getContext("2d")
+	.drawImage(
+		original,
+		0,
+		0,
+		canvas.width,
+		canvas.height,
+	);
 
-  return canvas
+	return canvas
 }
 
 const loadImages = (
@@ -117,6 +126,10 @@ getFileListObserver(
 		)
 		.argv
 		.filePath
+	)
+	|| (
+		config
+		.get('filePath')
 	)
 	|| './'
 )

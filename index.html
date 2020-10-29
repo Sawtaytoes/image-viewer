@@ -2,10 +2,12 @@
 <html>
 <head>
 	<meta charset="UTF-8">
+	<!--
 	<meta
 		content="script-src 'self' 'unsafe-inline';"
 		http-equiv="Content-Security-Policy"
 	/>
+	-->
 	<meta
 		content="max-age=604800"
 		httpEquiv="cache-control"
@@ -44,8 +46,13 @@
 	  Drag your file here
 	</div>
 
+	<div id="reactRoot"></div>
 	<div id="imageGallery"></div>
 
 	<script src="script.js"></script>
+	<script
+		defer
+		src="http://localhost:8000/client.main.bundle.js"
+	></script>
 </body>
 </html>
