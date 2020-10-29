@@ -1,23 +1,31 @@
-import React, { Fragment } from 'react'
-import {
-	css,
-	Global,
-} from '@emotion/core'
-import { hot } from 'react-hot-loader/root'
+import { Fragment } from 'react'
 
-// import config from 'config'
+import ImageGallery from './ImageGallery'
 
-// console.log({ config })
+const {
+ css,
+ Global,
+} = window.require('@emotion/core')
+const { hot } = window.require('react-hot-loader/root')
 
 const App = () => (
 	<Fragment>
 		<Global
 			styles={css`
+				*,
+				*::before,
+				*::after {
+					box-sizing: border-box;
+				}
+
 				body {
+					background-color: white;
 					margin: 0;
 				}
 			`}
 		/>
+
+		<ImageGallery />
 	</Fragment>
 )
 
