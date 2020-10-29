@@ -89,10 +89,10 @@ const webpackClientConfig = {
 				'global.renderEnvironment': 'client',
 			}),
 			new webpack.ProgressPlugin(),
-			new WebpackBuildNotifierPlugin({
-				suppressSuccess: 'always',
-				title: 'Renderer Shell',
-			}),
+			// new WebpackBuildNotifierPlugin({
+			// 	suppressSuccess: 'always',
+			// 	title: 'Renderer Shell',
+			// }),
 			// new CleanWebpackPlugin({
 			// 	// cleanStaleWebpackAssets: false,
 			// }),
