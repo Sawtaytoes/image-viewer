@@ -1,13 +1,13 @@
 import PropTypes from 'prop-types'
 import {
-	useCallback,
+	memo,
 	useMemo,
 	useState,
 } from 'react'
 
 import FileSystemContext from './FileSystemContext'
-import useDirectoryPaths from './hooks/useDirectoryPaths'
-import useImageFilePaths from './hooks/useImageFilePaths'
+import useDirectoryPaths from './useDirectoryPaths'
+import useImageFilePaths from './useImageFilePaths'
 
 const config = global.require('config')
 const yargs = global.require('yargs')
@@ -41,17 +41,6 @@ const FileSystemProvider = ({
 		setFilePath,
 	] = useState(defaultFilePath)
 
-	const onFilePathChanged = (
-		useCallback(
-			nextFilePath => {
-				setFilePath(
-					nextFilePath
-				)
-			},
-			[],
-		)
-	)
-
 	const directoryPaths = (
 		useDirectoryPaths(
 			filePath
@@ -70,19 +59,21 @@ const FileSystemProvider = ({
 				directoryPaths,
 				filePath,
 				imageFilePaths,
-				onFilePathChanged,
+				setFilePath,
 			}),
 			[
 				directoryPaths,
 				filePath,
 				imageFilePaths,
-				onFilePathChanged,
+				setFilePath,
 			],
 		)
 	)
 
 	return (
-		<FileSystemContext.Provider value={filePathProviderValue}>
+		<FileSystemContext.Provider
+			value={filePathProviderValue}
+		>
 			{children}
 		</FileSystemContext.Provider>
 	)
@@ -90,4 +81,6 @@ const FileSystemProvider = ({
 
 FileSystemProvider.propTypes = propTypes
 
-export default FileSystemProvider
+const MemoizedFileSystemProvider = memo(FileSystemProvider)
+
+export default MemoizedFileSystemProvider

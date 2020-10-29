@@ -1,8 +1,10 @@
 import { Fragment } from 'react'
 
-import FileSystemProvider from './FileSystemProvider'
-import FolderControls from './FolderControls'
-import ImageGallery from './ImageGallery'
+import FileBrowser from './fileBrowser/FileBrowser'
+import FileSystemProvider from './fileBrowser/FileSystemProvider'
+import ImageViewer from './imageViewer/ImageViewer'
+import ImageViewerProvider from './imageViewer/ImageViewerProvider'
+import FolderControls from './fileBrowser/FolderControls'
 
 const {
  css,
@@ -27,10 +29,13 @@ const App = () => (
 			`}
 		/>
 
-		<FileSystemProvider>
-			<FolderControls />
-			<ImageGallery />
-		</FileSystemProvider>
+		<ImageViewerProvider>
+			<FileSystemProvider>
+				<FolderControls />
+				<FileBrowser />
+				<ImageViewer />
+			</FileSystemProvider>
+		</ImageViewerProvider>
 	</Fragment>
 )
 

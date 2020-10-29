@@ -3,6 +3,8 @@ import {
  useState,
 } from 'react'
 
+import compareNaturalStrings from './compareNaturalStrings'
+
 const fs = global.require('fs')
 const path = global.require('path')
 const { bindNodeCallback } = global.require('rxjs')
@@ -38,7 +40,7 @@ const useImageFilePaths = filePath => {
 
 	useEffect(
 		() => {
-			const { unsubscribe } = (
+			// const { unsubscribe } = (
 				bindNodeCallback(
 					fs
 					.readdir
@@ -65,11 +67,18 @@ const useImageFilePaths = filePath => {
 						)
 					)),
 					toArray(),
+					map(directoryPaths => (
+						directoryPaths
+						.slice()
+						.sort(
+							compareNaturalStrings
+						)
+					)),
 				)
 				.subscribe(
 					setImageFilePaths
 				)
-			)
+			// )
 
 			// return unsubscribe // TEMP. Figure out why it errors trying to close the directory.
 		},

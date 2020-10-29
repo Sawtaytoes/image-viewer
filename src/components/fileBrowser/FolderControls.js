@@ -1,5 +1,7 @@
 import {
- useCallback, useContext,
+	memo,
+	useCallback,
+	useContext,
 } from 'react'
 
 import FileSystemContext from './FileSystemContext'
@@ -9,7 +11,7 @@ const path = global.require('path')
 const FolderControls = () => {
 	const {
 		filePath,
-		onFilePathChanged,
+		setFilePath,
 	} = (
 		useContext(
 			FileSystemContext
@@ -19,18 +21,17 @@ const FolderControls = () => {
 	const goUpFolderTree = (
 		useCallback(
 			() => {
-				onFilePathChanged(
+				setFilePath(
 					path
 					.join(
-						path
-						.dirname(filePath),
+						filePath,
 						'..',
 					)
 				)
 			},
 			[
 				filePath,
-				onFilePathChanged,
+				setFilePath,
 			],
 		)
 	)
@@ -44,4 +45,6 @@ const FolderControls = () => {
 	)
 }
 
-export default FolderControls
+const MemoizedFolderControls = memo(FolderControls)
+
+export default MemoizedFolderControls
