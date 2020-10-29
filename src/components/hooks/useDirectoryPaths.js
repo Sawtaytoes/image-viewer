@@ -9,31 +9,16 @@ const { bindNodeCallback } = global.require('rxjs')
 const {
 	filter,
 	map,
+	mapTo,
 	mergeAll,
+	mergeMap,
 	toArray,
 } = global.require('rxjs/operators')
 
-const validImageExtensions = [
-	'.apng',
-	'.avif',
-	'.bmp',
-	'.gif',
-	'.ico',
-	'.cur',
-	'.jpg',
-	'.jpeg',
-	'.jfif',
-	'.pjpeg',
-	'.pjp',
-	'.png',
-	'.svg',
-	'.webp',
-]
-
-const useImageFilePaths = filePath => {
+const useDirectoryPaths = filePath => {
 	const [
-		imageFilePaths,
-		setImageFilePaths,
+		directoryPaths,
+		setDirectoryPaths,
 	] = useState([])
 
 	useEffect(
@@ -48,15 +33,6 @@ const useImageFilePaths = filePath => {
 				)
 				.pipe(
 					mergeAll(),
-					filter(fileName => (
-						validImageExtensions
-						.includes(
-							path
-							.extname(
-								fileName
-							)
-						)
-					)),
 					map(fileName => (
 						path
 						.join(
@@ -64,10 +40,26 @@ const useImageFilePaths = filePath => {
 							fileName,
 						)
 					)),
+					mergeMap(fileName => (
+						bindNodeCallback(
+							fs
+							.lstat
+							.bind(fs)
+						)(
+							fileName
+						)
+						.pipe(
+							filter(stats => (
+								stats
+								.isDirectory()
+							)),
+							mapTo(fileName),
+						)
+					)),
 					toArray(),
 				)
 				.subscribe(
-					setImageFilePaths
+					setDirectoryPaths
 				)
 			)
 
@@ -76,7 +68,7 @@ const useImageFilePaths = filePath => {
 		[filePath],
 	)
 
-	return imageFilePaths
+	return directoryPaths
 }
 
-export default useImageFilePaths
+export default useDirectoryPaths

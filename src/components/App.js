@@ -1,13 +1,14 @@
 import { Fragment } from 'react'
 
 import FileSystemProvider from './FileSystemProvider'
+import FolderControls from './FolderControls'
 import ImageGallery from './ImageGallery'
 
 const {
  css,
  Global,
-} = window.require('@emotion/core')
-const { hot } = window.require('react-hot-loader/root')
+} = global.require('@emotion/core')
+const { hot } = global.require('react-hot-loader/root')
 
 const App = () => (
 	<Fragment>
@@ -27,6 +28,7 @@ const App = () => (
 		/>
 
 		<FileSystemProvider>
+			<FolderControls />
 			<ImageGallery />
 		</FileSystemProvider>
 	</Fragment>

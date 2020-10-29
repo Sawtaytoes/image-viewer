@@ -6,11 +6,12 @@ import {
 } from 'react'
 
 import FileSystemContext from './FileSystemContext'
+import useDirectoryPaths from './hooks/useDirectoryPaths'
 import useImageFilePaths from './hooks/useImageFilePaths'
 
-const config = window.require('config')
-const yargs = window.require('yargs')
-const { remote } = window.require('electron')
+const config = global.require('config')
+const yargs = global.require('yargs')
+const { remote } = global.require('electron')
 
 const defaultFilePath = (
 	(
@@ -51,6 +52,12 @@ const FileSystemProvider = ({
 		)
 	)
 
+	const directoryPaths = (
+		useDirectoryPaths(
+			filePath
+		)
+	)
+
 	const imageFilePaths = (
 		useImageFilePaths(
 			filePath
@@ -60,10 +67,14 @@ const FileSystemProvider = ({
 	const filePathProviderValue = (
 		useMemo(
 			() => ({
+				directoryPaths,
+				filePath,
 				imageFilePaths,
 				onFilePathChanged,
 			}),
 			[
+				directoryPaths,
+				filePath,
 				imageFilePaths,
 				onFilePathChanged,
 			],

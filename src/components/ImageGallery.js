@@ -4,6 +4,7 @@ import FileSystemContext from './FileSystemContext'
 
 const ImageGallery = () => {
 	const {
+		directoryPaths,
 		imageFilePaths,
 	} = (
 		useContext(
@@ -12,7 +13,15 @@ const ImageGallery = () => {
 	)
 
 	return (
-		<div>
+		<pre>
+			{
+				JSON.stringify(
+					directoryPaths,
+					null,
+					2,
+				)
+			}
+
 			{
 				JSON.stringify(
 					imageFilePaths,
@@ -20,7 +29,7 @@ const ImageGallery = () => {
 					2,
 				)
 			}
-		</div>
+		</pre>
 	)
 }
 
