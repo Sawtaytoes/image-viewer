@@ -2,6 +2,12 @@
 - Prioritize starting images.
 - Add fixed-size for columns, row-height, and gap.
 - Add image name, back, and forward buttons on `ImageViewer`.
-- Style "Up Directory".
 - Stop loading images in gallery when showing `ImageView`.
-
+- Fix slowness when going up a directory. Possibly prevent clicks on "Up Directory" until it's done processing and show a loading indicator.
+- Can't click "Next >" when image filename too long (use ellipsis CSS on image filename).
+- Add touch swipe support.
+- Add ability to zoom with mouse-wheel and pinch.
+- Add visual indicator when at final page other than removing "next" and "previous" buttons.
+- Add ability to switch images via keyboard (add native support for ctrl/shift image switching).
+- Fix hot-reloading not working.
+- Encode image paths.
