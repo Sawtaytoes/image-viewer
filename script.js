@@ -81,7 +81,7 @@ const loadImages = (
 		tap(({
 			imgDomElement,
 			thumbnailDomElement,
-		} ) => (
+		}) => (
 			imageGalleryDomElement
 			.replaceChild(
 				thumbnailDomElement,
