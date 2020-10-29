@@ -1,5 +1,6 @@
 import { Fragment } from 'react'
 
+import FileSystemProvider from './FileSystemProvider'
 import ImageGallery from './ImageGallery'
 
 const {
@@ -25,7 +26,9 @@ const App = () => (
 			`}
 		/>
 
-		<ImageGallery />
+		<FileSystemProvider>
+			<ImageGallery />
+		</FileSystemProvider>
 	</Fragment>
 )
 

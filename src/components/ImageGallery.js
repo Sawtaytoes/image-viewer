@@ -1,42 +1,25 @@
-import useImageFilePaths from './hooks/useImageFilePaths'
+import { useContext } from 'react'
 
-const config = window.require('config')
-const yargs = window.require('yargs')
-const { remote } = window.require('electron')
-
-const defaultFileList = (
-	(
-		yargs(
-			remote
-			.getGlobal('processArgs')
-		)
-		.argv
-		.filePath
-	)
-	|| (
-		config
-		.get('filePath')
-	)
-	|| './'
-)
+import FileSystemContext from './FileSystemContext'
 
 const ImageGallery = () => {
-	const imageFilePaths = (
-		useImageFilePaths(
-			defaultFileList
+	const {
+		imageFilePaths,
+	} = (
+		useContext(
+			FileSystemContext
 		)
 	)
 
 	return (
 		<div>
-			<pre>
-				{
-					JSON.stringify(
-						imageFilePaths,
-						null,
-						2,
-					)}
-			</pre>
+			{
+				JSON.stringify(
+					imageFilePaths,
+					null,
+					2,
+				)
+			}
 		</div>
 	)
 }
