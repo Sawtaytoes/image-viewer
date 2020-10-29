@@ -18,6 +18,19 @@ const propTypes = {
 const Image = ({
 	children: filePath,
 }) => {
+	const webSafeFilePath = (
+		useMemo(
+			() => (
+				filePath
+				.replace(
+					'#',
+					'%23',
+				)
+			),
+			[filePath],
+		)
+	)
+
 	const fileName = (
 		useMemo(
 			() => (
@@ -34,7 +47,7 @@ const Image = ({
 		<img
 			alt={fileName}
 			css={imageStyles}
-			src={filePath}
+			src={webSafeFilePath}
 			title={fileName}
 		/>
 	)
