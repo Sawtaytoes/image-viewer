@@ -57,6 +57,7 @@ const useImageFilePaths = filePath => {
 							.extname(
 								fileName
 							)
+							.toLowerCase()
 						)
 					)),
 					map(fileName => (

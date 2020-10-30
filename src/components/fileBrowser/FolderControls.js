@@ -7,6 +7,11 @@ import {
 import FileSystemContext from './FileSystemContext'
 
 const path = global.require('path')
+const { css } = global.require('@emotion/core')
+
+const folderControlsStyles = css`
+	display: flex;
+`
 
 const FolderControls = () => {
 	const {
@@ -37,9 +42,13 @@ const FolderControls = () => {
 	)
 
 	return (
-		<div>
+		<div css={folderControlsStyles}>
 			<div onClick={goUpFolderTree}>
 				^ Up Directory
+			</div>
+
+			<div>
+				{filePath}
 			</div>
 		</div>
 	)

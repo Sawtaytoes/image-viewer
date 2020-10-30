@@ -4,7 +4,6 @@ import FileBrowser from './fileBrowser/FileBrowser'
 import FileSystemProvider from './fileBrowser/FileSystemProvider'
 import ImageViewer from './imageViewer/ImageViewer'
 import ImageViewerProvider from './imageViewer/ImageViewerProvider'
-import FolderControls from './fileBrowser/FolderControls'
 
 const {
  css,
@@ -31,7 +30,6 @@ const App = () => (
 
 		<ImageViewerProvider>
 			<FileSystemProvider>
-				<FolderControls />
 				<FileBrowser />
 				<ImageViewer />
 			</FileSystemProvider>

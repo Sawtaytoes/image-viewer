@@ -8,6 +8,15 @@ import {
 import Image from '../imageViewer/Image'
 import ImageViewerContext from '../imageViewer/ImageViewerContext'
 
+const { css } = global.require('@emotion/core')
+
+const imageFileStyles = css`
+	align-items: center;
+	display: flex;
+	justify-content: center;
+	width: 100%;
+`
+
 const propTypes = {
 	children: PropTypes.string.isRequired,
 }
@@ -38,7 +47,10 @@ const ImageFile = ({
 	)
 
 	return (
-		<div onClick={goToImage}>
+		<div
+			css={imageFileStyles}
+			onClick={goToImage}
+		>
 			<Image>
 				{filePath}
 			</Image>

@@ -11,11 +11,17 @@ const { css } = global.require('@emotion/core')
 
 const imageViewerStyles = css`
 	background-color: #333;
+	display: flex;
+	flex-direction: column;
 	height: 100vh;
 	left: 0;
 	position: fixed;
 	top: 0;
 	width: 100vw;
+`
+
+const imageViewStyles = css`
+	flex: 1 0 auto;
 `
 
 const ImageViewer = () => {
@@ -31,9 +37,11 @@ const ImageViewer = () => {
 		imageFilePath
 		? (
 			<div css={imageViewerStyles}>
-				<ImageView>
-					{imageFilePath}
-				</ImageView>
+				<div css={imageViewStyles}>
+					<ImageView>
+						{imageFilePath}
+					</ImageView>
+				</div>
 
 				<ImageViewControls />
 			</div>

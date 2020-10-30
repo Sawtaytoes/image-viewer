@@ -8,6 +8,16 @@ import {
 import Image from '../imageViewer/Image'
 import ImageViewerContext from '../imageViewer/ImageViewerContext'
 
+const { css } = global.require('@emotion/core')
+
+const imageViewStyles = css`
+	align-items: center;
+	display: flex;
+	height: 100%;
+	justify-content: center;
+	width: 100%;
+`
+
 const propTypes = {
 	children: PropTypes.string.isRequired,
 }
@@ -35,7 +45,10 @@ const ImageView = ({
 	)
 
 	return (
-		<div onClick={leaveImageViewer}>
+		<div
+			css={imageViewStyles}
+			onClick={leaveImageViewer}
+		>
 			<Image>
 				{filePath}
 			</Image>

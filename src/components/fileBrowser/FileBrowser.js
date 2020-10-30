@@ -5,13 +5,25 @@ import {
 
 import Directory from './Directory'
 import FileSystemContext from './FileSystemContext'
+import FolderControls from './FolderControls'
 import ImageFile from './ImageFile'
 
 const { css } = global.require('@emotion/core')
 
 const fileBrowserStyles = css`
 	display: flex;
+	flex-direction: column;
+	height: 100vh;
+	width: 100vw;
+`
+
+const filesListStyles = css`
+	display: flex;
 	flex-wrap: wrap;
+`
+
+const spacerStyles = css`
+	flex: 1 0 auto;
 `
 
 const fileStyles = css`
@@ -31,33 +43,41 @@ const FileBrowser = () => {
 
 	return (
 		<div css={fileBrowserStyles}>
-			{
-				directoryPaths
-				.map(directoryPath => (
-					<div
-						// css={fileStyles}
-						key={directoryPath}
-					>
-						<Directory>
-							{directoryPath}
-						</Directory>
-					</div>
-				))
-			}
+			<div css={spacerStyles} />
 
-			{
-				imageFilePaths
-				.map(imageFilePath => (
-					<div
-						css={fileStyles}
-						key={imageFilePath}
-					>
-						<ImageFile>
-							{imageFilePath}
-						</ImageFile>
-					</div>
-				))
-			}
+			<div css={filesListStyles}>
+				{
+					directoryPaths
+					.map(directoryPath => (
+						<div
+							// css={fileStyles}
+							key={directoryPath}
+						>
+							<Directory>
+								{directoryPath}
+							</Directory>
+						</div>
+					))
+				}
+
+				{
+					imageFilePaths
+					.map(imageFilePath => (
+						<div
+							css={fileStyles}
+							key={imageFilePath}
+						>
+							<ImageFile>
+								{imageFilePath}
+							</ImageFile>
+						</div>
+					))
+				}
+			</div>
+
+			<div css={spacerStyles} />
+
+			<FolderControls />
 		</div>
 	)
 }
