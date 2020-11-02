@@ -3,18 +3,13 @@ import ArrowForwardRoundedIcon from '@material-ui/icons/ArrowForwardRounded'
 import { css } from '@emotion/core'
 import {
 	memo,
-	useCallback,
 	useContext,
 	useEffect,
 	useMemo,
 } from 'react'
 
-import FileSystemContext from '../fileBrowser/FileSystemContext'
 import ImageViewerContext from './ImageViewerContext'
-import {
-	getPreviousArrayIndex,
-	getNextArrayIndex,
-} from './arrayIndexNavigation'
+import useImageNavigation from './useImageNavigation'
 
 const path = global.require('path')
 
@@ -39,16 +34,7 @@ const navigationIconStyles = css`
 
 const ImageViewControls = () => {
 	const {
-		imageFilePaths,
-	} = (
-		useContext(
-			FileSystemContext
-		)
-	)
-
-	const {
 		imageFilePath,
-		setImageFilePath,
 	} = (
 		useContext(
 			ImageViewerContext
@@ -67,61 +53,12 @@ const ImageViewControls = () => {
 		)
 	)
 
-	const imageFileIndex = (
-		useMemo(
-			() => (
-				imageFilePaths
-				.indexOf(
-					imageFilePath
-				)
-			),
-			[
-				imageFilePath,
-				imageFilePaths,
-			],
-		)
-	)
-
-	const goToPreviousImage = (
-		useCallback(
-			() => {
-				setImageFilePath(
-					imageFilePaths
-					[
-						getPreviousArrayIndex(
-							imageFileIndex,
-						)
-					]
-				)
-			},
-			[
-				imageFileIndex,
-				imageFilePaths,
-				setImageFilePath,
-			],
-		)
-	)
-
-	const goToNextImage = (
-		useCallback(
-			() => {
-				setImageFilePath(
-					imageFilePaths
-					[
-						getNextArrayIndex(
-							imageFileIndex,
-							imageFilePaths.length,
-						)
-					]
-				)
-			},
-			[
-				imageFileIndex,
-				imageFilePaths,
-				setImageFilePath,
-			],
-		)
-	)
+	const {
+		goToNextImage,
+		goToPreviousImage,
+		isAtBeginning,
+		isAtEnd,
+	} = useImageNavigation()
 
 	useEffect(
 		() => {
@@ -165,7 +102,7 @@ const ImageViewControls = () => {
 				css={css`
 					${navigationIconStyles}
 					${
-						imageFileIndex === 0
+						isAtBeginning
 						&& 'visibility: hidden;'
 					}
 				`}
@@ -186,7 +123,7 @@ const ImageViewControls = () => {
 				css={css`
 					${navigationIconStyles}
 					${
-						imageFileIndex === imageFilePaths.length - 1
+						isAtEnd
 						&& 'visibility: hidden;'
 					}
 				`}

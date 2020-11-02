@@ -6,15 +6,43 @@ import {
 	useContext,
 } from 'react'
 
-import Image from '../imageViewer/Image'
-import ImageViewerContext from '../imageViewer/ImageViewerContext'
+import Image from './Image'
+import ImageViewerContext from './ImageViewerContext'
+import useImageNavigation from './useImageNavigation'
 
 const imageViewStyles = css`
 	align-items: center;
 	display: flex;
 	height: 100%;
 	justify-content: center;
+	position: relative;
 	width: 100%;
+`
+
+const navigateNextOverlayStyles = css`
+	height: 100%;
+	position: absolute;
+	right: 0;
+	top: 0;
+	opacity: 0.15;
+	width: 37.5%;
+
+	&:hover {
+		background-color: white;
+	}
+`
+
+const navigatePreviousOverlayStyles = css`
+	height: 100%;
+	position: absolute;
+	left: 0;
+	top: 0;
+	opacity: 0.15;
+	width: 37.5%;
+
+	&:hover {
+		background-color: white;
+	}
 `
 
 const propTypes = {
@@ -32,6 +60,13 @@ const ImageView = ({
 		)
 	)
 
+	const {
+		goToNextImage,
+		goToPreviousImage,
+		isAtBeginning,
+		isAtEnd,
+	} = useImageNavigation()
+
 	const leaveImageViewer = (
 		useCallback(
 			() => {
@@ -44,13 +79,37 @@ const ImageView = ({
 	)
 
 	return (
-		<div
-			css={imageViewStyles}
-			onClick={leaveImageViewer}
-		>
-			<Image>
-				{filePath}
-			</Image>
+		<div css={imageViewStyles}>
+			<div
+				css={imageViewStyles}
+				onClick={leaveImageViewer}
+			>
+				<Image>
+					{filePath}
+				</Image>
+			</div>
+
+			<div
+				css={css`
+					${navigatePreviousOverlayStyles}
+					${
+						isAtBeginning
+						&& 'background-color: transparent;'
+					}
+				`}
+				onClick={goToPreviousImage}
+			/>
+
+			<div
+				css={css`
+					${navigateNextOverlayStyles}
+					${
+						isAtEnd
+						&& 'background-color: transparent;'
+					}
+				`}
+				onClick={goToNextImage}
+			/>
 		</div>
 	)
 }
