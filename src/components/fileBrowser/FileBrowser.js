@@ -43,6 +43,8 @@ const FileBrowser = () => {
 
 	return (
 		<div css={fileBrowserStyles}>
+			<FolderControls />
+
 			<div css={spacerStyles} />
 
 			<div css={filesListStyles}>
@@ -76,8 +78,6 @@ const FileBrowser = () => {
 			</div>
 
 			<div css={spacerStyles} />
-
-			<FolderControls />
 		</div>
 	)
 }

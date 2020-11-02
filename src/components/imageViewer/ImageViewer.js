@@ -37,13 +37,13 @@ const ImageViewer = () => {
 		imageFilePath
 		? (
 			<div css={imageViewerStyles}>
+				<ImageViewControls />
+
 				<div css={imageViewStyles}>
 					<ImageView>
 						{imageFilePath}
 					</ImageView>
 				</div>
-
-				<ImageViewControls />
 			</div>
 		)
 		: null
