@@ -1,3 +1,5 @@
+import ArrowBackRoundedIcon from '@material-ui/icons/ArrowBackRounded'
+import ArrowForwardRoundedIcon from '@material-ui/icons/ArrowForwardRounded'
 import { css } from '@emotion/core'
 import {
 	memo,
@@ -9,14 +11,29 @@ import {
 
 import FileSystemContext from '../fileBrowser/FileSystemContext'
 import ImageViewerContext from './ImageViewerContext'
+import {
+	getPreviousArrayIndex,
+	getNextArrayIndex,
+} from './arrayIndexNavigation'
 
 const path = global.require('path')
+
+const fileNameStyles = css`
+	font-family: 'Source Sans Pro', sans-serif;
+	overflow: hidden;
+	text-overflow: ellipsis;
+	white-space: nowrap;
+`
 
 const imageViewControlsStyles = css`
 	align-items: center;
 	color: white;
 	display: flex;
 	justify-content: space-between;
+`
+
+const navigationIconStyles = css`
+	padding: 4px;
 `
 
 const ImageViewControls = () => {
@@ -70,9 +87,8 @@ const ImageViewControls = () => {
 				setImageFilePath(
 					imageFilePaths
 					[
-						Math.max(
-							imageFileIndex - 1,
-							0,
+						getPreviousArrayIndex(
+							imageFileIndex,
 						)
 					]
 				)
@@ -91,9 +107,9 @@ const ImageViewControls = () => {
 				setImageFilePath(
 					imageFilePaths
 					[
-						Math.min(
-							imageFileIndex + 1,
-							imageFilePaths.length - 1,
+						getNextArrayIndex(
+							imageFileIndex,
+							imageFilePaths.length,
 						)
 					]
 				)
@@ -144,22 +160,39 @@ const ImageViewControls = () => {
 
 	return (
 		<div css={imageViewControlsStyles}>
-			<div onClick={goToPreviousImage}>
-				{
-					imageFileIndex === 0
-					? ''
-					: '< Previous'
-				}
+			<div
+				css={css`
+					${navigationIconStyles}
+					${
+						imageFileIndex === 0
+						&& 'visibility: hidden;'
+					}
+				`}
+				onClick={goToPreviousImage}
+				title="< Previous Photo"
+			>
+				<ArrowBackRoundedIcon />
 			</div>
 
-			{imageFileName}
+			<div
+				css={fileNameStyles}
+				title={imageFileName}
+			>
+				{imageFileName}
+			</div>
 
-			<div onClick={goToNextImage}>
-				{
-					imageFileIndex === imageFilePaths.length - 1
-					? ''
-					: 'Next >'
-				}
+			<div
+				css={css`
+					${navigationIconStyles}
+					${
+						imageFileIndex === imageFilePaths.length - 1
+						&& 'visibility: hidden;'
+					}
+				`}
+				onClick={goToNextImage}
+				title="Next Photo >"
+			>
+				<ArrowForwardRoundedIcon />
 			</div>
 		</div>
 	)
