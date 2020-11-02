@@ -1,5 +1,4 @@
 import PropTypes from 'prop-types'
-import React from 'react'
 import { BrowserRouter } from 'react-router-dom'
 import { hot } from 'react-hot-loader/root'
 

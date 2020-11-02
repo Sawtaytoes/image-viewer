@@ -1,4 +1,5 @@
 import { Fragment } from 'react'
+import { hot } from 'react-hot-loader/root'
 
 import FileBrowser from './fileBrowser/FileBrowser'
 import FileSystemProvider from './fileBrowser/FileSystemProvider'
@@ -9,7 +10,6 @@ const {
  css,
  Global,
 } = global.require('@emotion/core')
-const { hot } = global.require('react-hot-loader/root')
 
 const App = () => (
 	<Fragment>
