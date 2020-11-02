@@ -30,6 +30,7 @@ const imageViewControlsStyles = css`
 	color: white;
 	display: flex;
 	justify-content: space-between;
+	user-select: none;
 `
 
 const navigationIconStyles = css`

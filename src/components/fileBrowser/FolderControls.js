@@ -17,6 +17,7 @@ const folderControlsStyles = css`
 
 const folderNameStyles = css`
 	font-family: 'Source Sans Pro', sans-serif;
+	user-select: none;
 `
 
 const navigationStyles = css`
