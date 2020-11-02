@@ -2,6 +2,7 @@ import {
 	memo,
 	useCallback,
 	useContext,
+	useEffect,
 	useMemo,
 } from 'react'
 
@@ -103,6 +104,42 @@ const ImageViewControls = () => {
 				setImageFilePath,
 			],
 		)
+	)
+
+	useEffect(
+		() => {
+			const keyConfigurations = {
+				ArrowLeft: goToPreviousImage,
+				ArrowRight: goToNextImage,
+				ControlLeft: goToPreviousImage,
+				ShiftLeft: goToNextImage,
+			}
+
+			const onKeyDown = ({
+				code,
+			}) => {
+				keyConfigurations[code]
+				&& keyConfigurations[code]()
+			}
+
+			window
+			.addEventListener(
+				'keydown',
+				onKeyDown,
+			)
+
+			return () => {
+				window
+				.removeEventListener(
+					'keydown',
+					onKeyDown,
+				)
+			}
+		},
+		[
+			goToPreviousImage,
+			goToNextImage,
+		],
 	)
 
 	return (
