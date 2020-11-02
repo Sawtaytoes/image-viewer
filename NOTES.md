@@ -8,4 +8,5 @@
 - Add touch swipe support.
 - Add ability to zoom with mouse-wheel and pinch.
 - Add visual indicator when at final page other than removing "next" and "previous" buttons.
-- Store previous browsing state in `sessionStorage`.
+- Make it so you can edit the URL with `history` pathing potentially using React-Router-DOM.
+- Add `F5` refresh functionality.
