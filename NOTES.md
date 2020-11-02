@@ -8,5 +8,4 @@
 - Add touch swipe support.
 - Add ability to zoom with mouse-wheel and pinch.
 - Add visual indicator when at final page other than removing "next" and "previous" buttons.
-- Add ability to switch images via keyboard (add native support for ctrl/shift image switching).
 - Fix hot-reloading not working.
