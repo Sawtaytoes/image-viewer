@@ -1,6 +1,7 @@
 import PropTypes from 'prop-types'
 import {
 	memo,
+	useEffect,
 	useMemo,
 	useState,
 } from 'react'
@@ -15,6 +16,10 @@ const { remote } = global.require('electron')
 
 const defaultFilePath = (
 	(
+		sessionStorage
+		.getItem('filePath')
+	)
+	|| (
 		yargs(
 			remote
 			.getGlobal('processArgs')
@@ -40,6 +45,17 @@ const FileSystemProvider = ({
 		filePath,
 		setFilePath,
 	] = useState(defaultFilePath)
+
+	useEffect(
+		() => {
+			sessionStorage
+			.setItem(
+				'filePath',
+				filePath,
+			)
+		},
+		[filePath],
+	)
 
 	const directoryPaths = (
 		useDirectoryPaths(
