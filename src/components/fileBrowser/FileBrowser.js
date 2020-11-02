@@ -20,7 +20,6 @@ const fileBrowserStyles = css`
 const filesListStyles = css`
 	display: flex;
 	flex-wrap: wrap;
-	margin: -4px;
 `
 
 const spacerStyles = css`
