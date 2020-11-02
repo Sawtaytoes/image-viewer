@@ -1,3 +1,4 @@
+import { css } from '@emotion/core'
 import {
 	memo,
 	useCallback,
@@ -10,7 +11,6 @@ import FileSystemContext from '../fileBrowser/FileSystemContext'
 import ImageViewerContext from './ImageViewerContext'
 
 const path = global.require('path')
-const { css } = global.require('@emotion/core')
 
 const imageViewControlsStyles = css`
 	align-items: center;

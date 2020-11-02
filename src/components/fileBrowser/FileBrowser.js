@@ -1,3 +1,4 @@
+import { css } from '@emotion/core'
 import {
 	memo,
 	useContext,
@@ -7,8 +8,6 @@ import Directory from './Directory'
 import FileSystemContext from './FileSystemContext'
 import FolderControls from './FolderControls'
 import ImageFile from './ImageFile'
-
-const { css } = global.require('@emotion/core')
 
 const fileBrowserStyles = css`
 	display: flex;

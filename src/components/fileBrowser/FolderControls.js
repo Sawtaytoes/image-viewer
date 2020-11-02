@@ -1,3 +1,4 @@
+import { css } from '@emotion/core'
 import {
 	memo,
 	useCallback,
@@ -7,7 +8,6 @@ import {
 import FileSystemContext from './FileSystemContext'
 
 const path = global.require('path')
-const { css } = global.require('@emotion/core')
 
 const folderControlsStyles = css`
 	display: flex;

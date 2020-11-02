@@ -1,4 +1,5 @@
 import PropTypes from 'prop-types'
+import { css } from '@emotion/core'
 import {
 	memo,
 	useCallback,
@@ -6,8 +7,6 @@ import {
 } from 'react'
 
 import FileSystemContext from './FileSystemContext'
-
-const { css } = require('@emotion/core')
 
 const directoryStyles = css`
 	background-color: #fffffa;

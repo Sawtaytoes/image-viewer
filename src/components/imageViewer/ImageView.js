@@ -1,4 +1,5 @@
 import PropTypes from 'prop-types'
+import { css } from '@emotion/core'
 import {
 	memo,
 	useCallback,
@@ -7,8 +8,6 @@ import {
 
 import Image from '../imageViewer/Image'
 import ImageViewerContext from '../imageViewer/ImageViewerContext'
-
-const { css } = global.require('@emotion/core')
 
 const imageViewStyles = css`
 	align-items: center;

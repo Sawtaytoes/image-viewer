@@ -1,3 +1,4 @@
+import { css } from '@emotion/core'
 import {
 	memo,
 	useContext,
@@ -6,8 +7,6 @@ import {
 import ImageView from './ImageView'
 import ImageViewControls from './ImageViewControls'
 import ImageViewerContext from './ImageViewerContext'
-
-const { css } = global.require('@emotion/core')
 
 const imageViewerStyles = css`
 	background-color: #333;
