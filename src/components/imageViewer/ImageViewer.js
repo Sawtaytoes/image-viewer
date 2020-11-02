@@ -17,7 +17,7 @@ const imageViewerStyles = css`
 	left: 0;
 	position: fixed;
 	top: 0;
-	width: 100vw;
+	width: 100%;
 `
 
 const imageViewStyles = css`
