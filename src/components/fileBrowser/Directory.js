@@ -7,6 +7,18 @@ import {
 
 import FileSystemContext from './FileSystemContext'
 
+const { css } = require('@emotion/core')
+
+const directoryStyles = css`
+	background-color: #fffffa;
+	border: 2px solid lightgray;
+	border-radius: 14px;
+	color: #333;
+	cursor: pointer;
+	font-family: 'Source Sans Pro', sans-serif;
+	padding: 10px 14px;
+`
+
 const propTypes = {
 	children: PropTypes.string.isRequired,
 }
@@ -37,7 +49,10 @@ const Directory = ({
 	)
 
 	return (
-		<div onClick={goToDirectory}>
+		<div
+			css={directoryStyles}
+			onClick={goToDirectory}
+		>
 			{directoryPath}
 		</div>
 	)

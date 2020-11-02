@@ -12,8 +12,15 @@ const { css } = global.require('@emotion/core')
 
 const imageFileStyles = css`
 	align-items: center;
+	background-color: #fffffa;
+	border-radius: 14px;
+	border: 2px solid lightgray;
+	color: #333;
+	cursor: pointer;
 	display: flex;
+	font-family: 'Source Sans Pro', sans-serif;
 	justify-content: center;
+	padding: 10px 14px;
 	width: 100%;
 `
 

@@ -14,12 +14,13 @@ const fileBrowserStyles = css`
 	display: flex;
 	flex-direction: column;
 	height: 100vh;
-	width: 100vw;
+	width: 100%;
 `
 
 const filesListStyles = css`
 	display: flex;
 	flex-wrap: wrap;
+	margin: -4px;
 `
 
 const spacerStyles = css`
@@ -28,6 +29,7 @@ const spacerStyles = css`
 
 const fileStyles = css`
 	flex: 0 0 25%;
+	padding: 4px;
 	width: 25%;
 `
 
@@ -52,7 +54,7 @@ const FileBrowser = () => {
 					directoryPaths
 					.map(directoryPath => (
 						<div
-							// css={fileStyles}
+							css={fileStyles}
 							key={directoryPath}
 						>
 							<Directory>
