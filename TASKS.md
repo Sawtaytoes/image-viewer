@@ -9,7 +9,6 @@
 - Add ability to zoom with mouse-wheel and pinch.
 - Add visual indicator when at final page other than removing "next" and "previous" buttons.
 - Make it so you can edit the URL with `history` pathing potentially using React-Router-DOM.
-- Add `F5` refresh functionality.
 - List number of images in each directory.
 - Allow ability to cancel loading of directory if it's too slow to load. Right now, this freezes up the process.
 - Add 4-image thumbnails to directory listing.
