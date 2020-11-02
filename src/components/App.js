@@ -5,36 +5,41 @@ import FileBrowser from './fileBrowser/FileBrowser'
 import FileSystemProvider from './fileBrowser/FileSystemProvider'
 import ImageViewer from './imageViewer/ImageViewer'
 import ImageViewerProvider from './imageViewer/ImageViewerProvider'
+import useF5RefreshEffect from './convenience/useF5RefreshEffect'
 
 const {
  css,
  Global,
 } = global.require('@emotion/core')
 
-const App = () => (
-	<Fragment>
-		<Global
-			styles={css`
-				*,
-				*::before,
-				*::after {
-					box-sizing: border-box;
-				}
+const App = () => {
+	useF5RefreshEffect()
 
-				body {
-					background-color: white;
-					margin: 0;
-				}
-			`}
-		/>
+	return (
+		<Fragment>
+			<Global
+				styles={css`
+					*,
+					*::before,
+					*::after {
+						box-sizing: border-box;
+					}
 
-		<ImageViewerProvider>
-			<FileSystemProvider>
-				<FileBrowser />
-				<ImageViewer />
-			</FileSystemProvider>
-		</ImageViewerProvider>
-	</Fragment>
-)
+					body {
+						background-color: white;
+						margin: 0;
+					}
+				`}
+			/>
+
+			<ImageViewerProvider>
+				<FileSystemProvider>
+					<FileBrowser />
+					<ImageViewer />
+				</FileSystemProvider>
+			</ImageViewerProvider>
+		</Fragment>
+	)
+}
 
 export default hot(App)
