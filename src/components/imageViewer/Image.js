@@ -303,8 +303,10 @@ const Image = ({
 
 	return (
 		<canvas
+			height="100%"
 			ref={canvasRef}
 			title={fileName}
+			width="100%"
 		/>
 	)
 }
