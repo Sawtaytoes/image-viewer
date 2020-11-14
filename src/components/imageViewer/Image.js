@@ -44,8 +44,21 @@ const Image = ({
 
 	useEffect(
 		() => {
-			canvasRef.current.style.height = '100%'
-			canvasRef.current.style.width = '100%'
+			canvasRef
+			.current
+			.style
+			.setProperty(
+				'height',
+				'100%',
+			)
+
+			canvasRef
+			.current
+			.style
+			.setProperty(
+				'width',
+				'100%',
+			)
 
 			const imageDomElement = (
 				document
@@ -53,12 +66,33 @@ const Image = ({
 			)
 
 			const loadCanvasWithImage = () => {
-				canvasRef.current.style.height = '100%'
-				canvasRef.current.style.width = '100%'
+				canvasRef
+				.current
+				.style
+				.setProperty(
+					'height',
+					'100%',
+				)
+
+				canvasRef
+				.current
+				.style
+				.setProperty(
+					'width',
+					'100%',
+				)
 
 				const isPortrait = (
-					canvasRef.current.clientHeight
-					> canvasRef.current.clientWidth
+					(
+						canvasRef
+						.current
+						.clientHeight
+					)
+					> (
+						canvasRef
+						.current
+						.clientWidth
+					)
 				)
 
 				const imageHeight = (
@@ -83,11 +117,35 @@ const Image = ({
 					)
 				)
 
-				canvasRef.current.height = imageHeight
-				canvasRef.current.width = imageWidth
+				canvasRef
+				.current
+				.setAttribute(
+					'height',
+					imageHeight,
+				)
 
-				canvasRef.current.style.height = 'auto'
-				canvasRef.current.style.width = 'auto'
+				canvasRef
+				.current
+				.setAttribute(
+					'width',
+					imageWidth,
+				)
+
+				canvasRef
+				.current
+				.style
+				.setProperty(
+					'height',
+					'auto',
+				)
+
+				canvasRef
+				.current
+				.style
+				.setProperty(
+					'width',
+					'auto',
+				)
 
 				canvasRef
 				.current
@@ -102,13 +160,16 @@ const Image = ({
 			}
 
 			imageDomElement
-			.alt = fileName
+			.setAttribute(
+				'alt',
+				fileName,
+			)
 
 			imageDomElement
-			.loading = 'lazy'
-
-			imageDomElement
-			.src = webSafeFilePath
+			.setAttribute(
+				'src',
+				webSafeFilePath,
+			)
 
 			imageDomElement
 			.addEventListener(
@@ -117,6 +178,11 @@ const Image = ({
 			)
 
 			return () => {
+				imageDomElement
+				.removeAttribute(
+					'src',
+				)
+
 				imageDomElement
 				.removeEventListener(
 					'load',
