@@ -59,6 +59,7 @@ const ImageFile = ({
 		>
 			<Image
 				filePath={filePath}
+				hasVisibilityDetection
 			/>
 		</div>
 	)

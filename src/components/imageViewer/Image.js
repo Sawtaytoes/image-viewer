@@ -11,15 +11,21 @@ const path = global.require('path')
 
 const propTypes = {
 	filePath: PropTypes.string.isRequired,
+	hasVisibilityDetection: PropTypes.bool,
 }
 
 const Image = ({
 	filePath,
+	hasVisibilityDetection = false,
 }) => {
 	const [
 		isVisible,
 		setIsVisible,
-	] = useState(false)
+	] = (
+		useState(
+			!hasVisibilityDetection
+		)
+	)
 
 	const canvasRef = useRef()
 	const imageRef = useRef()
@@ -52,6 +58,10 @@ const Image = ({
 
 	useEffect(
 		() => {
+			if (!hasVisibilityDetection) {
+				return
+			}
+
 			const intersectionObserver = (
 				new IntersectionObserver(
 					([intersectionObserverEntry]) => {
@@ -78,21 +88,7 @@ const Image = ({
 				.disconnect()
 			}
 		},
-		[],
-	)
-
-	useEffect(
-		// eslint-disable-next-line arrow-body-style
-		() => {
-			return () => {
-				imageRef
-				.current
-				.removeAttribute(
-					'src',
-				)
-			}
-		},
-		[],
+		[hasVisibilityDetection],
 	)
 
 	useEffect(
@@ -127,6 +123,11 @@ const Image = ({
 				if (
 					!(
 						isImageLoadedRef
+						.current
+					)
+					// Fixes issue where canvas is unmounted and then this function runs because the observer noticed a change.
+					|| !(
+						canvasRef
 						.current
 					)
 				) {
