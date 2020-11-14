@@ -25,7 +25,7 @@ const navigateNextOverlayStyles = css`
 	right: 0;
 	top: 0;
 	opacity: 0.15;
-	width: 37.5%;
+	width: 30%;
 
 	&:hover {
 		background-color: white;
@@ -38,7 +38,7 @@ const navigatePreviousOverlayStyles = css`
 	left: 0;
 	top: 0;
 	opacity: 0.15;
-	width: 37.5%;
+	width: 30%;
 
 	&:hover {
 		background-color: white;
