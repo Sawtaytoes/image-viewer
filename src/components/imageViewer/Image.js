@@ -23,6 +23,7 @@ const Image = ({
 
 	const canvasRef = useRef()
 	const imageRef = useRef()
+	const isImageLoadedRef = useRef(false)
 
 	const webSafeFilePath = (
 		useMemo(
@@ -81,6 +82,20 @@ const Image = ({
 	)
 
 	useEffect(
+		// eslint-disable-next-line arrow-body-style
+		() => {
+			return () => {
+				imageRef
+				.current
+				.removeAttribute(
+					'src',
+				)
+			}
+		},
+		[],
+	)
+
+	useEffect(
 		() => {
 			if (!isVisible) {
 				return
@@ -109,6 +124,15 @@ const Image = ({
 			)
 
 			const loadCanvasWithImage = () => {
+				if (
+					!(
+						isImageLoadedRef
+						.current
+					)
+				) {
+					return
+				}
+
 				canvasRef
 				.current
 				.style
@@ -203,6 +227,13 @@ const Image = ({
 				)
 			}
 
+			const imageLoaded = () => {
+				isImageLoadedRef
+				.current = true
+
+				loadCanvasWithImage()
+			}
+
 			imageRef
 			.current
 			.setAttribute(
@@ -221,7 +252,9 @@ const Image = ({
 			.current
 			.addEventListener(
 				'load',
-				loadCanvasWithImage,
+				imageLoaded,
+			)
+
 			const resizeObserver = (
 				new ResizeObserver(
 					loadCanvasWithImage
@@ -236,11 +269,18 @@ const Image = ({
 			)
 
 			return () => {
-				imageRef
-				.current
-				.removeAttribute(
-					'src',
-				)
+				if (
+					!(
+						isImageLoadedRef
+						.current
+					)
+				) {
+					imageRef
+					.current
+					.removeAttribute(
+						'src',
+					)
+				}
 
 				imageRef
 				.current
