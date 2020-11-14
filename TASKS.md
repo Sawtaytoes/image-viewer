@@ -1,4 +1,3 @@
-- Only load images that are in view (virtualized list).
 - Prioritize starting images.
 - Add fixed-size for columns, row-height, and gap.
 - Stop loading images in gallery when showing `ImageView`.
@@ -21,3 +20,5 @@
 	+ Add second thread for loading images and predictive loading of other images asynchronously.
 	+ Set `FileBrowser` to `visibility: hidden` when showing `ImageViewer`. We might still want to load images in the background though.
 - Resize image thumbnails after `window` resize event.
+- Remove `src` from `img` element when `canvas` loaded to save on memory so not all full-sized images are stored in RAM. Make sure there's a parent canvas element or something similar that has a large enough thumbnail so we're not using images from memory when recomputing the `canvas` on resize.
+- Show progress loader when images loading, so it's not simply blank. For now, this could be a loading indicator.
