@@ -4,6 +4,7 @@ import {
 	useEffect,
 	useMemo,
 	useRef,
+	useState,
 } from 'react'
 
 const path = global.require('path')
@@ -15,7 +16,13 @@ const propTypes = {
 const Image = ({
 	filePath,
 }) => {
+	const [
+		isVisible,
+		setIsVisible,
+	] = useState(false)
+
 	const canvasRef = useRef()
+	const imageRef = useRef()
 
 	const webSafeFilePath = (
 		useMemo(
@@ -44,6 +51,41 @@ const Image = ({
 
 	useEffect(
 		() => {
+			const intersectionObserver = (
+				new IntersectionObserver(
+					([intersectionObserverEntry]) => {
+						setIsVisible(
+							intersectionObserverEntry
+							.isVisible
+						)
+					},
+					{
+						delay: 100,
+						trackVisibility: true,
+					},
+				)
+			)
+
+			intersectionObserver
+			.observe(
+				canvasRef
+				.current
+			)
+
+			return () => {
+				intersectionObserver
+				.disconnect()
+			}
+		},
+		[],
+	)
+
+	useEffect(
+		() => {
+			if (!isVisible) {
+				return
+			}
+
 			canvasRef
 			.current
 			.style
@@ -60,7 +102,8 @@ const Image = ({
 				'100%',
 			)
 
-			const imageDomElement = (
+			imageRef
+			.current = (
 				document
 				.createElement('img')
 			)
@@ -98,7 +141,7 @@ const Image = ({
 				const imageHeight = (
 					isPortrait
 					? (
-						imageDomElement.height / imageDomElement.width
+						imageRef.current.height / imageRef.current.width
 						* canvasRef.current.clientWidth
 					)
 					: (
@@ -112,7 +155,7 @@ const Image = ({
 						canvasRef.current.clientWidth
 					)
 					: (
-						imageDomElement.width / imageDomElement.height
+						imageRef.current.width / imageRef.current.height
 						* canvasRef.current.clientHeight
 					)
 				)
@@ -151,7 +194,8 @@ const Image = ({
 				.current
 				.getContext('2d')
 				.drawImage(
-					imageDomElement,
+					imageRef
+					.current,
 					0,
 					0,
 					imageWidth,
@@ -159,31 +203,36 @@ const Image = ({
 				)
 			}
 
-			imageDomElement
+			imageRef
+			.current
 			.setAttribute(
 				'alt',
 				fileName,
 			)
 
-			imageDomElement
+			imageRef
+			.current
 			.setAttribute(
 				'src',
 				webSafeFilePath,
 			)
 
-			imageDomElement
+			imageRef
+			.current
 			.addEventListener(
 				'load',
 				loadCanvasWithImage,
 			)
 
 			return () => {
-				imageDomElement
+				imageRef
+				.current
 				.removeAttribute(
 					'src',
 				)
 
-				imageDomElement
+				imageRef
+				.current
 				.removeEventListener(
 					'load',
 					loadCanvasWithImage,
@@ -192,6 +241,7 @@ const Image = ({
 		},
 		[
 			fileName,
+			isVisible,
 			webSafeFilePath,
 		],
 	)
