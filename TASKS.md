@@ -22,3 +22,5 @@
 - Resize image thumbnails after `window` resize event.
 - Remove `src` from `img` element when `canvas` loaded to save on memory so not all full-sized images are stored in RAM. Make sure there's a parent canvas element or something similar that has a large enough thumbnail so we're not using images from memory when recomputing the `canvas` on resize.
 - Show progress loader when images loading, so it's not simply blank. For now, this could be a loading indicator.
+- Size thumbnails in `FileBrowser` to a fixed height and width based on the number of items and the number of thumbnails.
+- Add a slider to switch between different numbers of image thumbnails per row.
