@@ -4,6 +4,7 @@ import {
 	memo,
 	useCallback,
 	useContext,
+	useMemo,
 } from 'react'
 
 import Image from './Image'
@@ -19,29 +20,29 @@ const imageViewStyles = css`
 	width: 100%;
 `
 
-const navigateNextOverlayStyles = css`
+const navigateNextOverlayBaseStyles = css`
 	height: 100%;
 	position: absolute;
 	right: 0;
 	top: 0;
-	opacity: 0.15;
 	width: 30%;
 
 	&:hover {
 		background-color: white;
+		opacity: 0.15;
 	}
 `
 
-const navigatePreviousOverlayStyles = css`
+const navigatePreviousOverlayBaseStyles = css`
 	height: 100%;
 	position: absolute;
 	left: 0;
 	top: 0;
-	opacity: 0.15;
 	width: 30%;
 
 	&:hover {
 		background-color: white;
+		opacity: 0.15;
 	}
 `
 
@@ -78,6 +79,35 @@ const ImageView = ({
 		)
 	)
 
+	const navigateNextOverlayStyles = (
+		useMemo(
+			() => (
+				css`
+					${navigateNextOverlayBaseStyles}
+					${
+						isAtEnd
+						&& 'background-color: transparent;'
+					}
+				`
+			),
+			[isAtEnd],
+		)
+	)
+	const navigatePreviousOverlayStyles = (
+		useMemo(
+			() => (
+				css`
+					${navigatePreviousOverlayBaseStyles}
+					${
+						isAtBeginning
+						&& 'background-color: transparent;'
+					}
+				`
+			),
+			[isAtBeginning],
+		)
+	)
+
 	return (
 		<div css={imageViewStyles}>
 			<div
@@ -90,24 +120,12 @@ const ImageView = ({
 			</div>
 
 			<div
-				css={css`
-					${navigatePreviousOverlayStyles}
-					${
-						isAtBeginning
-						&& 'background-color: transparent;'
-					}
-				`}
+				css={navigatePreviousOverlayStyles}
 				onClick={goToPreviousImage}
 			/>
 
 			<div
-				css={css`
-					${navigateNextOverlayStyles}
-					${
-						isAtEnd
-						&& 'background-color: transparent;'
-					}
-				`}
+				css={navigateNextOverlayStyles}
 				onClick={goToNextImage}
 			/>
 		</div>
