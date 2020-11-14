@@ -222,6 +222,17 @@ const Image = ({
 			.addEventListener(
 				'load',
 				loadCanvasWithImage,
+			const resizeObserver = (
+				new ResizeObserver(
+					loadCanvasWithImage
+				)
+			)
+
+			resizeObserver
+			.observe(
+				canvasRef
+				.current
+				.parentElement
 			)
 
 			return () => {
@@ -237,6 +248,9 @@ const Image = ({
 					'load',
 					loadCanvasWithImage,
 				)
+
+				resizeObserver
+				.disconnect()
 			}
 		},
 		[
