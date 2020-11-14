@@ -84,9 +84,9 @@ const ImageView = ({
 				css={imageViewStyles}
 				onClick={leaveImageViewer}
 			>
-				<Image>
-					{filePath}
-				</Image>
+				<Image
+					filePath={filePath}
+				/>
 			</div>
 
 			<div

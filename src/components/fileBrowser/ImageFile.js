@@ -57,9 +57,9 @@ const ImageFile = ({
 			css={imageFileStyles}
 			onClick={goToImage}
 		>
-			<Image>
-				{filePath}
-			</Image>
+			<Image
+				filePath={filePath}
+			/>
 		</div>
 	)
 }

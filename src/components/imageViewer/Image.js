@@ -9,11 +9,11 @@ import {
 const path = global.require('path')
 
 const propTypes = {
-	children: PropTypes.string.isRequired,
+	filePath: PropTypes.string.isRequired,
 }
 
 const Image = ({
-	children: filePath,
+	filePath,
 }) => {
 	const canvasRef = useRef()
 
