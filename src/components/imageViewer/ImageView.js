@@ -19,6 +19,15 @@ const imageViewStyles = css`
 	width: 100%;
 `
 
+const imageStyles = css`
+	align-items: center;
+	display: flex;
+	height: 100%;
+	justify-content: center;
+	position: absolute;
+	width: 100%;
+`
+
 const navigateNextOverlayBaseStyles = css`
 	height: 100%;
 	position: absolute;
@@ -97,7 +106,7 @@ const ImageView = ({
 	return (
 		<div css={imageViewStyles}>
 			<div
-				css={imageViewStyles}
+				css={imageStyles}
 				onClick={leaveImageViewer}
 			>
 				<Image
