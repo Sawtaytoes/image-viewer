@@ -12,7 +12,7 @@ const imageViewerStyles = css`
 	background-color: #333;
 	display: flex;
 	flex-direction: column;
-	height: 100vh;
+	height: 100%;
 	left: 0;
 	position: fixed;
 	top: 0;
