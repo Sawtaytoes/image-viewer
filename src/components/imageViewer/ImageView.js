@@ -2,7 +2,6 @@ import PropTypes from 'prop-types'
 import { css } from '@emotion/core'
 import {
 	memo,
-	useCallback,
 	useContext,
 	useMemo,
 } from 'react'
@@ -53,9 +52,7 @@ const propTypes = {
 const ImageView = ({
 	children: filePath,
 }) => {
-	const {
-		setImageFilePath,
-	} = (
+	const { leaveImageViewer } = (
 		useContext(
 			ImageViewerContext
 		)
@@ -67,17 +64,6 @@ const ImageView = ({
 		isAtBeginning,
 		isAtEnd,
 	} = useImageNavigation()
-
-	const leaveImageViewer = (
-		useCallback(
-			() => {
-				setImageFilePath(
-					null
-				)
-			},
-			[setImageFilePath],
-		)
-	)
 
 	const navigateNextOverlayStyles = (
 		useMemo(

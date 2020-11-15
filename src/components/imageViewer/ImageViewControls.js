@@ -35,6 +35,7 @@ const navigationIconStyles = css`
 const ImageViewControls = () => {
 	const {
 		imageFilePath,
+		leaveImageViewer,
 	} = (
 		useContext(
 			ImageViewerContext
@@ -114,6 +115,7 @@ const ImageViewControls = () => {
 
 			<div
 				css={fileNameStyles}
+				onClick={leaveImageViewer}
 				title={imageFileName}
 			>
 				{imageFileName}

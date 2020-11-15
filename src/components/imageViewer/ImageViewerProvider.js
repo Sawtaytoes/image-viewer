@@ -1,6 +1,7 @@
 import PropTypes from 'prop-types'
 import {
 	memo,
+	useCallback,
 	useMemo,
 	useState,
 } from 'react'
@@ -19,14 +20,27 @@ const ImageViewerProvider = ({
 		setImageFilePath,
 	] = useState(null)
 
+	const leaveImageViewer = (
+		useCallback(
+			() => {
+				setImageFilePath(
+					null
+				)
+			},
+			[setImageFilePath],
+		)
+	)
+
 	const imageViewerProviderValue = (
 		useMemo(
 			() => ({
 				imageFilePath,
+				leaveImageViewer,
 				setImageFilePath,
 			}),
 			[
 				imageFilePath,
+				leaveImageViewer,
 				setImageFilePath,
 			],
 		)
