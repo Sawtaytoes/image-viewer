@@ -24,3 +24,5 @@
 - Show progress loader when images loading, so it's not simply blank. For now, this could be a loading indicator.
 - Size thumbnails in `FileBrowser` to a fixed height and width based on the number of items and the number of thumbnails.
 - Add a slider to switch between different numbers of image thumbnails per row.
+- Scroll image into view behind the selected image on close. Currently, this is being hacked in and needs a real implementation.
+- Handle error (shows in console) when trying to view protected folders or files.
