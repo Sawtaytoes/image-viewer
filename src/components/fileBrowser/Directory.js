@@ -19,11 +19,11 @@ const directoryStyles = css`
 `
 
 const propTypes = {
-	children: PropTypes.string.isRequired,
+	directoryPath: PropTypes.string.isRequired,
 }
 
 const Directory = ({
-	children: directoryPath,
+	directoryPath,
 }) => {
 	const {
 		setFilePath,

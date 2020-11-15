@@ -24,11 +24,11 @@ const imageFileStyles = css`
 `
 
 const propTypes = {
-	children: PropTypes.string.isRequired,
+	filePath: PropTypes.string.isRequired,
 }
 
 const ImageFile = ({
-	children: filePath,
+	filePath,
 }) => {
 	const {
 		setImageFilePath,

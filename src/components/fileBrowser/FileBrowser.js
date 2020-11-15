@@ -55,9 +55,9 @@ const FileBrowser = () => {
 							css={fileStyles}
 							key={directoryPath}
 						>
-							<Directory>
-								{directoryPath}
-							</Directory>
+							<Directory
+								directoryPath={directoryPath}
+							/>
 						</div>
 					))
 				}
@@ -69,9 +69,9 @@ const FileBrowser = () => {
 							css={fileStyles}
 							key={imageFilePath}
 						>
-							<ImageFile>
-								{imageFilePath}
-							</ImageFile>
+							<ImageFile
+								filePath={imageFilePath}
+							/>
 						</div>
 					))
 				}
