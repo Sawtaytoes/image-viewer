@@ -35,6 +35,7 @@ const webpackClientConfig = {
 		main: (
 			isLocalDevelopment
 				? [
+					'react-devtools',
 					'react-hot-loader/patch',
 					getAbsolutePath('./src/entries/client.js'),
 				]
