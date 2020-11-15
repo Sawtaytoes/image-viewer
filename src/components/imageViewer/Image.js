@@ -1,4 +1,5 @@
 import PropTypes from 'prop-types'
+import { css } from '@emotion/core'
 import {
 	memo,
 	useEffect,
@@ -8,6 +9,11 @@ import {
 } from 'react'
 
 const path = global.require('path')
+
+const imageCanvasStyles = css`
+	height: 100%;
+	width: 100%;
+`
 
 const propTypes = {
 	filePath: PropTypes.string.isRequired,
@@ -97,22 +103,6 @@ const Image = ({
 			if (!isVisible) {
 				return
 			}
-
-			canvasRef
-			.current
-			.style
-			.setProperty(
-				'height',
-				'100%',
-			)
-
-			canvasRef
-			.current
-			.style
-			.setProperty(
-				'width',
-				'100%',
-			)
 
 			imageRef
 			.current = (
@@ -321,10 +311,9 @@ const Image = ({
 
 	return (
 		<canvas
-			height="100%"
+			css={imageCanvasStyles}
 			ref={canvasRef}
 			title={fileName}
-			width="100%"
 		/>
 	)
 }
