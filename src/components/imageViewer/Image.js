@@ -27,6 +27,7 @@ const Image = ({
 		)
 	)
 
+	const animationFrameIdRef = useRef()
 	const canvasRef = useRef()
 	const imageRef = useRef()
 	const isImageLoadedRef = useRef(false)
@@ -228,11 +229,28 @@ const Image = ({
 				)
 			}
 
+			const throttleCanvasLoading = () => {
+				if (animationFrameIdRef.current) {
+					return
+				}
+
+				animationFrameIdRef
+				.current = (
+					window
+					.requestAnimationFrame(() => {
+						animationFrameIdRef
+						.current = null
+
+						loadCanvasWithImage()
+					})
+				)
+			}
+
 			const imageLoaded = () => {
 				isImageLoadedRef
 				.current = true
 
-				loadCanvasWithImage()
+				throttleCanvasLoading()
 			}
 
 			imageRef
@@ -258,7 +276,7 @@ const Image = ({
 
 			const resizeObserver = (
 				new ResizeObserver(
-					loadCanvasWithImage
+					throttleCanvasLoading
 				)
 			)
 
