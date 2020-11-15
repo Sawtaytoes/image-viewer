@@ -10,19 +10,18 @@ import FolderControls from './FolderControls'
 import ImageFile from './ImageFile'
 
 const fileBrowserStyles = css`
-	display: flex;
-	flex-direction: column;
+	display: grid;
 	height: 100vh;
 	width: 100%;
+	grid-template-rows: auto 1fr;
 `
 
 const filesListStyles = css`
+	align-items: center;
 	display: flex;
 	flex-wrap: wrap;
-`
-
-const spacerStyles = css`
-	flex: 1 0 auto;
+	height: 100%;
+	overflow-y: auto;
 `
 
 const fileStyles = css`
@@ -44,8 +43,6 @@ const FileBrowser = () => {
 	return (
 		<div css={fileBrowserStyles}>
 			<FolderControls />
-
-			<div css={spacerStyles} />
 
 			<div css={filesListStyles}>
 				{
@@ -76,8 +73,6 @@ const FileBrowser = () => {
 					))
 				}
 			</div>
-
-			<div css={spacerStyles} />
 		</div>
 	)
 }
