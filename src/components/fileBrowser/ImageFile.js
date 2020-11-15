@@ -4,6 +4,8 @@ import {
 	memo,
 	useCallback,
 	useContext,
+	useEffect,
+	useRef,
 } from 'react'
 
 import Image from '../imageViewer/Image'
@@ -11,15 +13,10 @@ import ImageViewerContext from '../imageViewer/ImageViewerContext'
 
 const imageFileStyles = css`
 	align-items: center;
-	background-color: #fffffa;
-	border-radius: 14px;
-	border: 2px solid lightgray;
-	color: #333;
 	cursor: pointer;
 	display: flex;
 	font-family: 'Source Sans Pro', sans-serif;
 	justify-content: center;
-	padding: 10px 14px;
 	width: 100%;
 `
 
@@ -30,6 +27,9 @@ const propTypes = {
 const ImageFile = ({
 	filePath,
 }) => {
+	const animationFrameIdRef = useRef()
+	const imageContainerRef = useRef()
+
 	const {
 		setImageFilePath,
 	} = (
@@ -52,10 +52,66 @@ const ImageFile = ({
 		)
 	)
 
+	useEffect(
+		() => {
+			const resizeContainer = () => {
+				const boxedHeight = (
+					imageContainerRef
+					.current
+					.clientWidth
+				)
+
+				imageContainerRef
+				.current
+				.style
+				.setProperty(
+					'height',
+					`${boxedHeight}px`,
+				)
+			}
+
+			const throttleResize = () => {
+				if (animationFrameIdRef.current) {
+					return
+				}
+
+				animationFrameIdRef
+				.current = (
+					window
+					.requestAnimationFrame(() => {
+						animationFrameIdRef
+						.current = null
+
+						resizeContainer()
+					})
+				)
+			}
+
+			const resizeObserver = (
+				new ResizeObserver(
+					throttleResize
+				)
+			)
+
+			resizeObserver
+			.observe(
+				imageContainerRef
+				.current
+			)
+
+			return () => {
+				resizeObserver
+				.disconnect()
+			}
+		},
+		[],
+	)
+
 	return (
 		<div
 			css={imageFileStyles}
 			onClick={goToImage}
+			ref={imageContainerRef}
 		>
 			<Image
 				filePath={filePath}
