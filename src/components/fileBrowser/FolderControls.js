@@ -53,10 +53,12 @@ const FolderControls = () => {
 	)
 
 	return (
-		<div css={folderControlsStyles}>
+		<div
+			css={folderControlsStyles}
+			onClick={goUpFolderTree}
+		>
 			<div
 				css={navigationStyles}
-				onClick={goUpFolderTree}
 				title="^ Go up a Directory"
 			>
 				<ArrowUpwardRoundedIcon />
