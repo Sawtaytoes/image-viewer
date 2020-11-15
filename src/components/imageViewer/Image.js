@@ -74,7 +74,7 @@ const Image = ({
 					([intersectionObserverEntry]) => {
 						setIsVisible(
 							intersectionObserverEntry
-							.isVisible
+							.isIntersecting
 						)
 					},
 					{
