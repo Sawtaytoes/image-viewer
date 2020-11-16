@@ -3,12 +3,16 @@ import { css } from '@emotion/core'
 import {
 	memo,
 	useContext,
+	useEffect,
 	useMemo,
+	useRef,
+	useState,
 } from 'react'
 
 import Image from './Image'
 import ImageViewerContext from './ImageViewerContext'
 import useImageNavigation from './useImageNavigation'
+import usePointerHover from './usePointerHover'
 
 const imageViewStyles = css`
 	align-items: center;
@@ -28,30 +32,25 @@ const imageStyles = css`
 	width: 100%;
 `
 
-const navigateNextOverlayBaseStyles = css`
+const navigationControlsStyles = css`
+	background-color: white;
 	height: 100%;
 	position: absolute;
-	right: 0;
 	top: 0;
 	width: 30%;
+`
 
-	&:hover {
-		background-color: white;
-		opacity: 0.15;
+const hideNavigationControlStyles = css`
+	opacity: 0;
+
+	&:focus,
+	&:active {
+		opacity: 0;
 	}
 `
 
-const navigatePreviousOverlayBaseStyles = css`
-	height: 100%;
-	position: absolute;
-	left: 0;
-	top: 0;
-	width: 30%;
-
-	&:hover {
-		background-color: white;
-		opacity: 0.15;
-	}
+const showNavigationControlStyles = css`
+	opacity: 0.15;
 `
 
 const propTypes = {
@@ -61,6 +60,16 @@ const propTypes = {
 const ImageView = ({
 	children: filePath,
 }) => {
+	const [
+		isHoveringNextOverlay,
+		setIsHoveringNextOverlay,
+	] = useState(false)
+
+	const [
+		isHoveringPreviousOverlay,
+		setIsHoveringPreviousOverlay,
+	] = useState(false)
+
 	const { leaveImageViewer } = (
 		useContext(
 			ImageViewerContext
@@ -74,32 +83,84 @@ const ImageView = ({
 		isAtEnd,
 	} = useImageNavigation()
 
+	const navigateNextOverlayRef = useRef()
+	const navigatePreviousOverlayRef = useRef()
+
+	usePointerHover({
+		callback: () => {
+			setIsHoveringNextOverlay(
+				isHovering => (
+					!isHovering
+				)
+			)
+		},
+		domElementRef: (
+			navigateNextOverlayRef
+		),
+	})
+
+	usePointerHover({
+		callback: () => {
+			setIsHoveringPreviousOverlay(
+				isHovering => (
+					!isHovering
+				)
+			)
+		},
+		domElementRef: (
+			navigatePreviousOverlayRef
+		),
+	})
+
 	const navigateNextOverlayStyles = (
 		useMemo(
 			() => (
 				css`
-					${navigateNextOverlayBaseStyles}
+					${navigationControlsStyles}
+					${hideNavigationControlStyles}
+					right: 0;
+
+					${
+						isHoveringNextOverlay
+						&& showNavigationControlStyles
+					}
+
 					${
 						isAtEnd
-						&& 'background-color: transparent;'
+						&& hideNavigationControlStyles
 					}
 				`
 			),
-			[isAtEnd],
+			[
+				isAtEnd,
+				isHoveringNextOverlay,
+			],
 		)
 	)
+
 	const navigatePreviousOverlayStyles = (
 		useMemo(
 			() => (
 				css`
-					${navigatePreviousOverlayBaseStyles}
+					${navigationControlsStyles}
+					${hideNavigationControlStyles}
+					left: 0;
+
+					${
+						isHoveringPreviousOverlay
+						&& showNavigationControlStyles
+					}
+
 					${
 						isAtBeginning
-						&& 'background-color: transparent;'
+						&& hideNavigationControlStyles
 					}
 				`
 			),
-			[isAtBeginning],
+			[
+				isAtBeginning,
+				isHoveringPreviousOverlay,
+			],
 		)
 	)
 
@@ -115,13 +176,15 @@ const ImageView = ({
 			</div>
 
 			<div
-				css={navigatePreviousOverlayStyles}
-				onClick={goToPreviousImage}
+				css={navigateNextOverlayStyles}
+				onClick={goToNextImage}
+				ref={navigateNextOverlayRef}
 			/>
 
 			<div
-				css={navigateNextOverlayStyles}
-				onClick={goToNextImage}
+				css={navigatePreviousOverlayStyles}
+				onClick={goToPreviousImage}
+				ref={navigatePreviousOverlayRef}
 			/>
 		</div>
 	)
