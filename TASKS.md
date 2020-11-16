@@ -26,3 +26,12 @@
 - Add a slider to switch between different numbers of image thumbnails per row.
 - Scroll image into view behind the selected image on close. Currently, this is being hacked in and needs a real implementation.
 - Handle error (shows in console) when trying to view protected folders or files.
+- Image previews in folders or at least using cover images.
+- Fix opacity staying focused on touch when switching between images.
+- Add `ESCAPE` key listener to hide image viewer.
+- Add ability to load images over XHR.
+- Add ability to pause image downloads when `ImageViewer` showing.
+- Add ability to pause image downloads when no longer in view showing.
+- Add ability to pause image downloads when that folder is unmounted.
+- Show loading progress indicator when loading images.
+- Stop listening to `SHIFT` and `CTRL` when held for different commands like grabbing a screenshot.
