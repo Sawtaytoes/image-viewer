@@ -3,7 +3,6 @@ import { css } from '@emotion/core'
 import {
 	memo,
 	useContext,
-	useEffect,
 	useMemo,
 	useRef,
 	useState,
