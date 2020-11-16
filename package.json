@@ -10,7 +10,7 @@
     "dev:develop": "nodemon index.js --task develop",
     "dev:electron": "electron electronApp.js",
     "dev:react-devtools": "react-devtools",
-    "start": "yarn && npm-run-all --parallel dev:react-devtools dev:develop dev:electron"
+    "start": "yarn && npm-run-all --parallel dev:develop dev:electron"
   },
   "engines": {
     "node": ">=12.18.4",
