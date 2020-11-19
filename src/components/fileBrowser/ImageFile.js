@@ -21,16 +21,18 @@ const imageFileStyles = css`
 `
 
 const propTypes = {
+	fileName: PropTypes.string.isRequired,
 	filePath: PropTypes.string.isRequired,
 }
 
 const ImageFile = ({
+	fileName,
 	filePath,
 }) => {
 	const imageContainerRef = useRef()
 
 	const {
-		setImageFilePath,
+		setImageFile,
 	} = (
 		useContext(
 			ImageViewerContext
@@ -40,65 +42,21 @@ const ImageFile = ({
 	const goToImage = (
 		useCallback(
 			() => {
-				setImageFilePath(
-					filePath
-				)
+				setImageFile({
+					name: fileName,
+					path: filePath,
+				})
 			},
 			[
+				fileName,
 				filePath,
-				setImageFilePath,
+				setImageFile,
 			],
 		)
 	)
 
 	useResizableSquareContainerEffect(
 		imageContainerRef
-	)
-
-				imageContainerRef
-				.current
-				.style
-				.setProperty(
-					'height',
-					`${boxedHeight}px`,
-				)
-			}
-
-			const throttleResize = () => {
-				if (animationFrameIdRef.current) {
-					return
-				}
-
-				animationFrameIdRef
-				.current = (
-					window
-					.requestAnimationFrame(() => {
-						animationFrameIdRef
-						.current = null
-
-						resizeContainer()
-					})
-				)
-			}
-
-			const resizeObserver = (
-				new ResizeObserver(
-					throttleResize
-				)
-			)
-
-			resizeObserver
-			.observe(
-				imageContainerRef
-				.current
-			)
-
-			return () => {
-				resizeObserver
-				.disconnect()
-			}
-		},
-		[],
 	)
 
 	return (
@@ -108,6 +66,7 @@ const ImageFile = ({
 			ref={imageContainerRef}
 		>
 			<Image
+				fileName={fileName}
 				filePath={filePath}
 				hasVisibilityDetection
 			/>

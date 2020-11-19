@@ -8,19 +8,19 @@ import {
 	useState,
 } from 'react'
 
-const path = global.require('path')
-
 const imageCanvasStyles = css`
 	height: 100%;
 	width: 100%;
 `
 
 const propTypes = {
+	fileName: PropTypes.string.isRequired,
 	filePath: PropTypes.string.isRequired,
 	hasVisibilityDetection: PropTypes.bool,
 }
 
 const Image = ({
+	fileName,
 	filePath,
 	hasVisibilityDetection = false,
 }) => {
@@ -45,18 +45,6 @@ const Image = ({
 				.replace(
 					'#',
 					'%23',
-				)
-			),
-			[filePath],
-		)
-	)
-
-	const fileName = (
-		useMemo(
-			() => (
-				path
-				.basename(
-					filePath
 				)
 			),
 			[filePath],

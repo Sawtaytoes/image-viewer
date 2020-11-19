@@ -13,8 +13,8 @@ import {
 } from 'react'
 
 import FileSystemContext from './FileSystemContext'
-import useDirectoryPaths from './useDirectoryPaths'
-import useImageFilePaths from './useImageFilePaths'
+import useDirectories from './useDirectories'
+import useImageFiles from './useImageFiles'
 
 const config = global.require('config')
 const fs = global.require('fs')
@@ -169,14 +169,14 @@ const FileSystemProvider = ({
 		[filePath],
 	)
 
-	const directoryPaths = (
-		useDirectoryPaths(
+	const directories = (
+		useDirectories(
 			directoryContents
 		)
 	)
 
-	const imageFilePaths = (
-		useImageFilePaths(
+	const imageFiles = (
+		useImageFiles(
 			directoryContents
 		)
 	)
@@ -184,15 +184,15 @@ const FileSystemProvider = ({
 	const filePathProviderValue = (
 		useMemo(
 			() => ({
-				directoryPaths,
+				directories,
 				filePath,
-				imageFilePaths,
+				imageFiles,
 				setFilePath,
 			}),
 			[
-				directoryPaths,
+				directories,
 				filePath,
-				imageFilePaths,
+				imageFiles,
 				setFilePath,
 			],
 		)

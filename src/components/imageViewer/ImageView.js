@@ -53,11 +53,13 @@ const showNavigationControlStyles = css`
 `
 
 const propTypes = {
-	children: PropTypes.string.isRequired,
+	imageFileName: PropTypes.string.isRequired,
+	imageFilePath: PropTypes.string.isRequired,
 }
 
 const ImageView = ({
-	children: filePath,
+	imageFileName,
+	imageFilePath,
 }) => {
 	const [
 		isHoveringNextOverlay,
@@ -172,7 +174,8 @@ const ImageView = ({
 				onClick={leaveImageViewer}
 			>
 				<Image
-					filePath={filePath}
+					fileName={imageFileName}
+					filePath={imageFilePath}
 				/>
 			</div>
 

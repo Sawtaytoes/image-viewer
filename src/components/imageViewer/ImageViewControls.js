@@ -5,13 +5,10 @@ import {
 	memo,
 	useContext,
 	useEffect,
-	useMemo,
 } from 'react'
 
 import ImageViewerContext from './ImageViewerContext'
 import useImageNavigation from './useImageNavigation'
-
-const path = global.require('path')
 
 const fileNameStyles = css`
 	font-family: 'Source Sans Pro', sans-serif;
@@ -34,23 +31,11 @@ const navigationIconStyles = css`
 
 const ImageViewControls = () => {
 	const {
-		imageFilePath,
+		imageFileName,
 		leaveImageViewer,
 	} = (
 		useContext(
 			ImageViewerContext
-		)
-	)
-
-	const imageFileName = (
-		useMemo(
-			() => (
-				path
-				.basename(
-					imageFilePath
-				)
-			),
-			[imageFilePath],
 		)
 	)
 

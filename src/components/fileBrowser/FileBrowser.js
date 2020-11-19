@@ -32,8 +32,8 @@ const fileStyles = css`
 
 const FileBrowser = () => {
 	const {
-		directoryPaths,
-		imageFilePaths,
+		directories,
+		imageFiles,
 	} = (
 		useContext(
 			FileSystemContext
@@ -46,36 +46,36 @@ const FileBrowser = () => {
 
 			<div css={filesListStyles}>
 				{
-					directoryPaths
+					directories
 					.map(({
-						fileName,
-						filePath,
+						name,
+						path,
 					}) => (
 						<div
 							css={fileStyles}
-							key={filePath}
+							key={path}
 						>
 							<Directory
-								directoryName={fileName}
-								directoryPath={filePath}
+								directoryName={name}
+								directoryPath={path}
 							/>
 						</div>
 					))
 				}
 
 				{
-					imageFilePaths
+					imageFiles
 					.map(({
-						fileName,
-						filePath,
+						name,
+						path,
 					}) => (
 						<div
 							css={fileStyles}
-							key={filePath}
+							key={path}
 						>
 							<ImageFile
-								fileName={fileName}
-								filePath={filePath}
+								fileName={name}
+								filePath={path}
 							/>
 						</div>
 					))

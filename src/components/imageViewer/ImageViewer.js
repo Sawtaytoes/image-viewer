@@ -26,6 +26,7 @@ const imageViewStyles = css`
 
 const ImageViewer = () => {
 	const {
+		imageFileName,
 		imageFilePath,
 		leaveImageViewer,
 	} = (
@@ -75,9 +76,10 @@ const ImageViewer = () => {
 				<ImageViewControls />
 
 				<div css={imageViewStyles}>
-					<ImageView>
-						{imageFilePath}
-					</ImageView>
+					<ImageView
+						imageFileName={imageFileName}
+						imageFilePath={imageFilePath}
+					/>
 				</div>
 			</div>
 		)

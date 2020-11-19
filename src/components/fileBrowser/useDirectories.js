@@ -11,29 +11,20 @@ import {
 
 import compareNaturalStrings from './compareNaturalStrings'
 
-const path = global.require('path')
-
-const validImageExtensions = [
-	'.apng',
-	'.avif',
-	'.bmp',
-	'.gif',
-	'.ico',
-	'.cur',
-	'.jpg',
-	'.jpeg',
-	'.jfif',
-	'.pjpeg',
-	'.pjp',
-	'.png',
-	'.svg',
-	'.webp',
+const systemDirectories = [
+	'$recycle.bin',
+	'$winreagent',
+	'ai_recyclebin',
+	'config.msi',
+	'recovery',
+	'system volume information',
+	'windows',
 ]
 
-const useImageFilePaths = directoryContents => {
+const useDirectories = directoryContents => {
 	const [
-		imageFilePaths,
-		setImageFilePaths,
+		directories,
+		setDirectories,
 	] = useState([])
 
 	useEffect(
@@ -42,46 +33,45 @@ const useImageFilePaths = directoryContents => {
 				from(directoryContents)
 				.pipe(
 					filter(({
-						isFile,
+						isDirectory,
 					}) => (
-						isFile
+						isDirectory
 					)),
 					filter(({
 						fileName,
 					}) => (
-						validImageExtensions
-						.includes(
-							path
-							.extname(
+						!(
+							systemDirectories
+							.includes(
 								fileName
+								.toLowerCase()
 							)
-							.toLowerCase()
 						)
 					)),
 					map(({
 						fileName,
 						filePath,
 					}) => ({
-						fileName,
-						filePath,
+						name: fileName,
+						path: filePath,
 					})),
 					toArray(),
-					map(directoryPaths => (
-						directoryPaths
+					map(directories => (
+						directories
 						.slice()
 						.sort((
 							a,
 							b,
 						) => (
 							compareNaturalStrings(
-								a.fileName,
-								b.fileName,
+								a.name,
+								b.name,
 							)
 						))
 					)),
 				)
 				.subscribe(
-					setImageFilePaths
+					setDirectories
 				)
 			)
 
@@ -93,7 +83,7 @@ const useImageFilePaths = directoryContents => {
 		[directoryContents],
 	)
 
-	return imageFilePaths
+	return directories
 }
 
-export default useImageFilePaths
+export default useDirectories

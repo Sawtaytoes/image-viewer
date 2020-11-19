@@ -9,7 +9,7 @@ import ImageViewerContext from './ImageViewerContext'
 
 const useImageNavigation = () => {
 	const {
-		imageFilePaths,
+		imageFiles,
 	} = (
 		useContext(
 			FileSystemContext
@@ -18,7 +18,7 @@ const useImageNavigation = () => {
 
 	const {
 		imageFilePath,
-		setImageFilePath,
+		setImageFile,
 	} = (
 		useContext(
 			ImageViewerContext
@@ -28,14 +28,16 @@ const useImageNavigation = () => {
 	const imageFileIndex = (
 		useMemo(
 			() => (
-				imageFilePaths
-				.indexOf(
-					imageFilePath
-				)
+				imageFiles
+				.findIndex(({
+					path,
+				}) => (
+					imageFilePath === path
+				))
 			),
 			[
 				imageFilePath,
-				imageFilePaths,
+				imageFiles,
 			],
 		)
 	)
@@ -43,20 +45,20 @@ const useImageNavigation = () => {
 	const goToNextImage = (
 		useCallback(
 			() => {
-				setImageFilePath(
-					imageFilePaths
+				setImageFile(
+					imageFiles
 					[
 						Math.min(
 							imageFileIndex + 1,
-							imageFilePaths.length - 1,
+							imageFiles.length - 1,
 						)
 					]
 				)
 			},
 			[
 				imageFileIndex,
-				imageFilePaths,
-				setImageFilePath,
+				imageFiles,
+				setImageFile,
 			],
 		)
 	)
@@ -64,8 +66,8 @@ const useImageNavigation = () => {
 	const goToPreviousImage = (
 		useCallback(
 			() => {
-				setImageFilePath(
-					imageFilePaths
+				setImageFile(
+					imageFiles
 					[
 						Math.max(
 							imageFileIndex - 1,
@@ -76,8 +78,8 @@ const useImageNavigation = () => {
 			},
 			[
 				imageFileIndex,
-				imageFilePaths,
-				setImageFilePath,
+				imageFiles,
+				setImageFile,
 			],
 		)
 	)
@@ -86,7 +88,7 @@ const useImageNavigation = () => {
 		goToNextImage,
 		goToPreviousImage,
 		isAtBeginning: imageFileIndex === 0,
-		isAtEnd: imageFileIndex === imageFilePaths.length - 1,
+		isAtEnd: imageFileIndex === imageFiles.length - 1,
 	}
 }
 

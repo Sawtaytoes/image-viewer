@@ -8,7 +8,7 @@ import {
 
 import ImageViewerContext from './ImageViewerContext'
 
-const path = global.require('path')
+const initialImageFile = {}
 
 const propTypes = {
 	children: PropTypes.node.isRequired,
@@ -18,33 +18,30 @@ const ImageViewerProvider = ({
 	children,
 }) => {
 	const [
-		imageFilePath,
-		setImageFilePath,
-	] = useState(null)
+		imageFile,
+		setImageFile,
+	] = (
+		useState(
+			initialImageFile
+		)
+	)
 
 	const leaveImageViewer = (
 		useCallback(
 			() => {
-				setImageFilePath(
-					null
-				)
-
-				const imageFileName = (
-					path
-					.basename(
-						imageFilePath
-					)
+				setImageFile(
+					initialImageFile
 				)
 
 				document
 				.querySelector(
-					`[title="${imageFileName}"]`
+					`[title="${imageFile.name}"]`
 				)
 				.scrollIntoViewIfNeeded()
 			},
 			[
-				imageFilePath,
-				setImageFilePath,
+				imageFile,
+				setImageFile,
 			],
 		)
 	)
@@ -52,14 +49,21 @@ const ImageViewerProvider = ({
 	const imageViewerProviderValue = (
 		useMemo(
 			() => ({
-				imageFilePath,
+				imageFileName: (
+					imageFile
+					.name
+				),
+				imageFilePath: (
+					imageFile
+					.path
+				),
 				leaveImageViewer,
-				setImageFilePath,
+				setImageFile,
 			}),
 			[
-				imageFilePath,
+				imageFile,
 				leaveImageViewer,
-				setImageFilePath,
+				setImageFile,
 			],
 		)
 	)
