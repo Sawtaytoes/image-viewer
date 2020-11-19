@@ -9,7 +9,6 @@ import {
 import FileSystemContext from './FileSystemContext'
 
 const path = global.require('path')
-const { remote } = global.require('electron')
 
 const folderControlsStyles = css`
 	align-items: center;
@@ -25,24 +24,9 @@ const navigationStyles = css`
 	padding: 4px;
 `
 
-const windowsDrives = (
-	(
-		remote
-		.getGlobal('windowsDrives')
-		|| []
-	)
-	.map(driveLetter => ({
-		filePath: driveLetter,
-		isDirectory: true,
-		isFile: false,
-		name: driveLetter,
-	}))
-)
-
 const FolderControls = () => {
 	const {
 		filePath,
-		setDirectoryContents,
 		setFilePath,
 	} = (
 		useContext(
@@ -61,13 +45,7 @@ const FolderControls = () => {
 					)
 				)
 
-				if (
-					filePath === nextFilePath
-					&& windowsDrives
-				) {
-					setDirectoryContents(
-						windowsDrives
-					)
+				if (filePath === nextFilePath) {
 					setFilePath(
 						''
 					)
@@ -80,7 +58,6 @@ const FolderControls = () => {
 			},
 			[
 				filePath,
-				setDirectoryContents,
 				setFilePath,
 			],
 		)

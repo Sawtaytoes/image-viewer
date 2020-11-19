@@ -22,6 +22,20 @@ const path = global.require('path')
 const yargs = global.require('yargs')
 const { remote } = global.require('electron')
 
+const windowsDrivePaths = (
+	(
+		remote
+		.getGlobal('windowsDrives')
+		|| []
+	)
+	.map(driveLetter => ({
+		fileName: driveLetter,
+		filePath: driveLetter,
+		isDirectory: true,
+		isFile: false,
+	}))
+)
+
 const initialFilePath = (
 	(
 		sessionStorage
@@ -82,6 +96,29 @@ const FileSystemProvider = ({
 
 	useEffect(
 		() => {
+			if (!filePath) {
+				if (windowsDrivePaths) {
+					setDirectoryContents(
+						windowsDrivePaths
+					)
+				}
+				else {
+					setFilePath(
+						path
+						.sep
+					)
+				}
+			}
+		},
+		[filePath],
+	)
+
+	useEffect(
+		() => {
+			if (!filePath) {
+				return
+			}
+
 			const subscriber = (
 				bindNodeCallback(
 					fs
@@ -150,14 +187,12 @@ const FileSystemProvider = ({
 				directoryPaths,
 				filePath,
 				imageFilePaths,
-				setDirectoryContents,
 				setFilePath,
 			}),
 			[
 				directoryPaths,
 				filePath,
 				imageFilePaths,
-				setDirectoryContents,
 				setFilePath,
 			],
 		)
