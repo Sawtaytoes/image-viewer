@@ -181,13 +181,13 @@ const ImageView = ({
 
 			<div
 				css={navigateNextOverlayStyles}
-				onClick={goToNextImage}
+				onPointerDown={goToNextImage}
 				ref={navigateNextOverlayRef}
 			/>
 
 			<div
 				css={navigatePreviousOverlayStyles}
-				onClick={goToPreviousImage}
+				onPointerDown={goToPreviousImage}
 				ref={navigatePreviousOverlayRef}
 			/>
 		</div>
