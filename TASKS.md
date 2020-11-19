@@ -35,3 +35,4 @@
 - Add ability to pause image downloads when that folder is unmounted.
 - Show loading progress indicator when loading images.
 - Stop listening to `SHIFT` and `CTRL` when held for different commands like grabbing a screenshot.
+- Create way to have a finite number of download slots and only begin downloading when slots are available. Will most-likely require a separate context provider.
