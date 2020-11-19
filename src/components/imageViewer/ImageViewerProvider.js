@@ -25,15 +25,15 @@ const ImageViewerProvider = ({
 	const leaveImageViewer = (
 		useCallback(
 			() => {
+				setImageFilePath(
+					null
+				)
+
 				const imageFileName = (
 					path
 					.basename(
 						imageFilePath
 					)
-				)
-
-				setImageFilePath(
-					null
 				)
 
 				document
