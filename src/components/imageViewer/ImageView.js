@@ -90,11 +90,11 @@ const ImageView = ({
 	const navigatePreviousOverlayRef = useRef()
 
 	usePointerHover({
-		callback: () => {
+		callback: ({
+			isHovering,
+		}) => {
 			setIsHoveringNextOverlay(
-				isHovering => (
-					!isHovering
-				)
+				isHovering
 			)
 		},
 		domElementRef: (
@@ -103,11 +103,11 @@ const ImageView = ({
 	})
 
 	usePointerHover({
-		callback: () => {
+		callback: ({
+			isHovering,
+		}) => {
 			setIsHoveringPreviousOverlay(
-				isHovering => (
-					!isHovering
-				)
+				isHovering
 			)
 		},
 		domElementRef: (

@@ -3,10 +3,18 @@ import {
 	useRef,
 } from 'react'
 
+const hoverStates = {
+	pointerenter: true,
+	pointermove: true,
+	pointerout: false,
+	pointerup: true,
+}
+
 const usePointerHover = ({
 	callback,
 	domElementRef,
 }) => {
+	const animationFrameIdRef = useRef()
 	const callbackRef = useRef()
 
 	callbackRef
@@ -14,9 +22,49 @@ const usePointerHover = ({
 
 	useEffect(
 		() => {
-			const listener = () => {
+			const hoverStateNotification = event => {
 				callbackRef
-				.current()
+				.current({
+					event,
+					isHovering: (
+						hoverStates
+						[event.type]
+					),
+				})
+			}
+
+			const throttleHoverStateNotification = event => {
+				if (
+					animationFrameIdRef
+					.current
+				) {
+					return
+				}
+
+				animationFrameIdRef
+				.current = (
+					window
+					.requestAnimationFrame(() => {
+						animationFrameIdRef
+						.current = null
+
+						hoverStateNotification(
+							event
+						)
+					})
+				)
+			}
+
+			const firstPointerMove = event => {
+				throttleHoverStateNotification(
+					event
+				)
+
+				domElement
+				.removeEventListener(
+					'pointermove',
+					firstPointerMove,
+				)
 			}
 
 			const domElement = (
@@ -26,27 +74,51 @@ const usePointerHover = ({
 
 			domElement
 			.addEventListener(
-				'pointerenter',
-				listener,
+				'pointerup',
+				throttleHoverStateNotification,
 			)
 
 			domElement
 			.addEventListener(
-				'pointerleave',
-				listener,
+				'pointerenter',
+				throttleHoverStateNotification,
+			)
+
+			domElement
+			.addEventListener(
+				'pointermove',
+				firstPointerMove,
+			)
+
+			domElement
+			.addEventListener(
+				'pointerout',
+				throttleHoverStateNotification,
 			)
 
 			return () => {
 				domElement
 				.removeEventListener(
-					'pointerenter',
-					listener,
+					'pointerup',
+					throttleHoverStateNotification,
 				)
 
 				domElement
 				.removeEventListener(
-					'pointerleave',
-					listener,
+					'pointerenter',
+					throttleHoverStateNotification,
+				)
+
+				domElement
+				.removeEventListener(
+					'pointermove',
+					firstPointerMove,
+				)
+
+				domElement
+				.removeEventListener(
+					'pointerout',
+					throttleHoverStateNotification,
 				)
 			}
 		},
