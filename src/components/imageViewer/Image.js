@@ -82,6 +82,16 @@ const Image = ({
 
 	useEffect(
 		() => {
+			setImageDataUrl(
+				null
+			)
+		},
+		// Listening to `webSafeFilePath` even though it's not used.
+		[webSafeFilePath],
+	)
+
+	useEffect(
+		() => {
 			if (
 				!isVisible
 				|| imageDataUrl
@@ -89,22 +99,7 @@ const Image = ({
 				return
 			}
 
-			const xmlHttpRequest = (
-				new XMLHttpRequest()
-			)
-
-			xmlHttpRequest
-			.open(
-				'GET',
-				webSafeFilePath,
-				true,
-			)
-
-			xmlHttpRequest
-			.responseType = 'arraybuffer'
-
-			xmlHttpRequest
-			.onprogress = event => {
+			const updateProgress = event => {
 				setPercentComplete(
 					Math.round(
 						(event.loaded / event.total)
@@ -113,10 +108,7 @@ const Image = ({
 				)
 			}
 
-			let aborted = false
-
-			xmlHttpRequest
-			.onloadend = function() {
+			const saveImageDataUrl = function() {
 				if (
 					!xmlHttpRequest
 					.status
@@ -146,8 +138,6 @@ const Image = ({
 					)
 				)
 
-				aborted && console.log(this.response)
-
 				setImageDataUrl(
 					URL
 					.createObjectURL(
@@ -156,13 +146,50 @@ const Image = ({
 				)
 			}
 
+			const xmlHttpRequest = (
+				new XMLHttpRequest()
+			)
+
+			xmlHttpRequest
+			.open(
+				'GET',
+				webSafeFilePath,
+				true,
+			)
+
+			xmlHttpRequest
+			.responseType = 'arraybuffer'
+
+			xmlHttpRequest
+			.addEventListener(
+				'progress',
+				updateProgress,
+			)
+
+			xmlHttpRequest
+			.addEventListener(
+				'loadend',
+				saveImageDataUrl,
+			)
+
 			xmlHttpRequest
 			.send()
 
 			return () => {
-				aborted = true
 				xmlHttpRequest
 				.abort()
+
+				xmlHttpRequest
+				.removeEventListener(
+					'progress',
+					updateProgress,
+				)
+
+				xmlHttpRequest
+				.removeEventListener(
+					'loadend',
+					saveImageDataUrl,
+				)
 			}
 		},
 		[
@@ -225,7 +252,10 @@ const Image = ({
 						isImageLoadedRef
 						.current
 					)
-					// Fixes issue where canvas is unmounted and then this function runs because the observer noticed a change.
+					|| !(
+						imageRef
+						.current
+					)
 					|| !(
 						canvasRef
 						.current
@@ -348,6 +378,11 @@ const Image = ({
 			const imageLoaded = () => {
 				isImageLoadedRef
 				.current = true
+
+				URL
+				.revokeObjectURL(
+					imageDataUrl
+				)
 
 				throttleCanvasLoading()
 			}
