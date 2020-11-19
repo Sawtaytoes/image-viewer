@@ -91,6 +91,16 @@ const Image = ({
 	)
 
 	useEffect(
+		() => () => {
+			URL
+			.revokeObjectURL(
+				imageDataUrl
+			)
+		},
+		[imageDataUrl],
+	)
+
+	useEffect(
 		() => {
 			if (
 				!isVisible
@@ -378,11 +388,6 @@ const Image = ({
 			const imageLoaded = () => {
 				isImageLoadedRef
 				.current = true
-
-				URL
-				.revokeObjectURL(
-					imageDataUrl
-				)
 
 				throttleCanvasLoading()
 			}
