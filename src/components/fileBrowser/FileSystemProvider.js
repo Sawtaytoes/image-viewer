@@ -150,12 +150,14 @@ const FileSystemProvider = ({
 				directoryPaths,
 				filePath,
 				imageFilePaths,
+				setDirectoryContents,
 				setFilePath,
 			}),
 			[
 				directoryPaths,
 				filePath,
 				imageFilePaths,
+				setDirectoryContents,
 				setFilePath,
 			],
 		)
