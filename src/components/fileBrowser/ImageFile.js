@@ -4,12 +4,12 @@ import {
 	memo,
 	useCallback,
 	useContext,
-	useEffect,
 	useRef,
 } from 'react'
 
 import Image from '../imageViewer/Image'
 import ImageViewerContext from '../imageViewer/ImageViewerContext'
+import useResizableSquareContainerEffect from './useResizableSquareContainerEffect'
 
 const imageFileStyles = css`
 	align-items: center;
@@ -27,7 +27,6 @@ const propTypes = {
 const ImageFile = ({
 	filePath,
 }) => {
-	const animationFrameIdRef = useRef()
 	const imageContainerRef = useRef()
 
 	const {
@@ -52,23 +51,9 @@ const ImageFile = ({
 		)
 	)
 
-	useEffect(
-		() => {
-			const resizeContainer = () => {
-				if (
-					!(
-						imageContainerRef
-						.current
-					)
-				) {
-					return
-				}
-
-				const boxedHeight = (
-					imageContainerRef
-					.current
-					.clientWidth
-				)
+	useResizableSquareContainerEffect(
+		imageContainerRef
+	)
 
 				imageContainerRef
 				.current
