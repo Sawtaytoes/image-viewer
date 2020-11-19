@@ -35,7 +35,7 @@ const webpackClientConfig = {
 		main: (
 			isLocalDevelopment
 				? [
-					'react-devtools',
+					// 'react-devtools',
 					'react-hot-loader/patch',
 					getAbsolutePath('./src/entries/client.js'),
 				]
@@ -98,6 +98,9 @@ const webpackClientConfig = {
 				isLocalDevelopment
 					? '@hot-loader/react-dom'
 					: 'react-dom'
+			),
+			'rxjs': (
+				'rxjs/_esm2015'
 			),
 		},
 		extensions: ['.js'],
