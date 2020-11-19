@@ -47,13 +47,17 @@ const FileBrowser = () => {
 			<div css={filesListStyles}>
 				{
 					directoryPaths
-					.map(directoryPath => (
+					.map(({
+						fileName,
+						filePath,
+					}) => (
 						<div
 							css={fileStyles}
-							key={directoryPath}
+							key={filePath}
 						>
 							<Directory
-								directoryPath={directoryPath}
+								directoryName={fileName}
+								directoryPath={filePath}
 							/>
 						</div>
 					))
@@ -61,13 +65,17 @@ const FileBrowser = () => {
 
 				{
 					imageFilePaths
-					.map(imageFilePath => (
+					.map(({
+						fileName,
+						filePath,
+					}) => (
 						<div
 							css={fileStyles}
-							key={imageFilePath}
+							key={filePath}
 						>
 							<ImageFile
-								filePath={imageFilePath}
+								fileName={fileName}
+								filePath={filePath}
 							/>
 						</div>
 					))

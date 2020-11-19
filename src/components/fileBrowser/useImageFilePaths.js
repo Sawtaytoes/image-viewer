@@ -47,29 +47,37 @@ const useImageFilePaths = directoryContents => {
 						isFile
 					)),
 					filter(({
-						name,
+						fileName,
 					}) => (
 						validImageExtensions
 						.includes(
 							path
 							.extname(
-								name
+								fileName
 							)
 							.toLowerCase()
 						)
 					)),
 					map(({
+						fileName,
 						filePath,
-					}) => (
-						filePath
-					)),
+					}) => ({
+						fileName,
+						filePath,
+					})),
 					toArray(),
 					map(directoryPaths => (
 						directoryPaths
 						.slice()
-						.sort(
-							compareNaturalStrings
-						)
+						.sort((
+							a,
+							b,
+						) => (
+							compareNaturalStrings(
+								a.fileName,
+								b.fileName,
+							)
+						))
 					)),
 				)
 				.subscribe(

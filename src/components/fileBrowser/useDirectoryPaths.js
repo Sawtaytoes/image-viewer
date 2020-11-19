@@ -38,28 +38,36 @@ const useDirectoryPaths = directoryContents => {
 						isDirectory
 					)),
 					filter(({
-						name,
+						fileName,
 					}) => (
 						!(
 							systemDirectories
 							.includes(
-								name
+								fileName
 								.toLowerCase()
 							)
 						)
 					)),
 					map(({
+						fileName,
 						filePath,
-					}) => (
-						filePath
-					)),
+					}) => ({
+						fileName,
+						filePath,
+					})),
 					toArray(),
 					map(directoryPaths => (
 						directoryPaths
 						.slice()
-						.sort(
-							compareNaturalStrings
-						)
+						.sort((
+							a,
+							b,
+						) => (
+							compareNaturalStrings(
+								a.fileName,
+								b.fileName,
+							)
+						))
 					)),
 				)
 				.subscribe(

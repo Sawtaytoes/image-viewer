@@ -94,6 +94,10 @@ const FileSystemProvider = ({
 				.pipe(
 					mergeAll(),
 					map(directoryEntry => ({
+						fileName: (
+							directoryEntry
+							.name
+						),
 						filePath: (
 							path
 							.join(
@@ -111,10 +115,6 @@ const FileSystemProvider = ({
 						isFile: (
 							directoryEntry
 							.isFile()
-						),
-						name: (
-							directoryEntry
-							.name
 						),
 					})),
 					toArray(),
