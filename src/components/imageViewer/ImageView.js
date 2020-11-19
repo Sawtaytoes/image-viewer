@@ -69,7 +69,9 @@ const ImageView = ({
 		setIsHoveringPreviousOverlay,
 	] = useState(false)
 
-	const { leaveImageViewer } = (
+	const {
+		leaveImageViewer,
+	} = (
 		useContext(
 			ImageViewerContext
 		)
