@@ -80,7 +80,8 @@ const ImageFile = ({
 					timeoutId
 				)
 			}
-		}
+		},
+		[],
 	)
 
 	return (
