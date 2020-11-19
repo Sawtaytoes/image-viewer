@@ -1,4 +1,10 @@
 import PropTypes from 'prop-types'
+import { bindNodeCallback } from 'rxjs'
+import {
+	map,
+	mergeAll,
+	toArray,
+} from 'rxjs/operators'
 import {
 	memo,
 	useEffect,
@@ -11,10 +17,12 @@ import useDirectoryPaths from './useDirectoryPaths'
 import useImageFilePaths from './useImageFilePaths'
 
 const config = global.require('config')
+const fs = global.require('fs')
+const path = global.require('path')
 const yargs = global.require('yargs')
 const { remote } = global.require('electron')
 
-const defaultFilePath = (
+const initialFilePath = (
 	(
 		sessionStorage
 		.getItem('filePath')
@@ -34,6 +42,8 @@ const defaultFilePath = (
 	|| './'
 )
 
+const initialDirectoryContents = []
+
 const propTypes = {
 	children: PropTypes.node.isRequired,
 }
@@ -44,7 +54,20 @@ const FileSystemProvider = ({
 	const [
 		filePath,
 		setFilePath,
-	] = useState(defaultFilePath)
+	] = (
+		useState(
+			initialFilePath
+		)
+	)
+
+	const [
+		directoryContents,
+		setDirectoryContents,
+	] = (
+		useState(
+			initialDirectoryContents
+		)
+	)
 
 	useEffect(
 		() => {
@@ -57,15 +80,67 @@ const FileSystemProvider = ({
 		[filePath],
 	)
 
+	useEffect(
+		() => {
+			const subscriber = (
+				bindNodeCallback(
+					fs
+					.readdir
+					.bind(fs)
+				)(
+					filePath,
+					{ withFileTypes: true },
+				)
+				.pipe(
+					mergeAll(),
+					map(directoryEntry => ({
+						filePath: (
+							path
+							.join(
+								filePath,
+								(
+									directoryEntry
+									.name
+								),
+							)
+						),
+						isDirectory: (
+							directoryEntry
+							.isDirectory()
+						),
+						isFile: (
+							directoryEntry
+							.isFile()
+						),
+						name: (
+							directoryEntry
+							.name
+						),
+					})),
+					toArray(),
+				)
+				.subscribe(
+					setDirectoryContents
+				)
+			)
+
+			return () => {
+				subscriber
+				.unsubscribe()
+			}
+		},
+		[filePath],
+	)
+
 	const directoryPaths = (
 		useDirectoryPaths(
-			filePath
+			directoryContents
 		)
 	)
 
 	const imageFilePaths = (
 		useImageFilePaths(
-			filePath
+			directoryContents
 		)
 	)
 

@@ -1,10 +1,7 @@
-import { bindNodeCallback } from 'rxjs'
+import { from } from 'rxjs'
 import {
 	filter,
 	map,
-	mapTo,
-	mergeAll,
-	mergeMap,
 	toArray,
 } from 'rxjs/operators'
 import {
@@ -14,10 +11,12 @@ import {
 
 import compareNaturalStrings from './compareNaturalStrings'
 
-const fs = global.require('fs')
-const path = global.require('path')
+const systemDirectories = [
+	'$RECYCLE.BIN',
+	'System Volume Information',
+]
 
-const useDirectoryPaths = filePath => {
+const useDirectoryPaths = directoryContents => {
 	const [
 		directoryPaths,
 		setDirectoryPaths,
@@ -25,38 +24,28 @@ const useDirectoryPaths = filePath => {
 
 	useEffect(
 		() => {
-			// const { unsubscribe } = (
-				bindNodeCallback(
-					fs
-					.readdir
-					.bind(fs)
-				)(
-					filePath
-				)
+			const subscriber = (
+				from(directoryContents)
 				.pipe(
-					mergeAll(),
-					map(fileName => (
-						path
-						.join(
-							filePath,
-							fileName,
+					filter(({
+						isDirectory,
+					}) => (
+						isDirectory
+					)),
+					filter(({
+						name,
+					}) => (
+						!(
+							systemDirectories
+							.includes(
+								name
+							)
 						)
 					)),
-					mergeMap(fileName => (
-						bindNodeCallback(
-							fs
-							.lstat
-							.bind(fs)
-						)(
-							fileName
-						)
-						.pipe(
-							filter(stats => (
-								stats
-								.isDirectory()
-							)),
-							mapTo(fileName),
-						)
+					map(({
+						filePath,
+					}) => (
+						filePath
 					)),
 					toArray(),
 					map(directoryPaths => (
@@ -70,11 +59,14 @@ const useDirectoryPaths = filePath => {
 				.subscribe(
 					setDirectoryPaths
 				)
-			// )
+			)
 
-			// return unsubscribe // TEMP. Figure out why it errors trying to close the directory.
+			return () => {
+				subscriber
+				.unsubscribe()
+			}
 		},
-		[filePath],
+		[directoryContents],
 	)
 
 	return directoryPaths

@@ -1,8 +1,7 @@
-import { bindNodeCallback } from 'rxjs'
+import { from } from 'rxjs'
 import {
 	filter,
 	map,
-	mergeAll,
 	toArray,
 } from 'rxjs/operators'
 import {
@@ -12,7 +11,6 @@ import {
 
 import compareNaturalStrings from './compareNaturalStrings'
 
-const fs = global.require('fs')
 const path = global.require('path')
 
 const validImageExtensions = [
@@ -32,7 +30,7 @@ const validImageExtensions = [
 	'.webp',
 ]
 
-const useImageFilePaths = filePath => {
+const useImageFilePaths = directoryContents => {
 	const [
 		imageFilePaths,
 		setImageFilePaths,
@@ -40,32 +38,30 @@ const useImageFilePaths = filePath => {
 
 	useEffect(
 		() => {
-			// const { unsubscribe } = (
-				bindNodeCallback(
-					fs
-					.readdir
-					.bind(fs)
-				)(
-					filePath
-				)
+			const subscriber = (
+				from(directoryContents)
 				.pipe(
-					mergeAll(),
-					filter(fileName => (
+					filter(({
+						isFile,
+					}) => (
+						isFile
+					)),
+					filter(({
+						name,
+					}) => (
 						validImageExtensions
 						.includes(
 							path
 							.extname(
-								fileName
+								name
 							)
 							.toLowerCase()
 						)
 					)),
-					map(fileName => (
-						path
-						.join(
-							filePath,
-							fileName,
-						)
+					map(({
+						filePath,
+					}) => (
+						filePath
 					)),
 					toArray(),
 					map(directoryPaths => (
@@ -79,11 +75,14 @@ const useImageFilePaths = filePath => {
 				.subscribe(
 					setImageFilePaths
 				)
-			// )
+			)
 
-			// return unsubscribe // TEMP. Figure out why it errors trying to close the directory.
+			return () => {
+				subscriber
+				.unsubscribe()
+			}
 		},
-		[filePath],
+		[directoryContents],
 	)
 
 	return imageFilePaths
