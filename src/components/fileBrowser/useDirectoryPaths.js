@@ -12,8 +12,13 @@ import {
 import compareNaturalStrings from './compareNaturalStrings'
 
 const systemDirectories = [
-	'$RECYCLE.BIN',
-	'System Volume Information',
+	'$recycle.bin',
+	'$winreagent',
+	'ai_recyclebin',
+	'config.msi',
+	'recovery',
+	'system volume information',
+	'windows',
 ]
 
 const useDirectoryPaths = directoryContents => {
@@ -39,6 +44,7 @@ const useDirectoryPaths = directoryContents => {
 							systemDirectories
 							.includes(
 								name
+								.toLowerCase()
 							)
 						)
 					)),
