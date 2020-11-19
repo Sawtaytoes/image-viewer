@@ -1,3 +1,10 @@
+import { bindNodeCallback } from 'rxjs'
+import {
+	filter,
+	map,
+	mergeAll,
+	toArray,
+} from 'rxjs/operators'
 import {
  useEffect,
  useState,
@@ -7,13 +14,6 @@ import compareNaturalStrings from './compareNaturalStrings'
 
 const fs = global.require('fs')
 const path = global.require('path')
-const { bindNodeCallback } = global.require('rxjs')
-const {
-	filter,
-	map,
-	mergeAll,
-	toArray,
-} = global.require('rxjs/operators')
 
 const validImageExtensions = [
 	'.apng',

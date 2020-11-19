@@ -1,3 +1,12 @@
+import { bindNodeCallback } from 'rxjs'
+import {
+	filter,
+	map,
+	mapTo,
+	mergeAll,
+	mergeMap,
+	toArray,
+} from 'rxjs/operators'
 import {
  useEffect,
  useState,
@@ -7,15 +16,6 @@ import compareNaturalStrings from './compareNaturalStrings'
 
 const fs = global.require('fs')
 const path = global.require('path')
-const { bindNodeCallback } = global.require('rxjs')
-const {
-	filter,
-	map,
-	mapTo,
-	mergeAll,
-	mergeMap,
-	toArray,
-} = global.require('rxjs/operators')
 
 const useDirectoryPaths = filePath => {
 	const [
