@@ -8,8 +8,23 @@ import {
 	useState,
 } from 'react'
 
+const imageStyles = css`
+	align-items: center;
+	display: flex;
+	height: 100%;
+	justify-content: center;
+	position: relative;
+	width: 100%;
+`
+
+const imageLoadingProgressStyles = css`
+	font-family: 'Source Sans Pro', sans-serif;
+	font-size: 24px;
+`
+
 const imageCanvasStyles = css`
 	height: 100%;
+	position: absolute;
 	width: 100%;
 `
 
@@ -33,6 +48,20 @@ const Image = ({
 		)
 	)
 
+	const [
+		percentComplete,
+		setPercentComplete,
+	] = (
+		useState(0)
+	)
+
+	const [
+		imageDataUrl,
+		setImageDataUrl,
+	] = (
+		useState(null)
+	)
+
 	const animationFrameIdRef = useRef()
 	const canvasRef = useRef()
 	const imageRef = useRef()
@@ -49,6 +78,98 @@ const Image = ({
 			),
 			[filePath],
 		)
+	)
+
+	useEffect(
+		() => {
+			if (
+				!isVisible
+				|| imageDataUrl
+			) {
+				return
+			}
+
+			const xmlHttpRequest = (
+				new XMLHttpRequest()
+			)
+
+			xmlHttpRequest
+			.open(
+				'GET',
+				webSafeFilePath,
+				true,
+			)
+
+			xmlHttpRequest
+			.responseType = 'arraybuffer'
+
+			xmlHttpRequest
+			.onprogress = event => {
+				setPercentComplete(
+					Math.round(
+						(event.loaded / event.total)
+						* 100
+					)
+				)
+			}
+
+			let aborted = false
+
+			xmlHttpRequest
+			.onloadend = function() {
+				if (
+					!xmlHttpRequest
+					.status
+					.toString()
+					.match(/^2/)
+				) {
+					return
+				}
+
+				const headers = (
+					xmlHttpRequest
+					.getAllResponseHeaders()
+				)
+
+				const mimeType = (
+					headers
+					.replace(
+						/^Content-Type:\s*(.*?)$/mi,
+						'$1',
+					)
+				)
+
+				const imageBlob = (
+					new Blob(
+						[this.response],
+						{ type: mimeType }
+					)
+				)
+
+				aborted && console.log(this.response)
+
+				setImageDataUrl(
+					URL
+					.createObjectURL(
+						imageBlob
+					)
+				)
+			}
+
+			xmlHttpRequest
+			.send()
+
+			return () => {
+				aborted = true
+				xmlHttpRequest
+				.abort()
+			}
+		},
+		[
+			imageDataUrl,
+			isVisible,
+			webSafeFilePath,
+		],
 	)
 
 	useEffect(
@@ -88,7 +209,7 @@ const Image = ({
 
 	useEffect(
 		() => {
-			if (!isVisible) {
+			if (!imageDataUrl) {
 				return
 			}
 
@@ -242,7 +363,7 @@ const Image = ({
 			.current
 			.setAttribute(
 				'src',
-				webSafeFilePath,
+				imageDataUrl,
 			)
 
 			imageRef
@@ -292,17 +413,32 @@ const Image = ({
 		},
 		[
 			fileName,
+			imageDataUrl,
 			isVisible,
-			webSafeFilePath,
 		],
 	)
 
 	return (
-		<canvas
-			css={imageCanvasStyles}
-			ref={canvasRef}
-			title={fileName}
-		/>
+		<div css={imageStyles}>
+			{
+				percentComplete !== 100
+				&& (
+					<progress
+						css={imageLoadingProgressStyles}
+						max="100"
+						value={percentComplete}
+					>
+						{percentComplete}
+					</progress>
+				)
+			}
+
+			<canvas
+				css={imageCanvasStyles}
+				ref={canvasRef}
+				title={fileName}
+			/>
+		</div>
 	)
 }
 
