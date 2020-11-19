@@ -55,6 +55,15 @@ const ImageFile = ({
 	useEffect(
 		() => {
 			const resizeContainer = () => {
+				if (
+					!(
+						imageContainerRef
+						.current
+					)
+				) {
+					return
+				}
+
 				const boxedHeight = (
 					imageContainerRef
 					.current
