@@ -2,6 +2,7 @@ import { css } from '@emotion/core'
 import {
 	memo,
 	useContext,
+	useEffect,
 } from 'react'
 
 import ImageView from './ImageView'
@@ -26,10 +27,45 @@ const imageViewStyles = css`
 const ImageViewer = () => {
 	const {
 		imageFilePath,
+		leaveImageViewer,
 	} = (
 		useContext(
 			ImageViewerContext
 		)
+	)
+
+	useEffect(
+		() => {
+			if (!imageFilePath) {
+				return
+			}
+
+			const onKeyDown = ({
+				code,
+			}) => {
+				if (code === 'Escape') {
+					leaveImageViewer()
+				}
+			}
+
+			window
+			.addEventListener(
+				'keydown',
+				onKeyDown,
+			)
+
+			return () => {
+				window
+				.removeEventListener(
+					'keydown',
+					onKeyDown,
+				)
+			}
+		},
+		[
+			imageFilePath,
+			leaveImageViewer,
+		],
 	)
 
 	return (
