@@ -9,9 +9,8 @@ import {
 import FileSystemContext from './FileSystemContext'
 
 const directoryStyles = css`
-	background-color: #fffffa;
+	background-color: #fffffb;
 	border: 2px solid lightgray;
-	border-radius: 14px;
 	color: #333;
 	cursor: pointer;
 	font-family: 'Source Sans Pro', sans-serif;
@@ -19,10 +18,12 @@ const directoryStyles = css`
 `
 
 const propTypes = {
+	directoryName: PropTypes.string.isRequired,
 	directoryPath: PropTypes.string.isRequired,
 }
 
 const Directory = ({
+	directoryName,
 	directoryPath,
 }) => {
 	const {
@@ -52,7 +53,7 @@ const Directory = ({
 			css={directoryStyles}
 			onClick={goToDirectory}
 		>
-			{directoryPath}
+			{directoryName}
 		</div>
 	)
 }
