@@ -4,7 +4,9 @@ import {
 	memo,
 	useCallback,
 	useContext,
+	useEffect,
 	useRef,
+	useState,
 } from 'react'
 
 import Image from '../imageViewer/Image'
@@ -59,17 +61,44 @@ const ImageFile = ({
 		imageContainerRef
 	)
 
+	const [
+		isReadyForImage,
+		setIsReadyForImage,
+	] = useState(false)
+
+	useEffect(
+		() => {
+			// Delays image loading until after container sizing is complete.
+			const timeoutId = (
+				setTimeout(() => {
+					setIsReadyForImage(true)
+				})
+			)
+
+			return () => {
+				clearTimeout(
+					timeoutId
+				)
+			}
+		}
+	)
+
 	return (
 		<div
 			css={imageFileStyles}
 			onClick={goToImage}
 			ref={imageContainerRef}
 		>
-			<Image
-				fileName={fileName}
-				filePath={filePath}
-				hasVisibilityDetection
-			/>
+			{
+				isReadyForImage
+				&& (
+					<Image
+						fileName={fileName}
+						filePath={filePath}
+						hasVisibilityDetection
+					/>
+				)
+			}
 		</div>
 	)
 }
