@@ -36,3 +36,4 @@
 - Show loading progress indicator when loading images.
 - Stop listening to `SHIFT` and `CTRL` when held for different commands like grabbing a screenshot.
 - Create way to have a finite number of download slots and only begin downloading when slots are available. Will most-likely require a separate context provider.
+- Add list virtualization so canvas elements might be loaded in memory but aren't loaded in the DOM. This will greatly speed up performance when loading hundreds of images.
