@@ -21,6 +21,7 @@
 - Add a slider to switch between different numbers of image thumbnails per row.
 - Add way to sort by last modified date rather than only alphabetical.
 - Store file sorting state in local storage.
+- Add highlight when hovering and clicking controls.
 
 ## Image Viewer
 - Add ability to zoom with mouse-wheel and pinch.
@@ -28,8 +29,8 @@
 - Make it so you can edit the URL with `history` pathing potentially using React-Router-DOM.
 - Scroll image into view behind the selected image on close. Currently, this is being hacked in and needs a real implementation.
 - Fix issue where image covers controls.
-- Fix residual navigation overlays on touch.
-- Loading indicator doesn't show when switching images.
+- Loading indicator doesn't show when switching images if images aren't already loaded.
+- Add highlight when hovering and clicking controls.
 
 ## Future
 Potentially unnecessary additions.
@@ -45,6 +46,11 @@ Potentially unnecessary additions.
 	+ Happens after max size reached.
 	+ After user changes thumbnail size?
 - Remove `src` from `img` element when `canvas` loaded to save on memory so not all full-sized images are stored in RAM. Make sure there's a parent canvas element or something similar that has a large enough thumbnail so we're not using images from memory when recomputing the `canvas` on resize.
+- Cache
+	+ Capture total machine memory and use up to a percentage of RAM for cached image elements.
+	+ Deletion priority starts with last viewed time. Viewing recent images resets the timer.
+	+ Set images in cache on a debounce timer, so they remove by themselves.
+
 
 ### Multi-threading
 - Add second thread for loading images and predictive loading of other images asynchronously.
