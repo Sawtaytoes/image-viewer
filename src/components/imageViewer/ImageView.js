@@ -52,6 +52,10 @@ const showNavigationControlStyles = css`
 	opacity: 0.15;
 `
 
+const unavailableNavigationStyles = css`
+	background-color: red;
+`
+
 const propTypes = {
 	imageFileName: PropTypes.string.isRequired,
 	imageFilePath: PropTypes.string.isRequired,
@@ -130,7 +134,7 @@ const ImageView = ({
 
 					${
 						isAtEnd
-						&& hideNavigationControlStyles
+						&& unavailableNavigationStyles
 					}
 				`
 			),
@@ -156,7 +160,7 @@ const ImageView = ({
 
 					${
 						isAtBeginning
-						&& hideNavigationControlStyles
+						&& unavailableNavigationStyles
 					}
 				`
 			),
