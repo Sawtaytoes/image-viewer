@@ -55,7 +55,7 @@ const usePointerHover = ({
 				)
 			}
 
-			const firstPointerMove = event => {
+			const onPointerInitialMovement = event => {
 				throttleHoverStateNotification(
 					event
 				)
@@ -63,8 +63,16 @@ const usePointerHover = ({
 				domElement
 				.removeEventListener(
 					'pointermove',
-					firstPointerMove,
+					onPointerInitialMovement,
 				)
+			}
+
+			const onMouseUp = event => {
+				if (event.pointerType !== 'touch') {
+					throttleHoverStateNotification(
+						event
+					)
+				}
 			}
 
 			const domElement = (
@@ -75,7 +83,7 @@ const usePointerHover = ({
 			domElement
 			.addEventListener(
 				'pointerup',
-				throttleHoverStateNotification,
+				onMouseUp,
 			)
 
 			domElement
@@ -87,7 +95,7 @@ const usePointerHover = ({
 			domElement
 			.addEventListener(
 				'pointermove',
-				firstPointerMove,
+				onPointerInitialMovement,
 			)
 
 			domElement
@@ -100,7 +108,7 @@ const usePointerHover = ({
 				domElement
 				.removeEventListener(
 					'pointerup',
-					throttleHoverStateNotification,
+					onMouseUp,
 				)
 
 				domElement
@@ -112,7 +120,7 @@ const usePointerHover = ({
 				domElement
 				.removeEventListener(
 					'pointermove',
-					firstPointerMove,
+					onPointerInitialMovement,
 				)
 
 				domElement
