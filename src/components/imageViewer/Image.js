@@ -2,11 +2,14 @@ import PropTypes from 'prop-types'
 import { css } from '@emotion/core'
 import {
 	memo,
+	useContext,
 	useEffect,
 	useMemo,
 	useRef,
 	useState,
 } from 'react'
+
+import ImageLoaderContext from '../imageLoader/ImageLoaderContext'
 
 const imageStyles = css`
 	align-items: center;
@@ -242,6 +245,28 @@ const Image = ({
 			}
 		},
 		[hasVisibilityDetection],
+	)
+
+	const {
+		updateImageVisibility,
+	} = (
+		useContext(
+			ImageLoaderContext
+		)
+	)
+
+	useEffect(
+		() => {
+			updateImageVisibility({
+				filePath,
+				isVisible,
+			})
+		},
+		[
+			filePath,
+			isVisible,
+			updateImageVisibility,
+		],
 	)
 
 	useEffect(
