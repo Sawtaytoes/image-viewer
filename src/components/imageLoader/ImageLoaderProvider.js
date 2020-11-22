@@ -7,7 +7,6 @@ import {
 	useState,
 } from 'react'
 
-import createObservable from './createObservable'
 import ImageLoaderContext from './ImageLoaderContext'
 
 const moveItemToArray = ({
