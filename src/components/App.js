@@ -3,6 +3,7 @@ import { hot } from 'react-hot-loader/root'
 
 import FileBrowser from './fileBrowser/FileBrowser'
 import FileSystemProvider from './fileBrowser/FileSystemProvider'
+import ImageLoaderProvider from './imageLoader/ImageLoaderProvider'
 import ImageViewer from './imageViewer/ImageViewer'
 import ImageViewerProvider from './imageViewer/ImageViewerProvider'
 import useF5RefreshEffect from './convenience/useF5RefreshEffect'
@@ -34,8 +35,10 @@ const App = () => {
 
 			<ImageViewerProvider>
 				<FileSystemProvider>
-					<FileBrowser />
-					<ImageViewer />
+					<ImageLoaderProvider>
+						<FileBrowser />
+						<ImageViewer />
+					</ImageLoaderProvider>
 				</FileSystemProvider>
 			</ImageViewerProvider>
 		</Fragment>
