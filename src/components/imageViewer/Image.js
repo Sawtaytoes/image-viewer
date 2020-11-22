@@ -291,15 +291,42 @@ const Image = ({
 				)
 
 				const isPortrait = (
-					(
-						imageRef
-						.current
-						.height
+					Object
+					.is(
+						(
+							canvasRef
+							.current
+							.clientHeight
+						),
+						(
+							canvasRef
+							.current
+							.clientWidth
+						),
 					)
-					> (
-						imageRef
-						.current
-						.width
+					? (
+						(
+							imageRef
+							.current
+							.height
+						)
+						> (
+							imageRef
+							.current
+							.width
+						)
+					)
+					: (
+						(
+							canvasRef
+							.current
+							.clientHeight
+						)
+						< (
+							canvasRef
+							.current
+							.clientWidth
+						)
 					)
 				)
 
@@ -309,7 +336,7 @@ const Image = ({
 						canvasRef.current.clientHeight
 					)
 					: (
-						imageRef.current.height / imageRef.current.width
+						(imageRef.current.height / imageRef.current.width)
 						* canvasRef.current.clientWidth
 					)
 				)
@@ -317,7 +344,7 @@ const Image = ({
 				const imageWidth = (
 					isPortrait
 					? (
-						imageRef.current.width / imageRef.current.height
+						(imageRef.current.width / imageRef.current.height)
 						* canvasRef.current.clientHeight
 					)
 					: (
