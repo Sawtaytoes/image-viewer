@@ -4,7 +4,6 @@ import {
 	useCallback,
 	useMemo,
 	useRef,
-	useState,
 } from 'react'
 
 import ImageLoaderContext from './ImageLoaderContext'
@@ -135,11 +134,6 @@ const ImageLoaderProvider = ({
 				filePath,
 				isVisible,
 			}) => {
-				console.log({
-					filePath,
-					isVisible,
-				})
-
 				if (isVisible) {
 					const {
 						receivingArray,
@@ -170,10 +164,6 @@ const ImageLoaderProvider = ({
 					queuedImagesRef.current = transmittingArray
 					unqueuedImagesRef.current = receivingArray
 				}
-
-				console.log('=========================')
-				console.log(queuedImagesRef.current)
-				console.log(unqueuedImagesRef.current)
 			},
 			[],
 		)
