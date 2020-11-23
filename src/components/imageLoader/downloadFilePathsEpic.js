@@ -26,7 +26,16 @@ const downloadFilePathsEpic = (
 	action$
 	.pipe(
 		ofType(addFilePathToProcessingQueue.type),
-		pluck('payload'),
+		map(({
+			namespace,
+			payload,
+		}) => ({
+			filePath: (
+				payload
+				.filePath
+			),
+			namespace,
+		})),
 		map(({
 			filePath,
 			namespace,
@@ -42,10 +51,8 @@ const downloadFilePathsEpic = (
 							addFilePathToStandbyQueue.type,
 							removeFilePathFromProcessingQueue.type,
 						),
-						pluck('payload'),
-						filter(({
-							namespace: expectedNamespace,
-						}) => (
+						pluck('namespace'),
+						filter(expectedNamespace => (
 							expectedNamespace === namespace
 						)),
 					)
