@@ -4,10 +4,13 @@ import {
 import {
 	concatMap,
 	reduce,
+	startWith,
 	tap,
 } from 'rxjs/operators'
 
 import reducers from './reducers'
+
+const initialAction = {}
 
 const stateReducerEpic = (
 	action$,
@@ -15,6 +18,9 @@ const stateReducerEpic = (
 ) => (
 	action$
 	.pipe(
+		startWith(
+			initialAction
+		),
 		concatMap(action => (
 			from(reducers)
 			.pipe(
