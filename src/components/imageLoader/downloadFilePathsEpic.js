@@ -1,5 +1,4 @@
 import {
-	concatAll,
 	endWith,
 	filter,
 	map,
@@ -84,7 +83,7 @@ const downloadFilePathsEpic = (
 				tap(dispatch),
 			)
 		)),
-		concatAll(4),
+		mergeAll(4),
 	)
 )
 
