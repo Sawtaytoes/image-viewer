@@ -89,6 +89,7 @@ const ImageLoaderProvider = ({
 		useMemo(
 			() => ({
 				clearDownloadQueue,
+				subscribeToState,
 				updateImageVisibility,
 			}),
 			[
