@@ -1,5 +1,6 @@
 import addFilePathEpic from './addFilePathEpic'
 import downloadFilePathsEpic from './downloadFilePathsEpic'
+import idleQueuingEpic from './idleQueuingEpic'
 import stateReducerEpic from './stateReducerEpic'
 import { createReduxObservable } from './reduxObservable'
 
@@ -11,9 +12,10 @@ export const {
 } = (
 	createReduxObservable({
 		epics: [
+			stateReducerEpic, // This has to be first to initialize `state$`.
 			addFilePathEpic,
 			downloadFilePathsEpic,
-			stateReducerEpic,
+			idleQueuingEpic,
 		],
 	})
 )
