@@ -129,23 +129,17 @@ const Image = ({
 				createStateObservable(({
 					downloadedFiles,
 				}) => ({
-					imageFileBlob: (
+					imageFileBlobUrl: (
 						downloadedFiles
 						[filePath]
 					),
 				}))
 				.subscribe(({
-					imageFileBlob,
+					imageFileBlobUrl,
 				}) => {
 					setImageDataUrl(
-						imageFileBlob
-						? (
-							URL
-							.createObjectURL(
-								imageFileBlob
-							)
-						)
-						: null
+						imageFileBlobUrl
+						|| null
 					)
 				})
 			)
