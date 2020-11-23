@@ -51,7 +51,7 @@ export const createReduxObservable = ({
 		new BehaviorSubject([])
 	)
 
-	const subscribeToState = stateSelector => (
+	const createStateObservable = stateSelector => (
 		Observable
 		.create(observer => {
 			const subscriber = (
@@ -146,6 +146,7 @@ export const createReduxObservable = ({
 	}
 
 	return {
+		createStateObservable,
 		dispatchReduxAction,
 		onHotReload,
 		reduxObservable$: (
@@ -200,6 +201,5 @@ export const createReduxObservable = ({
 				),
 			)
 		),
-		subscribeToState,
 	}
 }

@@ -4,10 +4,10 @@ import stateReducerEpic from './stateReducerEpic'
 import { createReduxObservable } from './reduxObservable'
 
 export const {
+	createStateObservable,
 	dispatchReduxAction,
 	onHotReload,
 	reduxObservable$,
-	subscribeToState,
 } = (
 	createReduxObservable({
 		epics: [

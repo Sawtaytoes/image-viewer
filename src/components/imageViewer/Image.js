@@ -70,148 +70,221 @@ const Image = ({
 	const imageRef = useRef()
 	const isImageLoadedRef = useRef(false)
 
-	const webSafeFilePath = (
-		useMemo(
-			() => (
-				filePath
-				.replace(
-					'#',
-					'%23',
-				)
-			),
-			[filePath],
+	const {
+		createStateObservable,
+		updateImageVisibility,
+	} = (
+		useContext(
+			ImageLoaderContext
 		)
 	)
 
 	useEffect(
 		() => {
-			setImageDataUrl(
-				null
+			const subscriber = (
+				createStateObservable(({
+					downloadPercentage,
+				}) => ({
+					downloadPercentage: (
+						downloadPercentage
+						[filePath]
+					),
+				}))
+				.subscribe(({
+					downloadPercentage,
+				}) => {
+					setPercentComplete(
+						downloadPercentage
+					)
+				})
 			)
-		},
-		// Listening to `webSafeFilePath` even though it's not used.
-		[webSafeFilePath],
-	)
 
-	useEffect(
-		() => () => {
-			// TEMP comment.
-			// URL
-			// .revokeObjectURL(
-			// 	imageDataUrl
-			// )
+			return () => {
+				subscriber
+				.unsubscribe()
+			}
 		},
-		[imageDataUrl],
+		[
+			createStateObservable,
+			filePath,
+		],
 	)
 
 	useEffect(
 		() => {
-			if (
-				!isVisible
-				|| imageDataUrl
-			) {
-				return
-			}
-
-			const updateProgress = event => {
-				setPercentComplete(
-					Math.round(
-						(event.loaded / event.total)
-						* 100
+			const subscriber = (
+				createStateObservable(({
+					downloadedFiles,
+				}) => ({
+					fileBlob: (
+						downloadedFiles
+						[filePath]
+					),
+				}))
+				.subscribe(({
+					fileBlob,
+				}) => {
+					setImageDataUrl(
+						URL
+						.createObjectURL(
+							fileBlob
+						)
 					)
-				)
-			}
-
-			const saveImageDataUrl = function() {
-				if (
-					!xmlHttpRequest
-					.status
-					.toString()
-					.match(/^2/)
-				) {
-					return
-				}
-
-				const headers = (
-					xmlHttpRequest
-					.getAllResponseHeaders()
-				)
-
-				const mimeType = (
-					headers
-					.replace(
-						/^Content-Type:\s*(.*?)$/mi,
-						'$1',
-					)
-				)
-
-				const imageBlob = (
-					new Blob(
-						[this.response],
-						{ type: mimeType }
-					)
-				)
-
-				setImageDataUrl(
-					URL
-					.createObjectURL(
-						imageBlob
-					)
-				)
-			}
-
-			const xmlHttpRequest = (
-				new XMLHttpRequest()
+				})
 			)
-
-			xmlHttpRequest
-			.open(
-				'GET',
-				webSafeFilePath,
-				true,
-			)
-
-			xmlHttpRequest
-			.responseType = 'arraybuffer'
-
-			xmlHttpRequest
-			.addEventListener(
-				'progress',
-				updateProgress,
-			)
-
-			xmlHttpRequest
-			.addEventListener(
-				'loadend',
-				saveImageDataUrl,
-			)
-
-			xmlHttpRequest
-			.send()
 
 			return () => {
-				xmlHttpRequest
-				.abort()
-
-				xmlHttpRequest
-				.removeEventListener(
-					'progress',
-					updateProgress,
-				)
-
-				xmlHttpRequest
-				.removeEventListener(
-					'loadend',
-					saveImageDataUrl,
-				)
+				subscriber
+				.unsubscribe()
 			}
 		},
 		[
-			imageDataUrl,
-			isVisible,
-			webSafeFilePath,
+			createStateObservable,
+			filePath,
 		],
 	)
+
+	// const webSafeFilePath = (
+	// 	useMemo(
+	// 		() => (
+	// 			filePath
+	// 			.replace(
+	// 				'#',
+	// 				'%23',
+	// 			)
+	// 		),
+	// 		[filePath],
+	// 	)
+	// )
+
+	// useEffect(
+	// 	() => {
+	// 		setImageDataUrl(
+	// 			null
+	// 		)
+	// 	},
+	// 	// Listening to `webSafeFilePath` even though it's not used.
+	// 	[webSafeFilePath],
+	// )
+
+	// useEffect(
+	// 	() => () => {
+	// 		URL
+	// 		.revokeObjectURL(
+	// 			imageDataUrl
+	// 		)
+	// 	},
+	// 	[imageDataUrl],
+	// )
+
+	// useEffect(
+	// 	() => {
+	// 		if (
+	// 			!isVisible
+	// 			|| imageDataUrl
+	// 		) {
+	// 			return
+	// 		}
+
+	// 		const updateProgress = event => {
+	// 			setPercentComplete(
+	// 				Math.round(
+	// 					(event.loaded / event.total)
+	// 					* 100
+	// 				)
+	// 			)
+	// 		}
+
+	// 		const saveImageDataUrl = function() {
+	// 			if (
+	// 				!xmlHttpRequest
+	// 				.status
+	// 				.toString()
+	// 				.match(/^2/)
+	// 			) {
+	// 				return
+	// 			}
+
+	// 			const headers = (
+	// 				xmlHttpRequest
+	// 				.getAllResponseHeaders()
+	// 			)
+
+	// 			const mimeType = (
+	// 				headers
+	// 				.replace(
+	// 					/^Content-Type:\s*(.*?)$/mi,
+	// 					'$1',
+	// 				)
+	// 			)
+
+	// 			const imageBlob = (
+	// 				new Blob(
+	// 					[this.response],
+	// 					{ type: mimeType }
+	// 				)
+	// 			)
+
+	// 			setImageDataUrl(
+	// 				URL
+	// 				.createObjectURL(
+	// 					imageBlob
+	// 				)
+	// 			)
+	// 		}
+
+	// 		const xmlHttpRequest = (
+	// 			new XMLHttpRequest()
+	// 		)
+
+	// 		xmlHttpRequest
+	// 		.open(
+	// 			'GET',
+	// 			webSafeFilePath,
+	// 			true,
+	// 		)
+
+	// 		xmlHttpRequest
+	// 		.responseType = 'arraybuffer'
+
+	// 		xmlHttpRequest
+	// 		.addEventListener(
+	// 			'progress',
+	// 			updateProgress,
+	// 		)
+
+	// 		xmlHttpRequest
+	// 		.addEventListener(
+	// 			'loadend',
+	// 			saveImageDataUrl,
+	// 		)
+
+	// 		xmlHttpRequest
+	// 		.send()
+
+	// 		return () => {
+	// 			xmlHttpRequest
+	// 			.abort()
+
+	// 			xmlHttpRequest
+	// 			.removeEventListener(
+	// 				'progress',
+	// 				updateProgress,
+	// 			)
+
+	// 			xmlHttpRequest
+	// 			.removeEventListener(
+	// 				'loadend',
+	// 				saveImageDataUrl,
+	// 			)
+	// 		}
+	// 	},
+	// 	[
+	// 		imageDataUrl,
+	// 		isVisible,
+	// 		webSafeFilePath,
+	// 	],
+	// )
 
 	useEffect(
 		() => {
@@ -246,14 +319,6 @@ const Image = ({
 			}
 		},
 		[hasVisibilityDetection],
-	)
-
-	const {
-		updateImageVisibility,
-	} = (
-		useContext(
-			ImageLoaderContext
-		)
 	)
 
 	useEffect(

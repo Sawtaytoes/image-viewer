@@ -9,9 +9,9 @@ import {
 import ImageLoaderContext from './ImageLoaderContext'
 import { addFilePath } from './imageLoaderActions'
 import {
+	createStateObservable,
 	dispatchReduxAction,
 	reduxObservable$,
-	subscribeToState,
 } from './createdReduxObservable'
 
 const propTypes = {
@@ -21,29 +21,6 @@ const propTypes = {
 const ImageLoaderProvider = ({
 	children,
 }) => {
-	useEffect(
-		() => {
-			const subscriber = (
-				subscribeToState(({
-					downloadPercentage,
-				}) => ({
-					downloadPercentage,
-				}))
-				.subscribe(({
-					downloadPercentage,
-				}) => {
-					console.log(downloadPercentage)
-				})
-			)
-
-			return () => {
-				subscriber
-				.unsubscribe()
-			}
-		},
-		[],
-	)
-
 	useEffect(
 		() => {
 			const subscriber = (
@@ -89,7 +66,7 @@ const ImageLoaderProvider = ({
 		useMemo(
 			() => ({
 				clearDownloadQueue,
-				subscribeToState,
+				createStateObservable,
 				updateImageVisibility,
 			}),
 			[
