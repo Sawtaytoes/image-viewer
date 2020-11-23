@@ -1,6 +1,7 @@
 import addFilePathEpic from './addFilePathEpic'
 import downloadFilePathsEpic from './downloadFilePathsEpic'
 import idleQueuingEpic from './idleQueuingEpic'
+import removeFilePathEpic from './removeFilePathEpic'
 import stateReducerEpic from './stateReducerEpic'
 import { createReduxObservable } from './reduxObservable'
 
@@ -16,6 +17,7 @@ export const {
 			addFilePathEpic,
 			downloadFilePathsEpic,
 			idleQueuingEpic,
+			removeFilePathEpic,
 		],
 	})
 )
