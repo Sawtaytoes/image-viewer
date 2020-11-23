@@ -4,7 +4,6 @@ import {
 	memo,
 	useContext,
 	useEffect,
-	useMemo,
 	useRef,
 	useState,
 } from 'react'
@@ -83,10 +82,10 @@ const Image = ({
 		() => {
 			const subscriber = (
 				createStateObservable(({
-					downloadPercentage,
+					downloadPercentages,
 				}) => ({
-					downloadPercentages: (
-						downloadPercentage
+					downloadPercentage: (
+						downloadPercentages
 						[filePath]
 					),
 				}))
@@ -95,6 +94,7 @@ const Image = ({
 				}) => {
 					setPercentComplete(
 						downloadPercentage
+						|| 0
 					)
 				})
 			)
@@ -116,19 +116,23 @@ const Image = ({
 				createStateObservable(({
 					downloadedFiles,
 				}) => ({
-					fileBlob: (
+					imageFileBlob: (
 						downloadedFiles
 						[filePath]
 					),
 				}))
 				.subscribe(({
-					fileBlob,
+					imageFileBlob,
 				}) => {
 					setImageDataUrl(
-						URL
-						.createObjectURL(
-							fileBlob
+						imageFileBlob
+						? (
+							URL
+							.createObjectURL(
+								imageFileBlob
+							)
 						)
+						: null
 					)
 				})
 			)
