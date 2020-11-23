@@ -95,10 +95,11 @@ const Image = ({
 
 	useEffect(
 		() => () => {
-			URL
-			.revokeObjectURL(
-				imageDataUrl
-			)
+			// TEMP comment.
+			// URL
+			// .revokeObjectURL(
+			// 	imageDataUrl
+			// )
 		},
 		[imageDataUrl],
 	)
