@@ -22,7 +22,7 @@ const reducerActions = {
 	),
 }
 
-const downloadPercentageReducer = (
+const downloadPercentagesReducer = (
 	createNamespaceReducer(
 		createReducer(
 			reducerActions,
@@ -31,4 +31,4 @@ const downloadPercentageReducer = (
 	)
 )
 
-export default downloadPercentageReducer
+export default downloadPercentagesReducer

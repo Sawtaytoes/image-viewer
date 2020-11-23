@@ -85,7 +85,7 @@ const Image = ({
 				createStateObservable(({
 					downloadPercentage,
 				}) => ({
-					downloadPercentage: (
+					downloadPercentages: (
 						downloadPercentage
 						[filePath]
 					),

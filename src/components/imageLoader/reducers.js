@@ -1,5 +1,5 @@
 import downloadedFilesReducer from './downloadedFilesReducer'
-import downloadPercentageReducer from './downloadPercentageReducer'
+import downloadPercentagesReducer from './downloadPercentagesReducer'
 import processingQueueReducer from './processingQueueReducer'
 import standbyQueueReducer from './standbyQueueReducer'
 
@@ -9,8 +9,8 @@ const reducers = [
 		reducer: downloadedFilesReducer,
 	},
 	{
-		namespace: 'downloadPercentage',
-		reducer: downloadPercentageReducer,
+		namespace: 'downloadPercentages',
+		reducer: downloadPercentagesReducer,
 	},
 	{
 		namespace: 'processingQueue',
