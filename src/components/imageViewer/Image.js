@@ -382,13 +382,6 @@ const Image = ({
 			imageRef
 			.current
 			.setAttribute(
-				'alt',
-				fileName,
-			)
-
-			imageRef
-			.current
-			.setAttribute(
 				'src',
 				imageDataUrl,
 			)
