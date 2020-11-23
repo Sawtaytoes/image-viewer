@@ -1,4 +1,5 @@
 import {
+	filter,
 	map,
 	pluck,
 	tap,
@@ -20,6 +21,16 @@ const addFilePathEpic = (
 	.pipe(
 		ofType(addFilePath.type),
 		pluck('payload'),
+		filter(({
+			filePath,
+		}) => (
+			!(
+				state$
+				.value
+				.downloadedFiles
+				[filePath]
+			)
+		)),
 		map(({
 			filePath,
 			isVisible,
