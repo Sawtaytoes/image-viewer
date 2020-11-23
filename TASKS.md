@@ -14,7 +14,7 @@
 - Eventually download all non-visible images after visible images downloaded.
 - Stop loading images in `FileBrowser` until `ImageViewer` image is loaded.
 
-## FileBrowser
+## File Browser
 - List number of images in each directory.
 - Add cover image or 4-image thumbnails to directory listing.
 - Stylize progress bar for image loading.
