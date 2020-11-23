@@ -28,6 +28,13 @@ export const addFilePathToStandbyQueue = (
 	})
 )
 
+export const finishedFilePathDownload = (
+	createNamespaceActionCreator({
+		actionType: 'finishedFilePathDownload',
+		namespaceIdentifier: 'filePath',
+	})
+)
+
 export const removeDownloadedFile = (
 	createNamespaceActionCreator({
 		actionType: 'removeDownloadedFile',
@@ -58,6 +65,20 @@ export const removeFilePathFromStandbyQueue = (
 export const resetDownloadedPercentage = (
 	createNamespaceActionCreator({
 		actionType: 'resetDownloadedPercentage',
+		namespaceIdentifier: 'filePath',
+	})
+)
+
+export const startFilePathDownload = (
+	createNamespaceActionCreator({
+		actionType: 'startFilePathDownload',
+		namespaceIdentifier: 'filePath',
+	})
+)
+
+export const stopFilePathDownload = (
+	createNamespaceActionCreator({
+		actionType: 'stopFilePathDownload',
 		namespaceIdentifier: 'filePath',
 	})
 )

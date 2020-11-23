@@ -3,6 +3,7 @@ import {
 	filter,
 	map,
 	mergeAll,
+	mergeMap,
 	takeUntil,
 	pluck,
 	tap,
@@ -12,9 +13,9 @@ import createFileDownloadObservable from './createFileDownloadObservable'
 import ofType from './ofType'
 import {
 	addDownloadedFile,
-	addFilePathToProcessingQueue,
-	addFilePathToStandbyQueue,
-	removeFilePathFromProcessingQueue,
+	finishedFilePathDownload,
+	startFilePathDownload,
+	stopFilePathDownload,
 	updateDownloadPercentage,
 } from './imageLoaderActions'
 
@@ -25,7 +26,7 @@ const downloadFilePathsEpic = (
 ) => (
 	action$
 	.pipe(
-		ofType(addFilePathToProcessingQueue.type),
+		ofType(startFilePathDownload.type),
 		map(({
 			namespace,
 			payload,
@@ -36,7 +37,7 @@ const downloadFilePathsEpic = (
 			),
 			namespace,
 		})),
-		map(({
+		mergeMap(({
 			filePath,
 			namespace,
 		}) => (
@@ -47,10 +48,7 @@ const downloadFilePathsEpic = (
 				takeUntil(
 					action$
 					.pipe(
-						ofType(
-							addFilePathToStandbyQueue.type,
-							removeFilePathFromProcessingQueue.type,
-						),
+						ofType(stopFilePathDownload.type),
 						pluck('namespace'),
 						filter(expectedNamespace => (
 							expectedNamespace === namespace
@@ -83,14 +81,13 @@ const downloadFilePathsEpic = (
 				mergeAll(),
 				filter(Boolean),
 				endWith(
-					removeFilePathFromProcessingQueue({
+					finishedFilePathDownload({
 						filePath,
 					})
 				),
 				tap(dispatch),
 			)
 		)),
-		mergeAll(4),
 	)
 )
 
