@@ -2,77 +2,17 @@ import PropTypes from 'prop-types'
 import {
 	memo,
 	useCallback,
+	useEffect,
 	useMemo,
-	useRef,
 } from 'react'
 
 import ImageLoaderContext from './ImageLoaderContext'
-
-const moveItemToArray = ({
-	itemValue,
-	receivingArray,
-	transmittingArray,
-}) => {
-	const matchingIndex = (
-		transmittingArray
-		.findIndex(arrayValue => (
-			Object
-			.is(
-				arrayValue,
-				itemValue,
-			)
-		))
-	)
-
-	return {
-		receivingArray: (
-			receivingArray
-			.concat(
-				matchingIndex === -1
-				? (
-					itemValue
-				)
-				: (
-					transmittingArray
-					[matchingIndex]
-				)
-			)
-		),
-		transmittingArray: (
-			matchingIndex === -1
-			? (
-				transmittingArray
-			)
-			: (
-				transmittingArray
-				.slice(
-					0,
-					matchingIndex,
-				)
-				.concat(
-					transmittingArray
-					.slice(
-						matchingIndex + 1
-					)
-				)
-			)
-		),
-	}
-}
-
-const queueSlotStates = {
-	available: 'available',
-	unavailable: 'unavailable',
-}
-
-const initialQueueSlots = {
-	slot1: queueSlotStates.available,
-	slot2: queueSlotStates.available,
-	slot3: queueSlotStates.available,
-	slot4: queueSlotStates.available,
-}
-
-const initialArray = []
+import { addFilePath } from './imageLoaderActions'
+import {
+	dispatchReduxAction,
+	reduxObservable$,
+	subscribeToState,
+} from './createdReduxObservable'
 
 const propTypes = {
 	children: PropTypes.node.isRequired,
@@ -81,48 +21,48 @@ const propTypes = {
 const ImageLoaderProvider = ({
 	children,
 }) => {
-	const loadedImagesRef = (
-		useRef(
-			initialArray
-		)
+	useEffect(
+		() => {
+			const subscriber = (
+				subscribeToState(({
+					downloadPercentage,
+				}) => ({
+					downloadPercentage,
+				}))
+				.subscribe(({
+					downloadPercentage,
+				}) => {
+					console.log(downloadPercentage)
+				})
+			)
+
+			return () => {
+				subscriber
+				.unsubscribe()
+			}
+		},
+		[],
 	)
 
-	const queuedImagesRef = (
-		useRef(
-			initialArray
-		)
-	)
+	useEffect(
+		() => {
+			const subscriber = (
+				reduxObservable$
+				.subscribe()
+			)
 
-	const unqueuedImagesRef = (
-		useRef(
-			initialArray
-		)
-	)
-
-	const queueSlotsRef = (
-		useRef(
-			initialQueueSlots
-		)
+			return () => {
+				subscriber
+				.unsubscribe()
+			}
+		},
+		[],
 	)
 
 	const clearDownloadQueue = (
 		useCallback(
 			() => {
-				loadedImagesRef.current = (
-					initialArray
-				)
-
-				queuedImagesRef.current = (
-					initialArray
-				)
-
-				unqueuedImagesRef.current = (
-					initialArray
-				)
-
-				queueSlotsRef.current = (
-					initialQueueSlots
-				)
+				// >>> Dispatch some actions
 			},
 			[],
 		)
@@ -134,36 +74,12 @@ const ImageLoaderProvider = ({
 				filePath,
 				isVisible,
 			}) => {
-				if (isVisible) {
-					const {
-						receivingArray,
-						transmittingArray,
-					} = (
-						moveItemToArray({
-							itemValue: filePath,
-							receivingArray: queuedImagesRef.current,
-							transmittingArray: unqueuedImagesRef.current,
-						})
-					)
-
-					unqueuedImagesRef.current = transmittingArray
-					queuedImagesRef.current = receivingArray
-				}
-				else {
-					const {
-						receivingArray,
-						transmittingArray,
-					} = (
-						moveItemToArray({
-							itemValue: filePath,
-							receivingArray: unqueuedImagesRef.current,
-							transmittingArray: queuedImagesRef.current,
-						})
-					)
-
-					queuedImagesRef.current = transmittingArray
-					unqueuedImagesRef.current = receivingArray
-				}
+				dispatchReduxAction(
+					addFilePath({
+						filePath,
+						isVisible,
+					})
+				)
 			},
 			[],
 		)
