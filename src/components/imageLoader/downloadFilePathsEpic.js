@@ -1,6 +1,7 @@
 import {
 	concatAll,
 	filter,
+	finalize,
 	map,
 	mergeAll,
 	takeUntil,
@@ -50,6 +51,13 @@ const downloadFilePathsEpic = (
 						)),
 					)
 				),
+				finalize(() => {
+					dispatch(
+						removeFilePathFromProcessingQueue({
+							filePath,
+						})
+					)
+				}),
 				map(({
 					downloadPercentage,
 					fileContents,
