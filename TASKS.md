@@ -1,10 +1,11 @@
 # Tasks
 
 ## Image Loader
-- Fix issue where `Image` isn't loading images in thumbnail view.
 - Setup `img` DOM element after getting blob instead of passing around the blob.
+- Rename `processingQueue` to `priorityQueue`.
+- Remove `idleQueuingEpic` and setup `downloadFilePathsEpic` to be pull-based and grab the next item off the processing queue first and then the standby queue after.
+- Ensure 4-image pipeline is respected.
 - Create custom hook similar to `useSelector` for creating side-effects from state updates. Possibly have it be named `useStateEffect`.
-- Rename `downloadPercentage` reducer to `downloadPercentages`.
 
 ## Build
 - Create Docker container or use existing one to build.
