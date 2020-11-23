@@ -1,5 +1,11 @@
 # Tasks
 
+## Image Loader
+- Fix issue where `Image` isn't loading images in thumbnail view.
+- Setup `img` DOM element after getting blob instead of passing around the blob.
+- Create custom hook similar to `useSelector` for creating side-effects from state updates. Possibly have it be named `useStateEffect`.
+- Rename `downloadPercentage` reducer to `downloadPercentages`.
+
 ## Build
 - Create Docker container or use existing one to build.
 	+ https://github.com/develar/electron-builder/blob/master/docker/node/Dockerfile
