@@ -71,11 +71,24 @@ const Image = ({
 
 	const {
 		createStateObservable,
+		unloadImage,
 		updateImageVisibility,
 	} = (
 		useContext(
 			ImageLoaderContext
 		)
+	)
+
+	useEffect(
+		() => () => {
+			unloadImage({
+				filePath,
+			})
+		},
+		[
+			filePath,
+			unloadImage,
+		],
 	)
 
 	useEffect(

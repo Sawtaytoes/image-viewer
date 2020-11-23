@@ -7,7 +7,10 @@ import {
 } from 'react'
 
 import ImageLoaderContext from './ImageLoaderContext'
-import { addFilePath } from './imageLoaderActions'
+import {
+	addFilePath,
+	removeFilePath,
+} from './imageLoaderActions'
 import {
 	createStateObservable,
 	dispatchReduxAction,
@@ -36,10 +39,16 @@ const ImageLoaderProvider = ({
 		[],
 	)
 
-	const clearDownloadQueue = (
+	const unloadImage = (
 		useCallback(
-			() => {
-				// >>> Dispatch some actions
+			({
+				filePath,
+			}) => {
+				dispatchReduxAction(
+					removeFilePath({
+						filePath,
+					})
+				)
 			},
 			[],
 		)
@@ -65,12 +74,12 @@ const ImageLoaderProvider = ({
 	const imageLoaderProviderValue = (
 		useMemo(
 			() => ({
-				clearDownloadQueue,
 				createStateObservable,
+				unloadImage,
 				updateImageVisibility,
 			}),
 			[
-				clearDownloadQueue,
+				unloadImage,
 				updateImageVisibility,
 			],
 		)
