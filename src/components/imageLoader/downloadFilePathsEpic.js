@@ -52,7 +52,7 @@ const downloadFilePathsEpic = (
 				),
 				map(({
 					downloadPercentage,
-					fileContents,
+					fileBlobUrl,
 				}) => ([
 					(
 						typeof downloadPercentage === 'number'
@@ -64,10 +64,10 @@ const downloadFilePathsEpic = (
 						)
 					),
 					(
-						fileContents
+						fileBlobUrl
 						&& (
 							addDownloadedFile({
-								fileContents,
+								fileBlobUrl,
 								filePath,
 							})
 						)

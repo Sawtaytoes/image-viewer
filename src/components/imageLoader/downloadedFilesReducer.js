@@ -14,7 +14,7 @@ const reducerActions = {
 		{ payload },
 	) => (
 		payload
-		.fileContents
+		.fileBlobUrl
 	),
 
 	[removeDownloadedFile.type]: () => (

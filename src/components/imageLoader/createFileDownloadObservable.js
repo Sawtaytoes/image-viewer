@@ -39,14 +39,23 @@ const createFileDownloadObservable = filePath => (
 				)
 			)
 
+			const fileBlob = (
+				new Blob(
+					[this.response],
+					{ type: mimeType }
+				)
+			)
+
+			const fileBlobUrl = (
+				URL
+				.createObjectURL(
+					fileBlob
+				)
+			)
+
 			observer
 			.next({
-				fileContents: (
-					new Blob(
-						[this.response],
-						{ type: mimeType }
-					)
-				),
+				fileBlobUrl,
 			})
 
 			observer
