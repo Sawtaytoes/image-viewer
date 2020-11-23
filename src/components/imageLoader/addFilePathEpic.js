@@ -36,7 +36,7 @@ const addFilePathEpic = (
 				})
 			)
 		)),
-		tap(dispatch)
+		tap(dispatch),
 	)
 )
 
