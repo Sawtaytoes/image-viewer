@@ -148,29 +148,6 @@ const Image = ({
 		],
 	)
 
-	// const webSafeFilePath = (
-	// 	useMemo(
-	// 		() => (
-	// 			filePath
-	// 			.replace(
-	// 				'#',
-	// 				'%23',
-	// 			)
-	// 		),
-	// 		[filePath],
-	// 	)
-	// )
-
-	// useEffect(
-	// 	() => {
-	// 		setImageDataUrl(
-	// 			null
-	// 		)
-	// 	},
-	// 	// Listening to `webSafeFilePath` even though it's not used.
-	// 	[webSafeFilePath],
-	// )
-
 	// useEffect(
 	// 	() => () => {
 	// 		URL
