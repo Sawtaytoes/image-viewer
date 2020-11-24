@@ -1,12 +1,12 @@
 import {
-	useEffect,
+	useLayoutEffect,
 	useRef,
 } from 'react'
 
 const useResizableSquareContainerEffect = domElementRef => {
 	const animationFrameIdRef = useRef()
 
-	useEffect(
+	useLayoutEffect(
 		() => {
 			const resizeContainer = () => {
 				if (
