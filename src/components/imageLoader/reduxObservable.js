@@ -142,6 +142,7 @@ export const createReduxObservable = ({
 
 	const epicDependencies = {
 		...dependencies,
+		createStateObservable,
 		dispatch: dispatchReduxAction,
 	}
 
