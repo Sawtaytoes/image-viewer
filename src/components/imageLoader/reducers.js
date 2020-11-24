@@ -27,4 +27,33 @@ const reducers = [
 	},
 ]
 
+const initialAction = {}
+
+export const initialState = (
+	reducers
+	.reduce(
+		(
+			state,
+			{
+				namespace,
+				reducer,
+			}
+		) => ({
+			...state,
+			[namespace]: (
+				reducer(
+					(
+						state
+						[namespace]
+					),
+					(
+						initialAction
+					),
+				)
+			),
+		}),
+		{},
+	)
+)
+
 export default reducers
