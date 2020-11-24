@@ -46,9 +46,7 @@ const Image = ({
 		isVisible,
 		setIsVisible,
 	] = (
-		useState(
-			!hasVisibilityDetection
-		)
+		useState(false)
 	)
 
 	const [
@@ -161,18 +159,21 @@ const Image = ({
 		],
 	)
 
-	useLayoutEffect(
+	useEffect(
 		() => {
-			if (!hasVisibilityDetection) {
-				return
-			}
-
 			const intersectionObserver = (
 				new IntersectionObserver(
 					([intersectionObserverEntry]) => {
 						setIsVisible(
-							intersectionObserverEntry
-							.isIntersecting
+							hasVisibilityDetection
+							? (
+								intersectionObserverEntry
+								.isVisible
+							)
+							: (
+								intersectionObserverEntry
+								.isIntersecting
+							)
 						)
 					},
 					{
@@ -202,9 +203,19 @@ const Image = ({
 				filePath,
 				isVisible,
 			})
+
+			return () => {
+				if (!hasVisibilityDetection) {
+					updateImageVisibility({
+						filePath,
+						isVisible: !isVisible,
+					})
+				}
+			}
 		},
 		[
 			filePath,
+			hasVisibilityDetection,
 			isVisible,
 			updateImageVisibility,
 		],
