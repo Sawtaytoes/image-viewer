@@ -23,14 +23,17 @@ const removeFilePathEpic = (
 	.pipe(
 		ofType(removeFilePath.type),
 		pluck('payload'),
-		// tap(({
-		// 	filePath,
-		// }) => {
-		// 	URL
-		// 	.revokeObjectURL(
-		// 		imageDataUrl
-		// 	)
-		// })
+		tap(({
+			filePath,
+		}) => {
+			URL
+			.revokeObjectURL(
+				state$
+				.value
+				.downloadedFiles
+				[filePath]
+			)
+		}),
 		map(({
 			filePath,
 		}) => ([
