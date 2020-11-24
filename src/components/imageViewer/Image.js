@@ -81,12 +81,17 @@ const Image = ({
 
 	useEffect(
 		() => () => {
-			unloadImage({
-				filePath,
-			})
+			// Added `hasVisibilityDetection` as a temporary fix for when images are unmounted from `ImageViewer` but thumbnails are still loaded.
+			hasVisibilityDetection
+			&& (
+				unloadImage({
+					filePath,
+				})
+			)
 		},
 		[
 			filePath,
+			hasVisibilityDetection,
 			unloadImage,
 		],
 	)
