@@ -20,6 +20,7 @@
 - Prioritize starting images.
 - Eventually download all non-visible images after visible images downloaded.
 - Stop loading images in `FileBrowser` until `ImageViewer` image is loaded.
+- Fix memory leak associated with loading and unloading folders containing images. They're probably getting stored somewhere other than state.
 
 ## File Browser
 - List number of images in each directory.
