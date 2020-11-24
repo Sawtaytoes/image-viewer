@@ -468,7 +468,6 @@ const Image = ({
 			fileName,
 			hasVisibilityDetection,
 			imageDataUrl,
-			isVisible,
 		],
 	)
 
