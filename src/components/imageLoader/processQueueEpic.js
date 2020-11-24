@@ -11,7 +11,7 @@ import {
 	removeFilePathFromStandbyQueue,
 } from './imageLoaderActions'
 
-const processingQueueSize = 4
+const processingQueueSize = 2
 
 const processQueueEpic = (
 	action$,
@@ -101,6 +101,11 @@ const processQueueEpic = (
 			isStandingBy,
 		}) => ([
 			(
+				addFilePathToProcessingQueue({
+					filePath,
+				})
+			),
+			(
 				isPrioritized
 				&& (
 					removeFilePathFromPriorityQueue({
@@ -115,11 +120,6 @@ const processQueueEpic = (
 						filePath,
 					})
 				)
-			),
-			(
-				addFilePathToProcessingQueue({
-					filePath,
-				})
 			),
 		])),
 		mergeAll(),
