@@ -4,6 +4,7 @@ import {
 	memo,
 	useContext,
 	useEffect,
+	useLayoutEffect,
 	useRef,
 	useState,
 } from 'react'
@@ -96,7 +97,7 @@ const Image = ({
 		],
 	)
 
-	useEffect(
+	useLayoutEffect(
 		() => {
 			const subscriber = (
 				createStateObservable(({
@@ -128,7 +129,7 @@ const Image = ({
 		],
 	)
 
-	useEffect(
+	useLayoutEffect(
 		() => {
 			const subscriber = (
 				createStateObservable(({
