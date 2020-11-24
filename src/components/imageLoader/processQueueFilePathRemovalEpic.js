@@ -7,38 +7,37 @@ import {
 
 import ofType from './ofType'
 import {
-	resetDownloadedPercentage,
+	removeFilePathFromProcessingQueue,
 	stopFilePathDownload,
 } from './imageLoaderActions'
 
-const downloadFileCancelationEpic = (
+const processQueueFilePathRemovalEpic = (
 	action$,
 	state$,
 	{ dispatch },
 ) => (
 	action$
 	.pipe(
-		ofType(stopFilePathDownload.type),
+		ofType(removeFilePathFromProcessingQueue.type),
 		pluck('payload'),
 		map(({
 			filePath,
 		}) => ({
-			downloadPercentage: (
+			filePath,
+			isDownloaded: (
 				state$
 				.value
-				.downloadPercentages
+				.downloadedFiles
 				[filePath]
 			),
-			filePath,
 		})),
 		map(({
-			downloadPercentage,
 			filePath,
+			isDownloaded,
 		}) => (
-			typeof downloadPercentage === 'number'
+			!isDownloaded
 			&& (
-				resetDownloadedPercentage({
-					downloadPercentage,
+				stopFilePathDownload({
 					filePath,
 				})
 			)
@@ -48,4 +47,4 @@ const downloadFileCancelationEpic = (
 	)
 )
 
-export default downloadFileCancelationEpic
+export default processQueueFilePathRemovalEpic

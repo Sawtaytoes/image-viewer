@@ -4,6 +4,7 @@ import downloadFileCompletionEpic from './downloadFileCompletionEpic'
 import downloadFileEpic from './downloadFileEpic'
 import downloadFilePathsEpic from './downloadFilePathsEpic'
 import processQueueEpic from './processQueueEpic'
+import processQueueFilePathRemovalEpic from './processQueueFilePathRemovalEpic'
 import removeFilePathEpic from './removeFilePathEpic'
 import stateReducerEpic from './stateReducerEpic'
 import { createReduxObservable } from './reduxObservable'
@@ -25,6 +26,7 @@ export const {
 			downloadFileEpic,
 			downloadFilePathsEpic,
 			processQueueEpic,
+			processQueueFilePathRemovalEpic,
 			removeFilePathEpic,
 		],
 		initialState,
