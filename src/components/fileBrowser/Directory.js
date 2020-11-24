@@ -4,11 +4,9 @@ import {
 	memo,
 	useCallback,
 	useContext,
-	useRef,
 } from 'react'
 
 import FileSystemContext from './FileSystemContext'
-import useResizableSquareContainerEffect from './useResizableSquareContainerEffect'
 
 const directoryStyles = css`
 	background-color: #fffffb;
@@ -16,7 +14,19 @@ const directoryStyles = css`
 	color: #333;
 	cursor: pointer;
 	font-family: 'Source Sans Pro', sans-serif;
+	padding-bottom: 100%;
+	position: relative;
+	width: 100%;
+`
+
+const textStyles = css`
+	bottom: 0;
+	left: 0;
 	padding: 10px 14px;
+	position: absolute;
+	right: 0;
+	top: 0;
+	word-wrap: break-word;
 `
 
 const propTypes = {
@@ -50,19 +60,14 @@ const Directory = ({
 		)
 	)
 
-	const directoryRef = useRef()
-
-	useResizableSquareContainerEffect(
-		directoryRef
-	)
-
 	return (
 		<div
 			css={directoryStyles}
 			onClick={goToDirectory}
-			ref={directoryRef}
 		>
-			{directoryName}
+			<div css={textStyles}>
+				{directoryName}
+			</div>
 		</div>
 	)
 }

@@ -5,13 +5,11 @@ import {
 	useCallback,
 	useContext,
 	useEffect,
-	useRef,
 	useState,
 } from 'react'
 
 import Image from '../imageViewer/Image'
 import ImageViewerContext from '../imageViewer/ImageViewerContext'
-import useResizableSquareContainerEffect from './useResizableSquareContainerEffect'
 
 const imageFileStyles = css`
 	align-items: center;
@@ -20,6 +18,16 @@ const imageFileStyles = css`
 	font-family: 'Source Sans Pro', sans-serif;
 	justify-content: center;
 	width: 100%;
+	padding-bottom: 100%;
+	position: relative;
+`
+
+const imageStyles = css`
+	bottom: 0;
+	left: 0;
+	position: absolute;
+	right: 0;
+	top: 0;
 `
 
 const propTypes = {
@@ -31,8 +39,6 @@ const ImageFile = ({
 	fileName,
 	filePath,
 }) => {
-	const imageContainerRef = useRef()
-
 	const {
 		setImageFile,
 	} = (
@@ -55,10 +61,6 @@ const ImageFile = ({
 				setImageFile,
 			],
 		)
-	)
-
-	useResizableSquareContainerEffect(
-		imageContainerRef
 	)
 
 	const [
@@ -88,18 +90,19 @@ const ImageFile = ({
 		<div
 			css={imageFileStyles}
 			onClick={goToImage}
-			ref={imageContainerRef}
 		>
-			{
-				isReadyForImage
-				&& (
-					<Image
-						fileName={fileName}
-						filePath={filePath}
-						hasVisibilityDetection
-					/>
-				)
-			}
+			<div css={imageStyles}>
+				{
+					isReadyForImage
+					&& (
+						<Image
+							fileName={fileName}
+							filePath={filePath}
+							hasVisibilityDetection
+						/>
+					)
+				}
+			</div>
 		</div>
 	)
 }
