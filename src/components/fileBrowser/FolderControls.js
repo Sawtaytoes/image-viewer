@@ -1,4 +1,5 @@
 import ArrowUpwardRoundedIcon from '@material-ui/icons/ArrowUpwardRounded'
+import DeleteForeverRoundedIcon from '@material-ui/icons/DeleteForeverRounded'
 import { css } from '@emotion/core'
 import {
 	memo,
@@ -8,6 +9,7 @@ import {
 
 import FileSystemContext from './FileSystemContext'
 
+const fs = global.require('fs')
 const path = global.require('path')
 
 const folderControlsStyles = css`
@@ -16,6 +18,7 @@ const folderControlsStyles = css`
 `
 
 const folderNameStyles = css`
+	flex: 1 1 auto;
 	font-family: 'Source Sans Pro', sans-serif;
 	user-select: none;
 `
@@ -63,6 +66,24 @@ const FolderControls = () => {
 		)
 	)
 
+	const deleteFolder = (
+		useCallback(
+			() => {
+				fs
+				.rmdir(
+					filePath,
+					{
+						recursive: true,
+					},
+					() => {
+						console.log('deleted')
+					},
+				)
+			},
+			[filePath],
+		)
+	)
+
 	return (
 		<div
 			css={folderControlsStyles}
@@ -77,6 +98,10 @@ const FolderControls = () => {
 
 			<div css={folderNameStyles}>
 				{filePath}
+			</div>
+
+			<div hidden onClick={deleteFolder}>
+				<DeleteForeverRoundedIcon />
 			</div>
 		</div>
 	)
