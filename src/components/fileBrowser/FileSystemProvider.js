@@ -1,16 +1,16 @@
 import PropTypes from 'prop-types'
-import { bindNodeCallback } from 'rxjs'
-import {
-	map,
-	mergeAll,
-	toArray,
-} from 'rxjs/operators'
 import {
 	memo,
 	useEffect,
 	useMemo,
 	useState,
 } from 'react'
+import { bindNodeCallback } from 'rxjs'
+import {
+	map,
+	mergeAll,
+	toArray,
+} from 'rxjs/operators'
 
 import FileSystemContext from './FileSystemContext'
 import useDirectories from './useDirectories'
