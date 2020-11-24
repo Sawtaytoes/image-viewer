@@ -6,6 +6,9 @@
 - Remove `idleQueuingEpic` and setup `downloadFilePathsEpic` to be pull-based and grab the next item off the processing queue first and then the standby queue after.
 - Ensure 4-image pipeline is respected.
 - Create custom hook similar to `useSelector` for creating side-effects from state updates. Possibly have it be named `useStateEffect`.
+- Create a single queue with states instead of multiple queues.
+- Load images from filePath rather than `Image`. This will make it easier to queue up images independent of React components.
+- Loading an image and unmounting it calls `unloadImage`; although, the image is still loaded as a thumbnail. There's no way to claim an image. This is why it's important to separate filePaths from React components.
 
 ## Build
 - Create Docker container or use existing one to build.
