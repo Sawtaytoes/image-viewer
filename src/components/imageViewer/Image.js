@@ -363,13 +363,15 @@ const Image = ({
 					imageHeight,
 				)
 
-				canvasRef
-				.current
-				.style
-				.setProperty(
-					'visibility',
-					'visible',
-				)
+				if (!hasVisibilityDetection) {
+					canvasRef
+					.current
+					.style
+					.setProperty(
+						'visibility',
+						'visible',
+					)
+				}
 			}
 
 			const throttleCanvasLoading = () => {
@@ -429,12 +431,14 @@ const Image = ({
 			)
 
 			return () => {
-				canvas
-				.style
-				.setProperty(
-					'visibility',
-					'hidden',
-				)
+				if (!hasVisibilityDetection) {
+					canvas
+					.style
+					.setProperty(
+						'visibility',
+						'hidden',
+					)
+				}
 
 				if (
 					!(
@@ -462,6 +466,7 @@ const Image = ({
 		},
 		[
 			fileName,
+			hasVisibilityDetection,
 			imageDataUrl,
 			isVisible,
 		],
