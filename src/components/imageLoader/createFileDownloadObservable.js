@@ -46,16 +46,9 @@ const createFileDownloadObservable = filePath => (
 				)
 			)
 
-			const fileBlobUrl = (
-				URL
-				.createObjectURL(
-					fileBlob
-				)
-			)
-
 			observer
 			.next({
-				fileBlobUrl,
+				fileBlob,
 			})
 
 			observer

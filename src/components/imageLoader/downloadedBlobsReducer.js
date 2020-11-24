@@ -13,11 +13,8 @@ const reducerActions = {
 		state,
 		{ payload },
 	) => (
-		URL
-		.createObjectURL(
-			payload
-			.fileBlob
-		)
+		payload
+		.fileBlob
 	),
 
 	[removeDownloadedFile.type]: () => (
@@ -25,7 +22,7 @@ const reducerActions = {
 	),
 }
 
-const downloadedFilesReducer = (
+const downloadedBlobsReducer = (
 	createNamespaceReducer(
 		createReducer(
 			reducerActions,
@@ -34,4 +31,4 @@ const downloadedFilesReducer = (
 	)
 )
 
-export default downloadedFilesReducer
+export default downloadedBlobsReducer

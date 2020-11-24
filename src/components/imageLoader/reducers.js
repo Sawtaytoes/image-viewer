@@ -1,3 +1,4 @@
+// import downloadedBlobsReducer from './downloadedBlobsReducer'
 import downloadedFilesReducer from './downloadedFilesReducer'
 import downloadPercentagesReducer from './downloadPercentagesReducer'
 // import imageDomElementsReducer from './imageDomElementsReducer'
@@ -6,6 +7,10 @@ import processingQueueReducer from './processingQueueReducer'
 import standbyQueueReducer from './standbyQueueReducer'
 
 const reducers = [
+	// {
+	// 	namespace: 'downloadedBlobs',
+	// 	reducer: downloadedBlobsReducer,
+	// },
 	{
 		namespace: 'downloadedFiles',
 		reducer: downloadedFilesReducer,
