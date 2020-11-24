@@ -9,7 +9,6 @@ import ofType from './ofType'
 import {
 	finishedFilePathDownload,
 	removeFilePathFromProcessingQueue,
-	stopFilePathDownload,
 } from './imageLoaderActions'
 
 const downloadFileCompletionEpic = (
