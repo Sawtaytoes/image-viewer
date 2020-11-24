@@ -9,6 +9,9 @@ const catchEpicError = epicName => (
 				epicName
 			),
 			(
+				'\n'
+			),
+			(
 				error.constructor.name === 'ErrorEvent'
 				? error.error.stack
 				: error
@@ -19,7 +22,7 @@ const catchEpicError = epicName => (
 			of({
 				epicName,
 				error,
-				type: 'CAUGHT_ERROR',
+				type: 'caughtError',
 			})
 		)
 	})
