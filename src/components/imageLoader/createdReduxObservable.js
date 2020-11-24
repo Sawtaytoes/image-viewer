@@ -1,11 +1,14 @@
 import addFilePathEpic from './addFilePathEpic'
-import downloadCancelationEpic from './downloadCancelationEpic'
+import downloadFileCancelationEpic from './downloadFileCancelationEpic'
+import downloadFileCompletionEpic from './downloadFileCompletionEpic'
+import downloadFileEpic from './downloadFileEpic'
 import downloadFilePathsEpic from './downloadFilePathsEpic'
-import downloadQueueEpic from './downloadQueueEpic'
-// import idleQueuingEpic from './idleQueuingEpic'
+import processQueueEpic from './processQueueEpic'
 import removeFilePathEpic from './removeFilePathEpic'
 import stateReducerEpic from './stateReducerEpic'
 import { createReduxObservable } from './reduxObservable'
+
+import { initialState } from './reducers'
 
 export const {
 	createStateObservable,
@@ -17,12 +20,14 @@ export const {
 		epics: [
 			stateReducerEpic, // This has to be first to initialize `state$`.
 			addFilePathEpic,
-			downloadCancelationEpic,
+			downloadFileCancelationEpic,
+			downloadFileCompletionEpic,
+			downloadFileEpic,
 			downloadFilePathsEpic,
-			downloadQueueEpic,
-			// idleQueuingEpic,
+			processQueueEpic,
 			removeFilePathEpic,
 		],
+		initialState,
 	})
 )
 

@@ -1,6 +1,7 @@
 import {
 	filter,
 	map,
+	mergeAll,
 	pluck,
 	tap,
 } from 'rxjs/operators'
@@ -8,8 +9,9 @@ import {
 import ofType from './ofType'
 import {
 	addFilePath,
-	addFilePathToProcessingQueue,
+	addFilePathToPriorityQueue,
 	addFilePathToStandbyQueue,
+	removeFilePathFromProcessingQueue,
 } from './imageLoaderActions'
 
 const addFilePathEpic = (
@@ -33,20 +35,51 @@ const addFilePathEpic = (
 		)),
 		map(({
 			filePath,
+			...otherProps
+		}) => ({
+			...otherProps,
+			filePath,
+			isProcessing: (
+				state$
+				.value
+				.processingQueue
+				[filePath]
+			),
+		})),
+		map(({
+			filePath,
+			isProcessing,
 			isVisible,
-		}) => (
-			isVisible
-			? (
-				addFilePathToProcessingQueue({
-					filePath,
-				})
-			)
-			: (
-				addFilePathToStandbyQueue({
-					filePath,
-				})
-			)
-		)),
+		}) => ([
+			(
+				isVisible
+				&&	!isProcessing
+				&& (
+					addFilePathToPriorityQueue({
+						filePath,
+					})
+				)
+			),
+			(
+				!isVisible
+				&& isProcessing
+				&& (
+					removeFilePathFromProcessingQueue({
+						filePath,
+					})
+				)
+			),
+			(
+				!isVisible
+				&& (
+					addFilePathToStandbyQueue({
+						filePath,
+					})
+				)
+			),
+		])),
+		mergeAll(),
+		filter(Boolean),
 		tap(dispatch),
 	)
 )

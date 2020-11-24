@@ -1,6 +1,7 @@
 import downloadedFilesReducer from './downloadedFilesReducer'
 import downloadPercentagesReducer from './downloadPercentagesReducer'
 // import imageDomElementsReducer from './imageDomElementsReducer'
+import priorityQueueReducer from './priorityQueueReducer'
 import processingQueueReducer from './processingQueueReducer'
 import standbyQueueReducer from './standbyQueueReducer'
 
@@ -17,6 +18,10 @@ const reducers = [
 	// 	namespace: 'imageDomElements',
 	// 	reducer: imageDomElementsReducer,
 	// },
+	{
+		namespace: 'priorityQueue',
+		reducer: priorityQueueReducer,
+	},
 	{
 		namespace: 'processingQueue',
 		reducer: processingQueueReducer,

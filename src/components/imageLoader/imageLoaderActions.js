@@ -14,6 +14,19 @@ export const addFilePath = (
 	})
 )
 
+export const addFilePathToQueue = (
+	createActionCreator({
+		actionType: 'addFilePathToQueue',
+	})
+)
+
+export const addFilePathToPriorityQueue = (
+	createNamespaceActionCreator({
+		actionType: 'addFilePathToPriorityQueue',
+		namespaceIdentifier: 'filePath',
+	})
+)
+
 export const addFilePathToProcessingQueue = (
 	createNamespaceActionCreator({
 		actionType: 'addFilePathToProcessingQueue',
@@ -45,6 +58,19 @@ export const removeDownloadedFile = (
 export const removeFilePath = (
 	createActionCreator({
 		actionType: 'removeFilePath',
+	})
+)
+
+export const removeFilePathFromQueue = (
+	createActionCreator({
+		actionType: 'removeFilePathFromQueue',
+	})
+)
+
+export const removeFilePathFromPriorityQueue = (
+	createNamespaceActionCreator({
+		actionType: 'removeFilePathFromPriorityQueue',
+		namespaceIdentifier: 'filePath',
 	})
 )
 
