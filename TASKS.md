@@ -8,6 +8,7 @@
 - Load images from directory rather than `Image`. This will make it easier to queue up images independent of React components.
 - Loading an image and unmounting it calls `unloadImage`; although, the image is still loaded as a thumbnail. There's no way to claim an image. This is why it's important to separate filePaths from React components.
 - Progress bar displaying when viewing `ImageViewer` images. This happens because it defaults to `0` then loads the correct percentage from state.
+- Reset download percentage on abort.
 
 ## Build
 - Create Docker container or use existing one to build.
@@ -32,6 +33,7 @@
 - Add way to sort by last modified date rather than only alphabetical.
 - Store file sorting state in local storage.
 - Add highlight when hovering and clicking controls.
+- Scroll to top on folder change.
 
 ## Image Viewer
 - Add ability to zoom with mouse-wheel and pinch.
