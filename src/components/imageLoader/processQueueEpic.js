@@ -88,6 +88,12 @@ const processQueueEpic = (
 				.priorityQueue
 				[filePath]
 			),
+			isProcessing: (
+				state$
+				.value
+				.processingQueue
+				[filePath]
+			),
 			isStandingBy: (
 				state$
 				.value
@@ -98,12 +104,16 @@ const processQueueEpic = (
 		map(({
 			filePath,
 			isPrioritized,
+			isProcessing,
 			isStandingBy,
 		}) => ([
 			(
-				addFilePathToProcessingQueue({
-					filePath,
-				})
+				!isProcessing
+				&& (
+					addFilePathToProcessingQueue({
+						filePath,
+					})
+				)
 			),
 			(
 				isPrioritized
