@@ -161,7 +161,7 @@ const Image = ({
 		],
 	)
 
-	useEffect(
+	useLayoutEffect(
 		() => {
 			if (!hasVisibilityDetection) {
 				return
