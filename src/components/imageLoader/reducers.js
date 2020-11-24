@@ -1,6 +1,7 @@
 // import downloadedBlobsReducer from './downloadedBlobsReducer'
 import downloadedFilesReducer from './downloadedFilesReducer'
 import downloadPercentagesReducer from './downloadPercentagesReducer'
+import filePathsQueueReducer from './filePathsQueueReducer'
 // import imageDomElementsReducer from './imageDomElementsReducer'
 import priorityQueueReducer from './priorityQueueReducer'
 import processingQueueReducer from './processingQueueReducer'
@@ -18,6 +19,10 @@ const reducers = [
 	{
 		namespace: 'downloadPercentages',
 		reducer: downloadPercentagesReducer,
+	},
+	{
+		namespace: 'filePathsQueue',
+		reducer: filePathsQueueReducer,
 	},
 	// {
 	// 	namespace: 'imageDomElements',
