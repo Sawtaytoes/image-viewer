@@ -35,7 +35,9 @@
 - Store file sorting state in local storage.
 - Add highlight when hovering and clicking controls.
 - Scroll to top on folder change.
-- Add ability to delete folder.
+- Add confirmation modal to folder deletion. Set [ENTER] to be "yes".
+- Unhide folder deletion icon.
+- Fix directory image thumbnails being too wide in some cases.
 
 ## Image Viewer
 - Add ability to zoom with mouse-wheel and pinch.
@@ -47,6 +49,7 @@
 - Add highlight when hovering and clicking controls.
 - Add ability to delete folder.
 - Fix issue where height calculation can result in infinite resize when scrollbar is added and removed infinitely at a specific window height.
+- Assign [ENTER] key as "return to `FileBrowser`".
 
 ## Future
 Potentially unnecessary additions.
