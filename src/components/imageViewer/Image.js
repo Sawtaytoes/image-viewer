@@ -216,6 +216,9 @@ const Image = ({
 				return
 			}
 
+			isImageLoadedRef
+			.current = false
+
 			imageRef
 			.current = (
 				document
@@ -359,6 +362,14 @@ const Image = ({
 					imageWidth,
 					imageHeight,
 				)
+
+				canvasRef
+				.current
+				.style
+				.setProperty(
+					'visibility',
+					'visible',
+				)
 			}
 
 			const throttleCanvasLoading = () => {
@@ -412,7 +423,19 @@ const Image = ({
 				.parentElement
 			)
 
+			const canvas = (
+				canvasRef
+				.current
+			)
+
 			return () => {
+				canvas
+				.style
+				.setProperty(
+					'visibility',
+					'hidden',
+				)
+
 				if (
 					!(
 						isImageLoadedRef
