@@ -9,6 +9,7 @@
 - Loading an image and unmounting it calls `unloadImage`; although, the image is still loaded as a thumbnail. There's no way to claim an image. This is why it's important to separate filePaths from React components.
 - Progress bar displaying when viewing `ImageViewer` images. This happens because it defaults to `0` then loads the correct percentage from state.
 - Reset download percentage on abort.
+- Fix bug where `isVisible` set `true` for clicked image, but immediately set to `false` when intersectionObserver runs.
 
 ## Build
 - Create Docker container or use existing one to build.
@@ -34,6 +35,7 @@
 - Store file sorting state in local storage.
 - Add highlight when hovering and clicking controls.
 - Scroll to top on folder change.
+- Add ability to delete folder.
 
 ## Image Viewer
 - Add ability to zoom with mouse-wheel and pinch.
@@ -43,6 +45,8 @@
 - Fix issue where image covers controls.
 - Loading indicator doesn't show when switching images if images aren't already loaded.
 - Add highlight when hovering and clicking controls.
+- Add ability to delete folder.
+- Fix issue where height calculation can result in infinite resize when scrollbar is added and removed infinitely at a specific window height.
 
 ## Future
 Potentially unnecessary additions.
