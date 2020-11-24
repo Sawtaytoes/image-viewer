@@ -11,7 +11,9 @@ import {
 	addFilePath,
 	addFilePathToPriorityQueue,
 	addFilePathToStandbyQueue,
+	removeFilePathFromPriorityQueue,
 	removeFilePathFromProcessingQueue,
+	removeFilePathFromStandbyQueue,
 } from './imageLoaderActions'
 
 const addFilePathEpic = (
@@ -39,23 +41,37 @@ const addFilePathEpic = (
 		}) => ({
 			...otherProps,
 			filePath,
+			isPrioritized: (
+				state$
+				.value
+				.priorityQueue
+				[filePath]
+			),
 			isProcessing: (
 				state$
 				.value
 				.processingQueue
 				[filePath]
 			),
+			isStandingBy: (
+				state$
+				.value
+				.standbyQueue
+				[filePath]
+			),
 		})),
 		map(({
 			filePath,
+			isPrioritized,
 			isProcessing,
+			isStandingBy,
 			isVisible,
 		}) => ([
 			(
-				isVisible
-				&&	!isProcessing
+				!isVisible
+				&&	isPrioritized
 				&& (
-					addFilePathToPriorityQueue({
+					removeFilePathFromPriorityQueue({
 						filePath,
 					})
 				)
@@ -65,6 +81,24 @@ const addFilePathEpic = (
 				&& isProcessing
 				&& (
 					removeFilePathFromProcessingQueue({
+						filePath,
+					})
+				)
+			),
+			(
+				isVisible
+				&& isStandingBy
+				&& (
+					removeFilePathFromStandbyQueue({
+						filePath,
+					})
+				)
+			),
+			(
+				isVisible
+				&&	!isProcessing
+				&& (
+					addFilePathToPriorityQueue({
 						filePath,
 					})
 				)
