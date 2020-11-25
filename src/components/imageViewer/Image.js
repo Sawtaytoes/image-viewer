@@ -25,12 +25,6 @@ const imageLoadingProgressStyles = css`
 	font-size: 24px;
 `
 
-const imageImageStyles = css`
-	height: 100%;
-	position: absolute;
-	width: 100%;
-`
-
 const imageCanvasStyles = css`
 	height: 100%;
 	position: absolute;
