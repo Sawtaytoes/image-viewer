@@ -268,7 +268,7 @@ const VirtualizedList = ({
 
 			return () => {
 				virtualizedListRef
-				.current
+				.current // eslint-disable-line react-hooks/exhaustive-deps
 				.removeEventListener(
 					'scroll',
 					throttleScrollPositionUpdate,

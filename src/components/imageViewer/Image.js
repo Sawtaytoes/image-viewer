@@ -300,7 +300,7 @@ const Image = ({
 					)
 				) {
 					canvasRef
-					.current
+					.current // eslint-disable-line react-hooks/exhaustive-deps
 					.style
 					.setProperty(
 						'visibility',
