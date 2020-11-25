@@ -17,7 +17,6 @@
 	+ https://www.electron.build/multi-platform-build#docker
 
 ## Performance
-- Add list virtualization so canvas elements might be loaded in memory but aren't loaded in the DOM. This will greatly speed up performance when loading hundreds of images.
 - Re-use images from `ImageFile` in `ImageViewer`.
 - Prioritize starting images.
 - Eventually download all non-visible images after visible images downloaded.
@@ -36,6 +35,9 @@
 - Add confirmation modal to folder deletion. Set [ENTER] to be "yes".
 - Unhide folder deletion icon.
 - Fix directory image thumbnails being too wide in some cases.
+- Scroll to `selectedIndex` in `VirtualizedList`.
+- Change `selectedIndex` when navigating `ImageViewer`.
+- Add highlight around `selectedIndex` item in `VirtualizedList`.
 
 ## Image Viewer
 - Add ability to zoom with mouse-wheel and pinch.
