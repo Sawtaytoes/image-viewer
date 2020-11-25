@@ -73,6 +73,12 @@ const downloadFilePathsEpic = (
 						&& (
 							addDownloadedFile({
 								fileBlob,
+								fileBlobUrl: (
+									URL
+									.createObjectURL(
+										fileBlob
+									)
+								),
 								filePath,
 							})
 						)

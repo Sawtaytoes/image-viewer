@@ -13,11 +13,8 @@ const reducerActions = {
 		state,
 		{ payload },
 	) => (
-		URL
-		.createObjectURL(
-			payload
-			.fileBlob
-		)
+		payload
+		.fileBlobUrl
 	),
 
 	[removeDownloadedFile.type]: () => (
