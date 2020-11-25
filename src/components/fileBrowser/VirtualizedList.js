@@ -119,11 +119,18 @@ const VirtualizedList = ({
 				)
 
 				const numberOfChildren = (
-					Children.count(children)
+					Children
+					.count(children)
 				)
 
 				const numberOfRows = (
-					Math.ceil(Children.count(children) / 4)
+					Math
+					.ceil(
+						Children
+						.count(
+							children
+						) / 4
+					)
 				)
 
 				const containerHeight = (
