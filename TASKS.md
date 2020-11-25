@@ -1,5 +1,9 @@
 # Tasks
 
+- Use directory and image file for scroll position.
+- Remove previous position ref.
+- Scroll to middle of window rather than top of image.
+
 ## Image Loader
 - Ensure 4-image pipeline is respected.
 - Create a single queue with states instead of multiple queues.
