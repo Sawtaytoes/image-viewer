@@ -270,48 +270,18 @@ const Image = ({
 					'100%',
 				)
 
-				const isPortrait = (
-					Object
-					.is(
-						(
-							canvasRef
-							.current
-							.clientHeight
-						),
-						(
-							canvasRef
-							.current
-							.clientWidth
-						),
+				const isHeightRestriction = (
+					(
+						(imageRef.current.height / imageRef.current.width)
+						* canvasRef.current.clientWidth
 					)
-					? (
-						(
-							imageRef
-							.current
-							.height
-						)
-						> (
-							imageRef
-							.current
-							.width
-						)
-					)
-					: (
-						(
-							canvasRef
-							.current
-							.clientHeight
-						)
-						< (
-							canvasRef
-							.current
-							.clientWidth
-						)
+					> (
+						canvasRef.current.clientHeight
 					)
 				)
 
-				const imageHeight = (
-					isPortrait
+				const canvasHeight = (
+					isHeightRestriction
 					? (
 						canvasRef.current.clientHeight
 					)
@@ -321,8 +291,8 @@ const Image = ({
 					)
 				)
 
-				const imageWidth = (
-					isPortrait
+				const canvasWidth = (
+					isHeightRestriction
 					? (
 						(imageRef.current.width / imageRef.current.height)
 						* canvasRef.current.clientHeight
@@ -336,14 +306,14 @@ const Image = ({
 				.current
 				.setAttribute(
 					'height',
-					imageHeight,
+					canvasHeight,
 				)
 
 				canvasRef
 				.current
 				.setAttribute(
 					'width',
-					imageWidth,
+					canvasWidth,
 				)
 
 				canvasRef
@@ -370,8 +340,8 @@ const Image = ({
 					.current,
 					0,
 					0,
-					imageWidth,
-					imageHeight,
+					canvasWidth,
+					canvasHeight,
 				)
 
 				if (!hasVisibilityDetection) {
