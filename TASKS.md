@@ -3,7 +3,6 @@
 ## Image Loader
 - Setup `img` DOM element after getting blob instead of passing around the blob.
 - Ensure 4-image pipeline is respected.
-- Create custom hook similar to `useSelector` for creating side-effects from state updates. Possibly have it be named `useStateEffect`.
 - Create a single queue with states instead of multiple queues.
 - Load images from directory rather than `Image`. This will make it easier to queue up images independent of React components.
 - Loading an image and unmounting it calls `unloadImage`; although, the image is still loaded as a thumbnail. There's no way to claim an image. This is why it's important to separate filePaths from React components.
