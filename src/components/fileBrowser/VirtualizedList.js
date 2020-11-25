@@ -79,7 +79,7 @@ const VirtualizedList = ({
 
 	useEffect(
 		() => {
-			const runCode = () => {
+			const calculateViewData = () => {
 				const viewWidth = (
 					virtualizedListRef
 					.current
@@ -149,8 +149,11 @@ const VirtualizedList = ({
 				})
 			}
 
-			const throttleCodeRunning = () => {
-				if (animationFrameIdRef.current) {
+			const throttleViewDataCalculation = () => {
+				if (
+					animationFrameIdRef
+					.current
+				) {
 					return
 				}
 
@@ -161,14 +164,14 @@ const VirtualizedList = ({
 						animationFrameIdRef
 						.current = null
 
-						runCode()
+						calculateViewData()
 					})
 				)
 			}
 
 			const resizeObserver = (
 				new ResizeObserver(
-					throttleCodeRunning
+					throttleViewDataCalculation
 				)
 			)
 
