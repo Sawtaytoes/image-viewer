@@ -16,6 +16,8 @@ import ImageViewerContext from '../imageViewer/ImageViewerContext'
 import VirtualizedList from './VirtualizedList'
 
 const fileBrowserStyles = css`
+	background-color: #444;
+	color: white;
 	display: grid;
 	height: 100vh;
 	width: 100%;
