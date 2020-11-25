@@ -57,7 +57,6 @@ const FileBrowser = () => {
 						<Directory
 							directoryName={name}
 							directoryPath={path}
-							id={path}
 							key={path}
 						/>
 					))
@@ -72,7 +71,6 @@ const FileBrowser = () => {
 						<ImageFile
 							fileName={name}
 							filePath={path}
-							id={path}
 							key={path}
 						/>
 					))
