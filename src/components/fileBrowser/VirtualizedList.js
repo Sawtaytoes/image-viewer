@@ -61,7 +61,7 @@ const virtualizedListStyles = css`
 
 const initialViewData = {
 	containerHeight: 0,
-	itemSize: 0,
+	itemSize: 1,
 	numberOfChildren: 0,
 	numberOfDomElements: 0,
 	numberOfImagesInView: 0,
@@ -84,17 +84,21 @@ const VirtualizedList = ({
 	const virtualizedListRef = useRef()
 
 	const [
+		scrollYPosition,
+		setScrollYPosition,
+	] = (
+		useState(
+			0
+		)
+	)
+
+	const [
 		viewData,
 		setViewData,
 	] = (
 		useState(
 			initialViewData
 		)
-	)
-
-	console.log(
-		'viewData',
-		viewData,
 	)
 
 	useEffect(
@@ -186,17 +190,6 @@ const VirtualizedList = ({
 				)
 			}
 
-			const onScroll = event => {
-				// console.log(event)
-			}
-
-			virtualizedListRef
-			.current
-			.addEventListener(
-				'scroll',
-				onScroll,
-			)
-
 			const resizeObserver = (
 				new ResizeObserver(
 					throttleCodeRunning
@@ -212,12 +205,54 @@ const VirtualizedList = ({
 			return () => {
 				resizeObserver
 				.disconnect()
+			}
+		},
+		[
+			children,
+			numberOfColumns,
+		],
+	)
 
+	useEffect(
+		() => {
+			const updateScrollPosition = () => {
+				setScrollYPosition(
+					virtualizedListRef
+					.current
+					.scrollTop
+				)
+			}
+
+			const throttleScrollPositionUpdate = () => {
+				if (animationFrameIdRef.current) {
+					return
+				}
+
+				animationFrameIdRef
+				.current = (
+					window
+					.requestAnimationFrame(() => {
+						animationFrameIdRef
+						.current = null
+
+						updateScrollPosition()
+					})
+				)
+			}
+
+			virtualizedListRef
+			.current
+			.addEventListener(
+				'scroll',
+				throttleScrollPositionUpdate,
+			)
+
+			return () => {
 				virtualizedListRef
 				.current
 				.removeEventListener(
 					'scroll',
-					onScroll,
+					throttleScrollPositionUpdate,
 				)
 			}
 		},
@@ -246,52 +281,74 @@ const VirtualizedList = ({
 
 	const virtualizedChildren = (
 		useMemo(
-			() => (
-				Children
-				.toArray(
-					children
+			() => {
+				const {
+					itemSize,
+					numberOfImagesInView,
+				} = viewData
+
+				const startingIndex = (
+					Math
+					.floor(
+						scrollYPosition / itemSize
+					)
+					* numberOfColumns
 				)
-				// .slice(
-				// 	0,
-				// 	(
-				// 		viewData
-				// 		.numberOfDomElements
-				// 	),
-				// )
-				.map((
-					childElement,
-					index,
-				) => ({
-					childElement,
-					key: index,
-					styles: (
-						css`
-							${virtualizedListItemStyles}
-							left: ${(index % numberOfColumns) * viewData.itemSize}px;
-							top: ${Math.floor(index / numberOfColumns) * viewData.itemSize}px;
-						`
-					),
-				}))
-				.filter(t => (
-					console.log(t)
-					|| t
-				))
-				.map(({
-					childElement,
-					id,
-					styles,
-				}) => (
-					<div
-						css={styles}
-						key={id}
-					>
-						{childElement}
-					</div>
-				))
-			),
+
+				return (
+					Children
+					.toArray(
+						children
+					)
+					.slice(
+						startingIndex,
+						(
+							startingIndex
+							+ numberOfImagesInView
+						),
+					)
+					.map((
+						childElement,
+						index,
+					) => ({
+						childElement,
+						shiftedIndex: (
+							index
+							+ startingIndex
+						),
+					}))
+					.map(({
+						childElement,
+						shiftedIndex,
+					}) => ({
+						childElement,
+						id: shiftedIndex,
+						styles: (
+							css`
+								${virtualizedListItemStyles}
+								left: ${(shiftedIndex % numberOfColumns) * itemSize}px;
+								top: ${Math.floor(shiftedIndex / numberOfColumns) * itemSize}px;
+							`
+						),
+					}))
+					.map(({
+						childElement,
+						id,
+						styles,
+					}) => (
+						<div
+							css={styles}
+							key={id}
+						>
+							{childElement}
+						</div>
+					))
+				)
+			},
 			[
 				children,
 				numberOfColumns,
+				scrollYPosition,
 				viewData,
 				virtualizedListItemStyles,
 			],
