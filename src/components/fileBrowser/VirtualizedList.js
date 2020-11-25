@@ -34,29 +34,18 @@ const propTypes = {
 	children: PropTypes.node.isRequired,
 	itemPadding: PropTypes.string,
 	numberOfColumns: PropTypes.number,
+	selectedIndex: PropTypes.number,
 }
 
 const VirtualizedList = ({
 	children,
 	itemPadding = '0',
 	numberOfColumns = 1,
+	selectedIndex = 0,
 }) => {
 	const animationFrameIdRef = useRef()
 	const scrollContainerRef = useRef()
 	const virtualizedListRef = useRef()
-
-	useEffect(
-		() => {
-			virtualizedListRef
-			.current
-			.scrollTo(
-				0,
-				0,
-			)
-		},
-		// While we care about this value, we're using `children` to listen for updates.
-		[children],
-	)
 
 	const [
 		scrollYPosition,
@@ -74,6 +63,54 @@ const VirtualizedList = ({
 		useState(
 			initialViewData
 		)
+	)
+
+	const numberOfColumnsRef = useRef()
+
+	numberOfColumnsRef
+	.current = (
+		numberOfColumns
+	)
+
+	const viewDataRef = useRef()
+
+	viewDataRef
+	.current = (
+		viewData
+	)
+
+	useEffect(
+		() => {
+			const {
+				itemSize,
+			} = (
+				viewDataRef
+				.current
+			)
+
+			virtualizedListRef
+			.current
+			.scrollTo(
+				0,
+				(
+					Math
+					.floor(
+						(
+							Math
+							.max(
+								0,
+								selectedIndex,
+							)
+						) / numberOfColumnsRef.current
+					)
+					* itemSize
+				),
+			)
+		},
+		[
+			children, // We're using `children` to listen for updates.
+			selectedIndex,
+		],
 	)
 
 	useEffect(
