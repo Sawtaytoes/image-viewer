@@ -1,14 +1,9 @@
 # Tasks
 
 ## Image Loader
-- Setup `img` DOM element after getting blob instead of passing around the blob.
 - Ensure 4-image pipeline is respected.
 - Create a single queue with states instead of multiple queues.
 - Load images from directory rather than `Image`. This will make it easier to queue up images independent of React components.
-- Loading an image and unmounting it calls `unloadImage`; although, the image is still loaded as a thumbnail. There's no way to claim an image. This is why it's important to separate filePaths from React components.
-- Progress bar displaying when viewing `ImageViewer` images. This happens because it defaults to `0` then loads the correct percentage from state.
-- Reset download percentage on abort.
-- Fix bug where `isVisible` set `true` for clicked image, but immediately set to `false` when intersectionObserver runs.
 
 ## Build
 - Create Docker container or use existing one to build.
@@ -17,39 +12,31 @@
 	+ https://www.electron.build/multi-platform-build#docker
 
 ## Performance
-- Re-use images from `ImageFile` in `ImageViewer`.
-- Prioritize starting images.
-- Eventually download all non-visible images after visible images downloaded.
 - Stop loading images in `FileBrowser` until `ImageViewer` image is loaded.
 - Fix memory leak associated with loading and unloading folders containing images. They're probably getting stored somewhere other than state.
 
 ## File Browser
 - List number of images in each directory.
-- Add cover image or 4-image thumbnails to directory listing.
 - Stylize progress bar for image loading.
 - Add a slider to switch between different numbers of image thumbnails per row.
 - Add way to sort by last modified date rather than only alphabetical.
 - Store file sorting state in local storage.
 - Add highlight when hovering and clicking controls.
-- Scroll to top on folder change.
+- Add highlight when hovering and clicking images and folders.
 - Add confirmation modal to folder deletion. Set [ENTER] to be "yes".
 - Unhide folder deletion icon.
-- Fix directory image thumbnails being too wide in some cases.
-- Scroll to `selectedIndex` in `VirtualizedList`.
-- Change `selectedIndex` when navigating `ImageViewer`.
 - Add highlight around `selectedIndex` item in `VirtualizedList`.
+- Handle situation where drive is inaccessible by either not rendering the drive, going back to the root, or displaying an error.
+- Fix incorrect vertical and horizontal padding between `VirtualizedList` items. Vertical padding is overlapping and horizontal padding is leaving 1px gaps between items and cutting off a few px of the right-most item.
+- When folders take forever to load a directory listing, there's no loading indicator. This causes `VirtualizedList` to scroll to the top of the current view making it seems as if the current view is the selected folder (which it's not).
+- It would also probably be good to cache directory listings. Cache would include the parent directory and each subdirectory. When loading a new directory, it will still list the files, but first use the cache SWR style.
 
 ## Image Viewer
-- Add ability to zoom with mouse-wheel and pinch.
-- Add visual indicator when at final page other than removing "next" and "previous" buttons.
+- Add ability to zoom with mouse-wheel and pinch. This changes the functionality of clicking the center of an image.
 - Make it so you can edit the URL with `history` pathing potentially using React-Router-DOM.
-- Scroll image into view behind the selected image on close. Currently, this is being hacked in and needs a real implementation.
-- Fix issue where image covers controls.
-- Loading indicator doesn't show when switching images if images aren't already loaded.
 - Add highlight when hovering and clicking controls.
-- Add ability to delete folder.
-- Fix issue where height calculation can result in infinite resize when scrollbar is added and removed infinitely at a specific window height.
 - Assign [ENTER] key as "return to `FileBrowser`".
+- Fix hover state still getting stuck sometimes.
 
 ## Future
 Potentially unnecessary additions.
@@ -64,13 +51,11 @@ Potentially unnecessary additions.
 	+ Happens after X time has passed.
 	+ Happens after max size reached.
 	+ After user changes thumbnail size?
-- Remove `src` from `img` element when `canvas` loaded to save on memory so not all full-sized images are stored in RAM. Make sure there's a parent canvas element or something similar that has a large enough thumbnail so we're not using images from memory when recomputing the `canvas` on resize.
+- Remove `src` from `img` element when `canvas` loaded to save on memory so not all full-sized images are stored in RAM. Make sure there's a parent canvas element or something similar that has a large enough thumbnail, so we're not using images from memory when recomputing the `canvas` on resize.
 - Cache
 	+ Capture total machine memory and use up to a percentage of RAM for cached image elements.
 	+ Deletion priority starts with last viewed time. Viewing recent images resets the timer.
 	+ Set images in cache on a debounce timer, so they remove by themselves.
 
-
 ### Multi-threading
 - Add second thread for loading images and predictive loading of other images asynchronously.
-- Set `FileBrowser` to `visibility: hidden` when showing `ImageViewer`. We might still want to load images in the background though.
