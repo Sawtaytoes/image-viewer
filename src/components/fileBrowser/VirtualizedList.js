@@ -311,8 +311,14 @@ const VirtualizedList = ({
 				const startingIndex = (
 					isEndingOffsetOutOfBounds
 					? (
-						numberOfChildren
-						- numberOfItemsToRender
+						Math
+						.max(
+							0,
+							(
+								numberOfChildren
+								- numberOfItemsToRender
+							)
+						)
 					)
 					: (
 						isStartingOffsetOutOfBounds
