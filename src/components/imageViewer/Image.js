@@ -287,9 +287,6 @@ const Image = ({
 					canvasImageHeight,
 				)
 
-				imageRef
-				.current = null
-
 				if (!hasVisibilityDetection) {
 					canvasRef
 					.current
