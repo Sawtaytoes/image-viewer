@@ -292,7 +292,13 @@ const Image = ({
 			)
 
 			return () => {
-				if (!hasVisibilityDetection) {
+				if (
+					!hasVisibilityDetection
+					&& (
+						canvasRef
+						.current
+					)
+				) {
 					canvasRef
 					.current
 					.style
