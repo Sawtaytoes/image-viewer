@@ -105,6 +105,15 @@ const usePointerHover = ({
 			)
 
 			return () => {
+				window
+				.cancelAnimationFrame(
+					animationFrameIdRef
+					.current
+				)
+
+				animationFrameIdRef
+				.current = null
+
 				domElement
 				.removeEventListener(
 					'pointerup',

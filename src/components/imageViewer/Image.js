@@ -302,6 +302,15 @@ const Image = ({
 					)
 				}
 
+				window
+				.cancelAnimationFrame(
+					animationFrameIdRef
+					.current
+				)
+
+				animationFrameIdRef
+				.current = null
+
 				resizeObserver
 				.disconnect()
 			}

@@ -179,6 +179,15 @@ const VirtualizedList = ({
 			)
 
 			return () => {
+				window
+				.cancelAnimationFrame(
+					animationFrameIdRef
+					.current
+				)
+
+				animationFrameIdRef
+				.current = null
+
 				resizeObserver
 				.disconnect()
 			}
