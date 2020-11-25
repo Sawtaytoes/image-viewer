@@ -4,12 +4,12 @@ import {
 	memo,
 	useContext,
 	useEffect,
-	useLayoutEffect,
 	useRef,
 	useState,
 } from 'react'
 
 import ImageLoaderContext from '../imageLoader/ImageLoaderContext'
+import useStateSelector from '../imageLoader/useStateSelector'
 
 const imageStyles = css`
 	align-items: center;
@@ -49,32 +49,39 @@ const Image = ({
 		useState(false)
 	)
 
-	const [
-		percentComplete,
-		setPercentComplete,
-	] = (
-		useState(0)
-	)
-
-	const [
-		imageDataUrl,
-		setImageDataUrl,
-	] = (
-		useState(null)
-	)
-
 	const animationFrameIdRef = useRef()
 	const canvasRef = useRef()
 	const imageRef = useRef()
 	const isImageLoadedRef = useRef(false)
 
 	const {
-		createStateObservable,
 		unloadImage,
 		updateImageVisibility,
 	} = (
 		useContext(
 			ImageLoaderContext
+		)
+	)
+
+	const {
+		imageDataUrl = null,
+		percentDownloaded = 0,
+	} = (
+		useStateSelector(
+			({
+				downloadedFiles,
+				downloadPercentages,
+			}) => ({
+				imageDataUrl: (
+					downloadedFiles
+					[filePath]
+				),
+				percentDownloaded: (
+					downloadPercentages
+					[filePath]
+				),
+			}),
+			[filePath],
 		)
 	)
 
@@ -92,70 +99,6 @@ const Image = ({
 			filePath,
 			hasVisibilityDetection,
 			unloadImage,
-		],
-	)
-
-	useLayoutEffect(
-		() => {
-			const subscriber = (
-				createStateObservable(({
-					downloadPercentages,
-				}) => ({
-					downloadPercentage: (
-						downloadPercentages
-						[filePath]
-					),
-				}))
-				.subscribe(({
-					downloadPercentage,
-				}) => {
-					setPercentComplete(
-						downloadPercentage
-						|| 0
-					)
-				})
-			)
-
-			return () => {
-				subscriber
-				.unsubscribe()
-			}
-		},
-		[
-			createStateObservable,
-			filePath,
-		],
-	)
-
-	useLayoutEffect(
-		() => {
-			const subscriber = (
-				createStateObservable(({
-					downloadedFiles,
-				}) => ({
-					imageFileBlobUrl: (
-						downloadedFiles
-						[filePath]
-					),
-				}))
-				.subscribe(({
-					imageFileBlobUrl,
-				}) => {
-					setImageDataUrl(
-						imageFileBlobUrl
-						|| null
-					)
-				})
-			)
-
-			return () => {
-				subscriber
-				.unsubscribe()
-			}
-		},
-		[
-			createStateObservable,
-			filePath,
 		],
 	)
 
@@ -344,6 +287,9 @@ const Image = ({
 					canvasImageHeight,
 				)
 
+				imageRef
+				.current = null
+
 				if (!hasVisibilityDetection) {
 					canvasRef
 					.current
@@ -426,6 +372,10 @@ const Image = ({
 						isImageLoadedRef
 						.current
 					)
+					&& (
+						imageRef
+						.current
+					)
 				) {
 					imageRef
 					.current
@@ -434,12 +384,17 @@ const Image = ({
 					)
 				}
 
-				imageRef
-				.current
-				.removeEventListener(
-					'load',
-					loadCanvasWithImage,
-				)
+				if (
+					imageRef
+					.current
+				) {
+					imageRef
+					.current
+					.removeEventListener(
+						'load',
+						loadCanvasWithImage,
+					)
+				}
 
 				resizeObserver
 				.disconnect()
@@ -455,14 +410,14 @@ const Image = ({
 	return (
 		<div css={imageStyles}>
 			{
-				percentComplete !== 100
+				percentDownloaded !== 100
 				&& (
 					<progress
 						css={imageLoadingProgressStyles}
 						max="100"
-						value={percentComplete}
+						value={percentDownloaded}
 					>
-						{percentComplete}
+						{percentDownloaded}
 					</progress>
 				)
 			}
