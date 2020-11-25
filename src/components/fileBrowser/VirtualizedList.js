@@ -26,8 +26,7 @@ const initialViewData = {
 	containerHeight: 0,
 	itemSize: 1,
 	numberOfChildren: 0,
-	numberOfDomElements: 0,
-	numberOfImagesInView: 0,
+	numberOfItemsInView: 0,
 	numberOfRows: 0,
 }
 
@@ -99,23 +98,12 @@ const VirtualizedList = ({
 					)
 				)
 
-				const numberOfImagesInView = (
+				const numberOfItemsInView = (
 					Math
 					.ceil(
 						(viewHeight / (viewWidth / numberOfColumns))
 					)
 					* numberOfColumns
-				)
-
-				const numberOfDomElements = (
-					Math
-					.ceil(
-						numberOfImagesInView
-						+ (
-							numberOfImagesInView
-							* (2 / numberOfColumns)
-						)
-					)
 				)
 
 				const numberOfChildren = (
@@ -150,8 +138,7 @@ const VirtualizedList = ({
 					containerHeight,
 					itemSize,
 					numberOfChildren,
-					numberOfDomElements,
-					numberOfImagesInView,
+					numberOfItemsInView,
 					numberOfRows,
 				})
 			}
@@ -279,15 +266,69 @@ const VirtualizedList = ({
 			() => {
 				const {
 					itemSize,
-					numberOfImagesInView,
+					numberOfChildren,
+					numberOfItemsInView,
 				} = viewData
 
-				const startingIndex = (
-					Math
-					.floor(
-						scrollYPosition / itemSize
-					)
+				const numberOfRowsToPad = 4
+
+				const numberOfItemsToPad = (
+					numberOfRowsToPad
 					* numberOfColumns
+				)
+
+				const numberOfItemsToRender = (
+					numberOfItemsInView
+					+ numberOfItemsToPad
+				)
+
+				const startingOffset = (
+					(
+						Math
+						.floor(
+							scrollYPosition / itemSize
+						)
+						* numberOfColumns
+					)
+					- (numberOfItemsToPad / 2)
+				)
+
+				const endingOffset = (
+					startingOffset
+					+ numberOfItemsToRender
+				)
+
+				const isStartingOffsetOutOfBounds = (
+					startingOffset
+					< 0
+				)
+
+				const isEndingOffsetOutOfBounds = (
+					endingOffset
+					> numberOfChildren
+				)
+
+				const startingIndex = (
+					isEndingOffsetOutOfBounds
+					? (
+						numberOfChildren
+						- numberOfItemsToRender
+					)
+					: (
+						isStartingOffsetOutOfBounds
+						? 0
+						: startingOffset
+					)
+				)
+
+				const endingIndex = (
+					isStartingOffsetOutOfBounds
+					? numberOfItemsToRender
+					: (
+						isEndingOffsetOutOfBounds
+						? numberOfChildren
+						: endingOffset
+					)
 				)
 
 				return (
@@ -297,10 +338,7 @@ const VirtualizedList = ({
 					)
 					.slice(
 						startingIndex,
-						(
-							startingIndex
-							+ numberOfImagesInView
-						),
+						endingIndex,
 					)
 					.map((
 						childElement,
