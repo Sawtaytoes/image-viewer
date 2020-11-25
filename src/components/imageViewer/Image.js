@@ -25,6 +25,12 @@ const imageLoadingProgressStyles = css`
 	font-size: 24px;
 `
 
+const imageImageStyles = css`
+	height: 100%;
+	position: absolute;
+	width: 100%;
+`
+
 const imageCanvasStyles = css`
 	height: 100%;
 	position: absolute;
@@ -258,7 +264,7 @@ const Image = ({
 				.current
 				.style
 				.setProperty(
-					'height',
+					'width',
 					'100%',
 				)
 
@@ -266,11 +272,11 @@ const Image = ({
 				.current
 				.style
 				.setProperty(
-					'width',
+					'height',
 					'100%',
 				)
 
-				const isHeightRestriction = (
+				const isHeightRestricted = (
 					(
 						(imageRef.current.height / imageRef.current.width)
 						* canvasRef.current.clientWidth
@@ -280,19 +286,8 @@ const Image = ({
 					)
 				)
 
-				const canvasHeight = (
-					isHeightRestriction
-					? (
-						canvasRef.current.clientHeight
-					)
-					: (
-						(imageRef.current.height / imageRef.current.width)
-						* canvasRef.current.clientWidth
-					)
-				)
-
-				const canvasWidth = (
-					isHeightRestriction
+				const canvasImageWidth = (
+					isHeightRestricted
 					? (
 						(imageRef.current.width / imageRef.current.height)
 						* canvasRef.current.clientHeight
@@ -302,25 +297,36 @@ const Image = ({
 					)
 				)
 
-				canvasRef
-				.current
-				.setAttribute(
-					'height',
-					canvasHeight,
+				const canvasImageHeight = (
+					isHeightRestricted
+					? (
+						canvasRef.current.clientHeight
+					)
+					: (
+						(imageRef.current.height / imageRef.current.width)
+						* canvasRef.current.clientWidth
+					)
 				)
 
 				canvasRef
 				.current
 				.setAttribute(
 					'width',
-					canvasWidth,
+					canvasImageWidth,
+				)
+
+				canvasRef
+				.current
+				.setAttribute(
+					'height',
+					canvasImageHeight,
 				)
 
 				canvasRef
 				.current
 				.style
 				.setProperty(
-					'height',
+					'width',
 					'auto',
 				)
 
@@ -328,7 +334,7 @@ const Image = ({
 				.current
 				.style
 				.setProperty(
-					'width',
+					'height',
 					'auto',
 				)
 
@@ -340,8 +346,8 @@ const Image = ({
 					.current,
 					0,
 					0,
-					canvasWidth,
-					canvasHeight,
+					canvasImageWidth,
+					canvasImageHeight,
 				)
 
 				if (!hasVisibilityDetection) {
