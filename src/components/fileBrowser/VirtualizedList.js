@@ -46,6 +46,19 @@ const VirtualizedList = ({
 	const scrollContainerRef = useRef()
 	const virtualizedListRef = useRef()
 
+	useEffect(
+		() => {
+			virtualizedListRef
+			.current
+			.scrollTo(
+				0,
+				0,
+			)
+		},
+		// While we care about this value, we're using `children` to listen for updates.
+		[children],
+	)
+
 	const [
 		scrollYPosition,
 		setScrollYPosition,

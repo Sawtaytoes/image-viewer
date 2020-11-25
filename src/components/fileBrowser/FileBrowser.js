@@ -21,23 +21,11 @@ const fileBrowserStyles = css`
 const FileBrowser = () => {
 	const {
 		directories,
-		filePath,
 		imageFiles,
 	} = (
 		useContext(
 			FileSystemContext
 		)
-	)
-
-	useEffect(
-		() => {
-			window
-			.scrollTo(
-				0,
-				0,
-			)
-		},
-		[filePath],
 	)
 
 	return (
