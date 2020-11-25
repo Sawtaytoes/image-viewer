@@ -187,6 +187,19 @@ const FileSystemProvider = ({
 				directories,
 				filePath,
 				imageFiles,
+				isRootFilePath: (
+					!filePath
+					|| (
+						Object
+						.is(
+							filePath,
+							(
+								path
+								.sep
+							),
+						)
+					)
+				),
 				setFilePath,
 			}),
 			[

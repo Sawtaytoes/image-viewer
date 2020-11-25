@@ -30,6 +30,7 @@ const navigationStyles = css`
 const FolderControls = () => {
 	const {
 		filePath,
+		isRootFilePath,
 		setFilePath,
 	} = (
 		useContext(
@@ -40,6 +41,10 @@ const FolderControls = () => {
 	const goUpFolderTree = (
 		useCallback(
 			() => {
+				if (isRootFilePath) {
+					return
+				}
+
 				const nextFilePath = (
 					path
 					.join(
@@ -61,6 +66,7 @@ const FolderControls = () => {
 			},
 			[
 				filePath,
+				isRootFilePath,
 				setFilePath,
 			],
 		)
@@ -89,12 +95,17 @@ const FolderControls = () => {
 			css={folderControlsStyles}
 			onClick={goUpFolderTree}
 		>
-			<div
-				css={navigationStyles}
-				title="^ Go up a Directory"
-			>
-				<ArrowUpwardRoundedIcon />
-			</div>
+			{
+				!isRootFilePath
+				&& (
+					<div
+						css={navigationStyles}
+						title="^ Go up a Directory"
+					>
+						<ArrowUpwardRoundedIcon />
+					</div>
+				)
+			}
 
 			<div css={folderNameStyles}>
 				{filePath}
