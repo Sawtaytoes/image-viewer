@@ -53,7 +53,6 @@ const Image = ({
 	const canvasRef = useRef()
 
 	const {
-		unloadImage,
 		updateImageVisibility,
 	} = (
 		useContext(
@@ -81,24 +80,6 @@ const Image = ({
 			}),
 			[filePath],
 		)
-	)
-
-	// TEMP. Bring this back eventually, but move it to FileBrowser or `ImageFile` or somewhere else, so it only executes when `filePath` changes. Technically, we don't unload directories or images except at the `FileBrowser` level.
-	useEffect(
-		() => () => {
-			// Added `hasVisibilityDetection` as a temporary fix for when images are unmounted from `ImageViewer` but thumbnails are still loaded.
-			hasVisibilityDetection
-			&& (
-				unloadImage({
-					filePath,
-				})
-			)
-		},
-		[
-			filePath,
-			hasVisibilityDetection,
-			unloadImage,
-		],
 	)
 
 	useEffect(

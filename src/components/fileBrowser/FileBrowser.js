@@ -9,6 +9,7 @@ import Directory from './Directory'
 import FileSystemContext from './FileSystemContext'
 import FolderControls from './FolderControls'
 import ImageFile from './ImageFile'
+import ImageLoaderContext from '../imageLoader/ImageLoaderContext'
 import VirtualizedList from './VirtualizedList'
 
 const fileBrowserStyles = css`
@@ -26,6 +27,31 @@ const FileBrowser = () => {
 		useContext(
 			FileSystemContext
 		)
+	)
+
+	const {
+		unloadImage,
+	} = (
+		useContext(
+			ImageLoaderContext
+		)
+	)
+
+	useEffect(
+		() => () => {
+			imageFiles
+			.forEach(({
+				path,
+			}) => (
+				unloadImage({
+					filePath: path,
+				})
+			))
+		},
+		[
+			imageFiles,
+			unloadImage,
+		],
 	)
 
 	return (
