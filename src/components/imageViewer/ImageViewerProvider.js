@@ -33,11 +33,12 @@ const ImageViewerProvider = ({
 					initialImageFile
 				)
 
-				document
-				.querySelector(
-					`[title="${imageFile.name}"]`
-				)
-				.scrollIntoViewIfNeeded()
+				// TEMP. This is no longer working. It needs to be rewritten to scroll to the virtualized list item as `next` is clicked. Also would be good to have an animation on the selected image thumbnail.
+				// document
+				// .querySelector(
+				// 	`[title="${imageFile.name}"]`
+				// )
+				// .scrollIntoViewIfNeeded()
 			},
 			[
 				imageFile,
