@@ -51,8 +51,6 @@ const Image = ({
 
 	const animationFrameIdRef = useRef()
 	const canvasRef = useRef()
-	const imageRef = useRef()
-	const isImageLoadedRef = useRef(false)
 
 	const {
 		unloadImage,
@@ -64,16 +62,16 @@ const Image = ({
 	)
 
 	const {
-		imageDataUrl = null,
+		imageDomElement,
 		percentDownloaded = 0,
 	} = (
 		useStateSelector(
 			({
-				downloadedFiles,
 				downloadPercentages,
+				imageDomElements,
 			}) => ({
-				imageDataUrl: (
-					downloadedFiles
+				imageDomElement: (
+					imageDomElements
 					[filePath]
 				),
 				percentDownloaded: (
@@ -85,6 +83,7 @@ const Image = ({
 		)
 	)
 
+	// TEMP. Bring this back eventually, but move it to FileBrowser or `ImageFile` or somewhere else, so it only executes when `filePath` changes. Technically, we don't unload directories or images except at the `FileBrowser` level.
 	useEffect(
 		() => () => {
 			// Added `hasVisibilityDetection` as a temporary fix for when images are unmounted from `ImageViewer` but thumbnails are still loaded.
@@ -166,29 +165,13 @@ const Image = ({
 
 	useEffect(
 		() => {
-			if (!imageDataUrl) {
+			if (!imageDomElement) {
 				return
 			}
 
-			isImageLoadedRef
-			.current = false
-
-			imageRef
-			.current = (
-				document
-				.createElement('img')
-			)
-
 			const loadCanvasWithImage = () => {
 				if (
-					!(
-						isImageLoadedRef
-						.current
-					)
-					|| !(
-						imageRef
-						.current
-					)
+					!imageDomElement
 					|| !(
 						canvasRef
 						.current
@@ -215,7 +198,7 @@ const Image = ({
 
 				const isHeightRestricted = (
 					(
-						(imageRef.current.height / imageRef.current.width)
+						(imageDomElement.height / imageDomElement.width)
 						* canvasRef.current.clientWidth
 					)
 					> (
@@ -226,7 +209,7 @@ const Image = ({
 				const canvasImageWidth = (
 					isHeightRestricted
 					? (
-						(imageRef.current.width / imageRef.current.height)
+						(imageDomElement.width / imageDomElement.height)
 						* canvasRef.current.clientHeight
 					)
 					: (
@@ -240,7 +223,7 @@ const Image = ({
 						canvasRef.current.clientHeight
 					)
 					: (
-						(imageRef.current.height / imageRef.current.width)
+						(imageDomElement.height / imageDomElement.width)
 						* canvasRef.current.clientWidth
 					)
 				)
@@ -279,8 +262,7 @@ const Image = ({
 				.current
 				.getContext('2d')
 				.drawImage(
-					imageRef
-					.current,
+					imageDomElement,
 					0,
 					0,
 					canvasImageWidth,
@@ -315,27 +297,6 @@ const Image = ({
 				)
 			}
 
-			const imageLoaded = () => {
-				isImageLoadedRef
-				.current = true
-
-				throttleCanvasLoading()
-			}
-
-			imageRef
-			.current
-			.setAttribute(
-				'src',
-				imageDataUrl,
-			)
-
-			imageRef
-			.current
-			.addEventListener(
-				'load',
-				imageLoaded,
-			)
-
 			const resizeObserver = (
 				new ResizeObserver(
 					throttleCanvasLoading
@@ -349,47 +310,14 @@ const Image = ({
 				.parentElement
 			)
 
-			const canvas = (
-				canvasRef
-				.current
-			)
-
 			return () => {
 				if (!hasVisibilityDetection) {
-					canvas
+					canvasRef
+					.current
 					.style
 					.setProperty(
 						'visibility',
 						'hidden',
-					)
-				}
-
-				if (
-					!(
-						isImageLoadedRef
-						.current
-					)
-					&& (
-						imageRef
-						.current
-					)
-				) {
-					imageRef
-					.current
-					.removeAttribute(
-						'src',
-					)
-				}
-
-				if (
-					imageRef
-					.current
-				) {
-					imageRef
-					.current
-					.removeEventListener(
-						'load',
-						loadCanvasWithImage,
 					)
 				}
 
@@ -400,7 +328,7 @@ const Image = ({
 		[
 			fileName,
 			hasVisibilityDetection,
-			imageDataUrl,
+			imageDomElement,
 		],
 	)
 
