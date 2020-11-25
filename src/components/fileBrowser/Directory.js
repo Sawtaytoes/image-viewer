@@ -37,7 +37,7 @@ const directoryContentStyles = css`
 	display: flex;
 	flex-direction: column;
 	left: 0;
-	padding: 10px 14px;
+	padding: 6px 10px;
 	position: absolute;
 	right: 0;
 	top: 0;
@@ -48,7 +48,7 @@ const imageStyles = css`
 `
 
 const textStyles = css`
-	padding-bottom: 10px;
+	padding-bottom: 6px;
 	word-wrap: break-word;
 `
 
