@@ -2,49 +2,12 @@ import { css } from '@emotion/core'
 import PropTypes from 'prop-types'
 import {
 	Children,
-	// cloneElement,
 	memo,
 	useEffect,
 	useMemo,
 	useRef,
 	useState,
 } from 'react'
-
-// {
-// 	directories
-// 	.map(({
-// 		name,
-// 		path,
-// 	}) => (
-// 		<div
-// 			css={fileStyles}
-// 			key={path}
-// 		>
-// 			<Directory
-// 				directoryName={name}
-// 				directoryPath={path}
-// 			/>
-// 		</div>
-// 	))
-// }
-
-// {
-// 	imageFiles
-// 	.map(({
-// 		name,
-// 		path,
-// 	}) => (
-// 		<div
-// 			css={fileStyles}
-// 			key={path}
-// 		>
-// 			<ImageFile
-// 				fileName={name}
-// 				filePath={path}
-// 			/>
-// 		</div>
-// 	))
-// }
 
 const scrollContainerStyles = css`
 	height: auto;
@@ -354,8 +317,6 @@ const VirtualizedList = ({
 			],
 		)
 	)
-
-	console.log(Children.count(virtualizedChildren))
 
 	return (
 		<div
