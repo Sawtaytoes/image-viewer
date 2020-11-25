@@ -3,6 +3,8 @@ import downloadFileCancelationEpic from './downloadFileCancelationEpic'
 import downloadFileCompletionEpic from './downloadFileCompletionEpic'
 import downloadFileEpic from './downloadFileEpic'
 import downloadFilePathsEpic from './downloadFilePathsEpic'
+import imageDomElementCleanupEpic from './imageDomElementCleanupEpic'
+import imageDomElementLoaderEpic from './imageDomElementLoaderEpic'
 import processQueueEpic from './processQueueEpic'
 import processQueueFilePathRemovalEpic from './processQueueFilePathRemovalEpic'
 import removeFilePathEpic from './removeFilePathEpic'
@@ -25,6 +27,8 @@ export const {
 			downloadFileCompletionEpic,
 			downloadFileEpic,
 			downloadFilePathsEpic,
+			imageDomElementCleanupEpic,
+			imageDomElementLoaderEpic,
 			processQueueEpic,
 			processQueueFilePathRemovalEpic,
 			removeFilePathEpic,

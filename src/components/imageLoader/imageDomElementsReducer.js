@@ -2,35 +2,22 @@ import createNamespaceReducer from './createNamespaceReducer'
 import createReducer from './createReducer'
 
 import {
-	addDownloadedFile,
-	removeDownloadedFile,
+	addImageDomElement,
+	removeImageDomElement,
 } from './imageLoaderActions'
 
 const initialState = null
 
 const reducerActions = {
-	[addDownloadedFile.type]: (
+	[addImageDomElement.type]: (
 		state,
 		{ payload },
-	) => {
-		const imageDomElement = (
-			document
-			.createElement('img')
-		)
+	) => (
+		payload
+		.imageDomElement
+	),
 
-		imageDomElement
-		.setAttribute(
-			'src',
-			(
-				payload
-				.fileBlobUrl
-			),
-		)
-
-		return imageDomElement
-	},
-
-	[removeDownloadedFile.type]: () => (
+	[removeImageDomElement.type]: () => (
 		initialState
 	),
 }

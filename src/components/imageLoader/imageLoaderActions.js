@@ -15,7 +15,7 @@ export const addFilePath = (
 )
 
 export const addFilePathToQueue = (
-	createActionCreator({
+	createNamespaceActionCreator({
 		actionType: 'addFilePathToQueue',
 	})
 )
@@ -41,6 +41,13 @@ export const addFilePathToStandbyQueue = (
 	})
 )
 
+export const addImageDomElement = (
+	createNamespaceActionCreator({
+		actionType: 'addImageDomElement',
+		namespaceIdentifier: 'filePath',
+	})
+)
+
 export const finishedFilePathDownload = (
 	createNamespaceActionCreator({
 		actionType: 'finishedFilePathDownload',
@@ -62,7 +69,7 @@ export const removeFilePath = (
 )
 
 export const removeFilePathFromQueue = (
-	createActionCreator({
+	createNamespaceActionCreator({
 		actionType: 'removeFilePathFromQueue',
 	})
 )
@@ -84,6 +91,13 @@ export const removeFilePathFromProcessingQueue = (
 export const removeFilePathFromStandbyQueue = (
 	createNamespaceActionCreator({
 		actionType: 'removeFilePathFromStandbyQueue',
+		namespaceIdentifier: 'filePath',
+	})
+)
+
+export const removeImageDomElement = (
+	createNamespaceActionCreator({
+		actionType: 'removeImageDomElement',
 		namespaceIdentifier: 'filePath',
 	})
 )

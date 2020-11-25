@@ -2,7 +2,7 @@
 import downloadedFilesReducer from './downloadedFilesReducer'
 import downloadPercentagesReducer from './downloadPercentagesReducer'
 import filePathsQueueReducer from './filePathsQueueReducer'
-// import imageDomElementsReducer from './imageDomElementsReducer'
+import imageDomElementsReducer from './imageDomElementsReducer'
 import priorityQueueReducer from './priorityQueueReducer'
 import processingQueueReducer from './processingQueueReducer'
 import standbyQueueReducer from './standbyQueueReducer'
@@ -24,10 +24,10 @@ const reducers = [
 		namespace: 'filePathsQueue',
 		reducer: filePathsQueueReducer,
 	},
-	// {
-	// 	namespace: 'imageDomElements',
-	// 	reducer: imageDomElementsReducer,
-	// },
+	{
+		namespace: 'imageDomElements',
+		reducer: imageDomElementsReducer,
+	},
 	{
 		namespace: 'priorityQueue',
 		reducer: priorityQueueReducer,
