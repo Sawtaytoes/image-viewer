@@ -2,6 +2,7 @@ import { css } from '@emotion/core'
 import {
 	memo,
 	useContext,
+	useEffect,
 } from 'react'
 
 import Directory from './Directory'
@@ -33,11 +34,23 @@ const fileStyles = css`
 const FileBrowser = () => {
 	const {
 		directories,
+		filePath,
 		imageFiles,
 	} = (
 		useContext(
 			FileSystemContext
 		)
+	)
+
+	useEffect(
+		() => {
+			window
+			.scrollTo(
+				0,
+				0,
+			)
+		},
+		[filePath],
 	)
 
 	return (
