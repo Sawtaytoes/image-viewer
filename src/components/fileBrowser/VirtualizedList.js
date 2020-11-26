@@ -86,36 +86,66 @@ const VirtualizedList = ({
 		() => {
 			const {
 				itemSize,
-				numberOfItemsInView,
+				numberOfChildren,
 			} = (
 				viewDataRef
 				.current
 			)
 
+			const clampedIndex = (
+				Math
+				.min(
+					(
+						numberOfChildren
+						- 1
+					),
+					(
+						Math
+						.max(
+							0,
+							selectedIndex,
+						)
+					),
+				)
+			)
+
+			const itemPositionY = (
+				Math
+				.floor(
+					(
+						clampedIndex
+					) / numberOfColumnsRef.current
+				)
+				* itemSize
+			)
+
+			const halfViewHeight = (
+				(
+					virtualizedListRef
+					.current
+					.clientHeight
+				)
+				* 0.5
+			)
+
+			const halfItemSize = (
+				itemSize
+				* 0.5
+			)
+
+			const scrollYPosition = (
+				itemPositionY
+				- halfViewHeight
+				+ halfItemSize
+			)
+
+			// Have this scroll only when the item isn't fully in-view; otherwise, it will be jarring to users.
+			// Break this apart into named variables.
 			virtualizedListRef
 			.current
 			.scrollTo(
 				0,
-				(
-					(
-						Math
-						.floor(
-							(
-								Math
-								.max(
-									0,
-									selectedIndex,
-								)
-							) / numberOfColumnsRef.current
-						)
-						* itemSize
-					)
-					- (
-						((numberOfItemsInView / numberOfColumnsRef.current) / 2)
-						* itemSize
-					)
-					+ itemSize
-				),
+				scrollYPosition,
 			)
 		},
 		[
@@ -165,7 +195,7 @@ const VirtualizedList = ({
 						Children
 						.count(
 							children
-						) / 4
+						) / numberOfColumns
 					)
 				)
 
