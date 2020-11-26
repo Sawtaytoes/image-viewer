@@ -9,11 +9,11 @@ import FileSystemProvider from './fileBrowser/FileSystemProvider'
 import ImageLoaderProvider from './imageLoader/ImageLoaderProvider'
 import ImageViewer from './imageViewer/ImageViewer'
 import ImageViewerProvider from './imageViewer/ImageViewerProvider'
-import useF5RefreshEffect from './convenience/useF5RefreshEffect'
+import useWindowCloseKeys from './convenience/useWindowCloseKeys'
 import useWindowRefreshKeys from './convenience/useWindowRefreshKeys'
 
 const App = () => {
-	useF5RefreshEffect()
+	useWindowCloseKeys()
 	useWindowRefreshKeys()
 
 	return (
