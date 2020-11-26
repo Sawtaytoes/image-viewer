@@ -1,8 +1,8 @@
 # Tasks
 
-- Use directory and image file for scroll position.
-- Remove previous position ref.
-- Scroll to middle of window rather than top of image.
+- Highlight selected item with an outline, so it's clear which one hitting `[ENTER]` affects.
+- Add arrow-key navigation to select images for viewing.
+- Update number of images per row when screen width changes.
 
 ## Image Loader
 - Ensure 4-image pipeline is respected.
