@@ -4,6 +4,7 @@ const {
 	app,
 	BrowserWindow,
 	protocol,
+	screen,
 } = require('electron')
 const windowStateKeeper = require('electron-window-state')
 const os = require('os')
@@ -55,10 +56,12 @@ if (require('electron-squirrel-startup')) { // eslint-disable-line global-requir
 }
 
 const createWindow = () => {
+	const mainDisplay = screen.getPrimaryDisplay()
+
 	const mainWindowState = (
 		windowStateKeeper({
-			defaultHeight: 800,
-			defaultWidth: 1000,
+			defaultHeight: mainDisplay.workAreaSize.height,
+			defaultWidth: mainDisplay.workAreaSize.width * 0.5,
 		})
 	)
 
