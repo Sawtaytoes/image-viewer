@@ -1,4 +1,4 @@
-const stringNaturalCompare = global.require('string-natural-compare')
+import stringNaturalCompare from 'string-natural-compare'
 
 const compareNaturalStrings = (
 	(
