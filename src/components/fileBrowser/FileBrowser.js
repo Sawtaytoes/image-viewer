@@ -22,7 +22,7 @@ const fileBrowserStyles = css`
 	background-color: #444;
 	color: #fafafa;
 	display: grid;
-	height: 100%;
+	height: 100vh;
 	width: 100%;
 	grid-template-rows: auto 1fr;
 `
