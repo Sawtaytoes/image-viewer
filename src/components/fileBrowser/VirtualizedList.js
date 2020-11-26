@@ -17,7 +17,7 @@ const scrollContainerStyles = css`
 `
 
 const selectedListItemStyles = css`
-	border: 4px dotted gray;
+	border: 4px dotted lightgray;
 `
 
 const virtualizedListStyles = css`
