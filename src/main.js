@@ -72,16 +72,18 @@ const createWindow = () => {
 	)
 
 	// Open the DevTools.
-	// if (
-	// 	config
-	// 	.get(
-	// 		'isLocalDevelopment'
-	// 	)
-	// ) {
+	if (
+		(
+			process
+			.env
+			.NODE_ENV
+		)
+		=== 'development'
+	) {
 		mainWindow
 		.webContents
 		.openDevTools()
-	// }
+	}
 }
 
 // This method will be called when Electron has finished
