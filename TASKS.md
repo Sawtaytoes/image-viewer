@@ -38,6 +38,7 @@
 - Fix incorrect vertical and horizontal padding between `VirtualizedList` items. Vertical padding is overlapping and horizontal padding is leaving 1px gaps between items and cutting off a few px of the right-most item.
 - When folders take forever to load a directory listing, there's no loading indicator. This causes `VirtualizedList` to scroll to the top of the current view making it seems as if the current view is the selected folder (which it's not).
 - Fix issue where leaving a folder resets scroll. Maybe save all directories and scroll positions in context and set them to `0` only when it's a new folder. Should these be stored in localStorage along with an image cache?
+- Show `filePath` as the window title.
 
 ## Image Viewer
 - Add ability to zoom with mouse-wheel and pinch. This changes the functionality of clicking the center of an image.
