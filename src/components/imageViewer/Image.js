@@ -11,7 +11,7 @@ import {
 import ImageLoaderContext from '../imageLoader/ImageLoaderContext'
 import useStateSelector from '../imageLoader/useStateSelector'
 
-const imageStyles = css`
+const imageContainerStyles = css`
 	align-items: center;
 	display: flex;
 	height: 100%;
@@ -26,7 +26,10 @@ const imageLoadingProgressStyles = css`
 `
 
 const imageCanvasStyles = css`
+	align-items: center;
+	display: flex;
 	height: 100%;
+	justify-content: center;
 	position: absolute;
 	width: 100%;
 `
@@ -66,9 +69,14 @@ const Image = ({
 	} = (
 		useStateSelector(
 			({
+				downloadedFiles,
 				downloadPercentages,
 				imageDomElements,
 			}) => ({
+				fileBlobUrl: (
+					downloadedFiles
+					[filePath]
+				),
 				imageDomElement: (
 					imageDomElements
 					[filePath]
@@ -152,30 +160,13 @@ const Image = ({
 
 			const loadCanvasWithImage = () => {
 				if (
-					!imageDomElement
-					|| !(
+					!(
 						canvasRef
 						.current
 					)
 				) {
 					return
 				}
-
-				canvasRef
-				.current
-				.style
-				.setProperty(
-					'width',
-					'100%',
-				)
-
-				canvasRef
-				.current
-				.style
-				.setProperty(
-					'height',
-					'100%',
-				)
 
 				const isHeightRestricted = (
 					(
@@ -209,15 +200,13 @@ const Image = ({
 					)
 				)
 
-				canvasRef
-				.current
+				imageDomElement
 				.setAttribute(
 					'width',
 					canvasImageWidth,
 				)
 
-				canvasRef
-				.current
+				imageDomElement
 				.setAttribute(
 					'height',
 					canvasImageHeight,
@@ -225,40 +214,26 @@ const Image = ({
 
 				canvasRef
 				.current
-				.style
-				.setProperty(
-					'width',
-					'auto',
-				)
-
-				canvasRef
-				.current
-				.style
-				.setProperty(
-					'height',
-					'auto',
-				)
-
-				canvasRef
-				.current
-				.getContext('2d')
-				.drawImage(
-					imageDomElement,
-					0,
-					0,
-					canvasImageWidth,
-					canvasImageHeight,
-				)
-
-				if (!hasVisibilityDetection) {
-					canvasRef
-					.current
-					.style
-					.setProperty(
-						'visibility',
-						'visible',
+				.replaceChildren(
+					Object
+					.is(
+						(
+							imageDomElement
+							.parentElement
+						),
+						(
+							canvasRef
+							.current
+						),
 					)
-				}
+					? (
+						imageDomElement
+					)
+					: (
+						imageDomElement
+						.cloneNode(true)
+					)
+				)
 			}
 
 			const throttleCanvasLoading = () => {
@@ -292,22 +267,6 @@ const Image = ({
 			)
 
 			return () => {
-				if (
-					!hasVisibilityDetection
-					&& (
-						canvasRef
-						.current
-					)
-				) {
-					canvasRef
-					.current // eslint-disable-line react-hooks/exhaustive-deps
-					.style
-					.setProperty(
-						'visibility',
-						'hidden',
-					)
-				}
-
 				window
 				.cancelAnimationFrame(
 					animationFrameIdRef
@@ -321,15 +280,11 @@ const Image = ({
 				.disconnect()
 			}
 		},
-		[
-			fileName,
-			hasVisibilityDetection,
-			imageDomElement,
-		],
+		[imageDomElement],
 	)
 
 	return (
-		<div css={imageStyles}>
+		<div css={imageContainerStyles}>
 			{
 				percentDownloaded !== 100
 				&& (
@@ -343,7 +298,7 @@ const Image = ({
 				)
 			}
 
-			<canvas
+			<div
 				css={imageCanvasStyles}
 				ref={canvasRef}
 				title={fileName}
