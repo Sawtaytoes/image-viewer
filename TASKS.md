@@ -2,6 +2,7 @@
 
 - Highlight selected item with an outline, so it's clear which one hitting `[ENTER]` affects.
 - Add arrow-key navigation to select images for viewing.
+- [ESCAPE] key un-highlights from view where as clicking re-highlights.
 - Update number of images per row when screen width changes.
 
 ## Image Loader
