@@ -1,6 +1,6 @@
 import { useEffect } from 'react'
 
-const useF5RefreshEffect = () => {
+const useWindowRefreshKeys = () => {
 	useEffect(
 		() => {
 			const onKeyDown = event => {
@@ -23,6 +23,20 @@ const useF5RefreshEffect = () => {
 				}
 			}
 
+			if (
+				(
+					event.altKey
+					&& event.code === 'F4'
+				)
+				|| (
+					event.ctrlKey
+					&& event.code === 'KeyW'
+				)
+			) {
+				window
+				.close()
+			}
+
 			window
 			.addEventListener(
 				'keydown',
@@ -41,4 +55,4 @@ const useF5RefreshEffect = () => {
 	)
 }
 
-export default useF5RefreshEffect
+export default useWindowRefreshKeys

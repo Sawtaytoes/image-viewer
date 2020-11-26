@@ -10,9 +10,11 @@ import ImageLoaderProvider from './imageLoader/ImageLoaderProvider'
 import ImageViewer from './imageViewer/ImageViewer'
 import ImageViewerProvider from './imageViewer/ImageViewerProvider'
 import useF5RefreshEffect from './convenience/useF5RefreshEffect'
+import useWindowRefreshKeys from './convenience/useWindowRefreshKeys'
 
 const App = () => {
 	useF5RefreshEffect()
+	useWindowRefreshKeys()
 
 	return (
 		<Fragment>
