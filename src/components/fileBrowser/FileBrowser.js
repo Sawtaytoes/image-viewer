@@ -4,7 +4,7 @@ import {
 	useContext,
 	useEffect,
 	useMemo,
-	useRef,
+	useState,
 } from 'react'
 
 import Directory from './Directory'
@@ -25,10 +25,22 @@ const fileBrowserStyles = css`
 `
 
 const FileBrowser = () => {
-	const previousSelectedImageIndexRef = useRef()
+	const [
+		previousFilePath,
+		setPreviousFilePath,
+	] = (
+		useState('')
+	)
+	const [
+		previousImageFilePath,
+		setPreviousImageFilePath,
+	] = (
+		useState('')
+	)
 
 	const {
 		directories,
+		filePath,
 		imageFiles,
 	} = (
 		useContext(
@@ -69,44 +81,51 @@ const FileBrowser = () => {
 		],
 	)
 
-	useMemo(
-		() => {
-			previousSelectedImageIndexRef
-			.current = 0
+	useEffect(
+		() => () => {
+			setPreviousFilePath(
+				filePath
+			)
+
+			setPreviousImageFilePath(
+				imageFilePath
+			)
 		},
-		// eslint-disable-next-line react-hooks/exhaustive-deps
 		[
-			// We need to run this callback only when `imageFiles` updates.
-			imageFiles,
+			filePath,
+			imageFilePath,
 		],
 	)
 
 	const selectedImageIndex = (
 		useMemo(
 			() => (
-				imageFilePath
+				previousImageFilePath
 				? (
 					imageFiles
 					.findIndex(({
 						path,
 					}) => (
-						path === imageFilePath
+						path === previousImageFilePath
 					))
 				)
 				: (
-					previousSelectedImageIndexRef
-					.current
+					directories
+					.findIndex(({
+						path,
+					}) => (
+						path === previousFilePath
+					))
 				)
 			),
 			[
-				imageFilePath,
+				directories,
 				imageFiles,
+				previousFilePath,
+				previousImageFilePath,
 			],
 		)
 	)
-
-	previousSelectedImageIndexRef
-	.current = selectedImageIndex
 
 	return (
 		<div css={fileBrowserStyles}>
