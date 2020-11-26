@@ -19,7 +19,7 @@ const fileNameStyles = css`
 
 const imageViewControlsStyles = css`
 	align-items: center;
-	color: white;
+	color: #fafafa;
 	display: flex;
 	justify-content: space-between;
 	user-select: none;

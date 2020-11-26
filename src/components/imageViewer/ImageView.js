@@ -32,7 +32,7 @@ const imageStyles = css`
 `
 
 const navigationControlsStyles = css`
-	background-color: white;
+	background-color: #fafafa;
 	height: 100%;
 	position: absolute;
 	top: 0;

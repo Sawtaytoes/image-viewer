@@ -17,7 +17,7 @@ import VirtualizedList from './VirtualizedList'
 
 const fileBrowserStyles = css`
 	background-color: #444;
-	color: white;
+	color: #fafafa;
 	display: grid;
 	height: 100vh;
 	width: 100%;
