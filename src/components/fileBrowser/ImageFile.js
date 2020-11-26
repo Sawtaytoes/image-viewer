@@ -13,7 +13,6 @@ const imageFileStyles = css`
 	align-items: center;
 	cursor: pointer;
 	display: flex;
-	font-family: 'Source Sans Pro', sans-serif;
 	justify-content: center;
 	width: 100%;
 	padding-bottom: 100%;

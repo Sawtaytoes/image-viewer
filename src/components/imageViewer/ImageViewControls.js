@@ -12,6 +12,7 @@ import useImageNavigation from './useImageNavigation'
 
 const fileNameStyles = css`
 	font-family: 'Source Sans Pro', sans-serif;
+	font-weight: 300;
 	overflow: hidden;
 	text-overflow: ellipsis;
 	white-space: nowrap;

@@ -21,8 +21,6 @@ const imageContainerStyles = css`
 `
 
 const imageLoadingProgressStyles = css`
-	font-family: 'Source Sans Pro', sans-serif;
-	font-size: 24px;
 `
 
 const imageCanvasStyles = css`
