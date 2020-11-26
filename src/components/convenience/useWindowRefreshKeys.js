@@ -23,20 +23,6 @@ const useWindowRefreshKeys = () => {
 				}
 			}
 
-			if (
-				(
-					event.altKey
-					&& event.code === 'F4'
-				)
-				|| (
-					event.ctrlKey
-					&& event.code === 'KeyW'
-				)
-			) {
-				window
-				.close()
-			}
-
 			window
 			.addEventListener(
 				'keydown',
