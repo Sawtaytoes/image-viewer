@@ -27,7 +27,13 @@ const fileBrowserStyles = css`
 	grid-template-rows: auto 1fr;
 `
 
+const virtualizedListContainerStyles = css`
+	overflow: hidden;
+`
+
 const FileBrowser = () => {
+	const virtualizedListContainerRef = useRef()
+
 	const [numberOfColumns] = (
 		useState(3)
 	)
@@ -182,18 +188,6 @@ const FileBrowser = () => {
 		],
 	)
 
-	const keyCodeIndexModifiers = (
-		useMemo(
-			() => ({
-				ArrowDown: numberOfColumns,
-				ArrowLeft: -1,
-				ArrowRight: 1,
-				ArrowUp: -numberOfColumns,
-			}),
-			[numberOfColumns],
-		)
-	)
-
 	useFileBrowserKeyboardControls(({
 		code,
 	}) => {
@@ -201,7 +195,67 @@ const FileBrowser = () => {
 			return
 		}
 
-		if (code === 'Backspace') {
+		const keyCodeIndexValues = {
+			ArrowDown: () => (
+				numberOfColumns
+			),
+			ArrowLeft: () => (
+				(
+					keyCodeIndexValues
+					.ArrowRight()
+				)
+				* -1
+			),
+			ArrowRight: () => (
+				1
+			),
+			ArrowUp: () => (
+				(
+					keyCodeIndexValues
+					.ArrowDown()
+				)
+				* -1
+			),
+			PageDown: () => {
+				const viewHeight = (
+					virtualizedListContainerRef
+					.current
+					.clientHeight
+				)
+
+				const itemSize = (
+					(
+						virtualizedListContainerRef
+						.current
+						.clientWidth
+					) / numberOfColumns
+				)
+
+				const rowsInView = (
+					Math
+					.floor(
+						viewHeight / itemSize
+					)
+				)
+
+				return (
+					rowsInView
+					* numberOfColumns
+				)
+			},
+			PageUp: () => (
+				(
+					keyCodeIndexValues
+					.PageDown()
+				)
+				* -1
+			),
+		}
+
+		if (
+			code === 'Backspace'
+			|| code === 'Escape'
+		) {
 			navigateUpFolderTree()
 		}
 
@@ -231,9 +285,26 @@ const FileBrowser = () => {
 				)
 			}
 		}
-
-		if (
-			keyCodeIndexModifiers
+		else if (code === 'Home') {
+			setSelectedIndex(
+				0
+			)
+		}
+		else if (code === 'End') {
+			setSelectedIndex(
+				(
+					directories
+					.length
+				)
+				+ (
+					imageFiles
+					.length
+				)
+				- 1
+			)
+		}
+		else if (
+			keyCodeIndexValues
 			[code]
 		) {
 			setSelectedIndex(
@@ -255,8 +326,8 @@ const FileBrowser = () => {
 						(
 							selectedIndex
 							+ (
-								keyCodeIndexModifiers
-								[code]
+								keyCodeIndexValues
+								[code]()
 							)
 						),
 					),
@@ -269,39 +340,44 @@ const FileBrowser = () => {
 		<div css={fileBrowserStyles}>
 			<FolderControls />
 
-			<VirtualizedList
-				itemPadding="2px"
-				numberOfColumns={numberOfColumns}
-				selectedIndex={selectedIndex}
+			<div
+				css={virtualizedListContainerStyles}
+				ref={virtualizedListContainerRef}
 			>
-				{
-					directories
-					.map(({
-						name,
-						path,
-					}) => (
-						<Directory
-							directoryName={name}
-							directoryPath={path}
-							key={path}
-						/>
-					))
-				}
+				<VirtualizedList
+					itemPadding="2px"
+					numberOfColumns={numberOfColumns}
+					selectedIndex={selectedIndex}
+				>
+					{
+						directories
+						.map(({
+							name,
+							path,
+						}) => (
+							<Directory
+								directoryName={name}
+								directoryPath={path}
+								key={path}
+							/>
+						))
+					}
 
-				{
-					imageFiles
-					.map(({
-						name,
-						path,
-					}) => (
-						<ImageFile
-							fileName={name}
-							filePath={path}
-							key={path}
-						/>
-					))
-				}
-			</VirtualizedList>
+					{
+						imageFiles
+						.map(({
+							name,
+							path,
+						}) => (
+							<ImageFile
+								fileName={name}
+								filePath={path}
+								key={path}
+							/>
+						))
+					}
+				</VirtualizedList>
+			</div>
 		</div>
 	)
 }
