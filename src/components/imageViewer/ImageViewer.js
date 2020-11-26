@@ -42,9 +42,6 @@ const ImageViewer = () => {
 			}
 
 			const onKeyDown = event => {
-				event
-				.preventDefault()
-
 				if (
 					event.code === 'Backspace'
 					|| event.code === 'Enter'

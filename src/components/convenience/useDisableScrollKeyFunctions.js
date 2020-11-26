@@ -1,24 +1,29 @@
 import { useEffect } from 'react'
 
-const useWindowCloseKeys = () => {
+const scrollKeys = [
+	'ArrowUp',
+	'ArrowDown',
+	'ArrowRight',
+	'ArrowLeft',
+	'PageUp',
+	'PageDown',
+	'Home',
+	'End',
+]
+
+const useDisableScrollKeyFunctions = () => {
 	useEffect(
 		() => {
 			const onKeyDown = event => {
-				event
-				.preventDefault()
-
 				if (
-					(
-						event.altKey
-						&& event.code === 'F4'
-					)
-					|| (
-						event.ctrlKey
-						&& event.code === 'KeyW'
+					scrollKeys
+					.includes(
+						event
+						.code
 					)
 				) {
-					window
-					.close()
+					event
+					.preventDefault()
 				}
 			}
 
@@ -40,4 +45,4 @@ const useWindowCloseKeys = () => {
 	)
 }
 
-export default useWindowCloseKeys
+export default useDisableScrollKeyFunctions

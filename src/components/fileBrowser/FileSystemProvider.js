@@ -49,20 +49,23 @@ const initialFilePath = (
 	|| (
 		filePathArg
 		&& (
-			(
-				fs
-				.lstatSync(
+			path
+			.resolve(
+				(
+					fs
+					.lstatSync(
+						filePathArg
+					)
+					.isDirectory()
+				)
+				? (
 					filePathArg
 				)
-				.isDirectory()
-			)
-			? (
-				filePathArg
-			)
-			: (
-				path
-				.dirname(
-					filePathArg
+				: (
+					path
+					.dirname(
+						filePathArg
+					)
 				)
 			)
 		)
@@ -211,9 +214,12 @@ const FileSystemProvider = ({
 
 				const nextFilePath = (
 					path
-					.join(
-						filePath,
-						'..',
+					.resolve(
+						path
+						.join(
+							filePath,
+							'..',
+						)
 					)
 				)
 

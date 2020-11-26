@@ -64,9 +64,6 @@ const ImageViewControls = () => {
 					return
 				}
 
-				event
-				.preventDefault()
-
 				if (
 					keyConfigurations
 					[event.code]
