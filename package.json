@@ -62,7 +62,6 @@
     "string-natural-compare": "^3.0.1"
   },
   "dependencies": {
-    "electron-squirrel-startup": "^1.0.0",
-    "yargs": "^16.1.0"
+    "electron-squirrel-startup": "^1.0.0"
   }
 }
