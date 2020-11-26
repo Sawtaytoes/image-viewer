@@ -4,6 +4,7 @@ import {
 	Children,
 	memo,
 	useEffect,
+	useLayoutEffect,
 	useMemo,
 	useRef,
 	useState,
@@ -79,7 +80,7 @@ const VirtualizedList = ({
 		viewData
 	)
 
-	useEffect(
+	useLayoutEffect(
 		() => {
 			const {
 				itemSize,
