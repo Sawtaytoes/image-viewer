@@ -16,6 +16,10 @@ const scrollContainerStyles = css`
 	width: 100%;
 `
 
+const selectedListItemStyles = css`
+	border: 4px dotted gray;
+`
+
 const virtualizedListStyles = css`
 	height: 100%;
 	overflow-x: hidden;
@@ -290,7 +294,7 @@ const VirtualizedList = ({
 		useMemo(
 			() => (
 				css`
-					flex: 0 0 calc((1 / ${numberOfColumns}) * 100%);
+					filter: drop-shadow(3px 3px 4px #222);
 					padding: ${itemPadding};
 					position: absolute;
 					width: calc((1 / ${numberOfColumns}) * 100%);
@@ -409,6 +413,11 @@ const VirtualizedList = ({
 								${virtualizedListItemStyles}
 								left: ${(shiftedIndex % numberOfColumns) * itemSize}px;
 								top: ${Math.floor(shiftedIndex / numberOfColumns) * itemSize}px;
+
+								${
+									shiftedIndex === selectedIndex
+									&& selectedListItemStyles
+								}
 							`
 						),
 					}))
@@ -430,6 +439,7 @@ const VirtualizedList = ({
 				children,
 				numberOfColumns,
 				scrollYPosition,
+				selectedIndex,
 				viewData,
 				virtualizedListItemStyles,
 			],
