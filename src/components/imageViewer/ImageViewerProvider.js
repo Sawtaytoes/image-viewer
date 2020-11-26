@@ -8,7 +8,38 @@ import {
 
 import ImageViewerContext from './ImageViewerContext'
 
-const initialImageFile = {}
+const fs = global.require('fs')
+const path = global.require('path')
+const { remote } = global.require('electron')
+
+const filePathArg = (
+	remote
+	.getGlobal('processArgs')
+	[1]
+)
+
+const initialImageFile = (
+	(
+		filePathArg
+		&& (
+			fs
+			.lstatSync(
+				filePathArg
+			)
+			.isFile()
+		)
+	)
+	? {
+		name: (
+			path
+			.basename(
+				filePathArg
+			)
+		),
+		path: filePathArg,
+	}
+	: {}
+)
 
 const propTypes = {
 	children: PropTypes.node.isRequired,
@@ -29,9 +60,7 @@ const ImageViewerProvider = ({
 	const leaveImageViewer = (
 		useCallback(
 			() => {
-				setImageFile(
-					initialImageFile
-				)
+				setImageFile({})
 			},
 			[setImageFile],
 		)

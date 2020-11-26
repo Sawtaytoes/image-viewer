@@ -47,20 +47,23 @@ const initialFilePath = (
 		.getItem('filePath')
 	)
 	|| (
-		(
-			fs
-			.lstatSync(
+		filePathArg
+		&& (
+			(
+				fs
+				.lstatSync(
+					filePathArg
+				)
+				.isDirectory()
+			)
+			? (
 				filePathArg
 			)
-			.isDirectory()
-		)
-		? (
-			filePathArg
-		)
-		: (
-			path
-			.dirname(
-				filePathArg
+			: (
+				path
+				.dirname(
+					filePathArg
+				)
 			)
 		)
 	)
