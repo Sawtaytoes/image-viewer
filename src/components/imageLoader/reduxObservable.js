@@ -17,14 +17,14 @@ import {
 
 import catchEpicError from './catchEpicError'
 
-const config = global.require('config')
 const path = global.require('path')
 
 const isLocalDevelopment = (
-	config
-	.get(
-		'isLocalDevelopment'
-	)
+	true
+	// config
+	// .get(
+	// 	'isLocalDevelopment'
+	// )
 )
 
 export const createReduxObservable = ({

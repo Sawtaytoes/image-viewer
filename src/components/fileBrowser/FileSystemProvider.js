@@ -17,7 +17,6 @@ import FileSystemContext from './FileSystemContext'
 import useDirectories from './useDirectories'
 import useImageFiles from './useImageFiles'
 
-const config = global.require('config')
 const fs = global.require('fs')
 const path = global.require('path')
 const yargs = global.require('yargs')
@@ -50,11 +49,7 @@ const initialFilePath = (
 		.argv
 		.filePath
 	)
-	|| (
-		config
-		.get('filePath')
-	)
-	|| './'
+	|| ''
 )
 
 const initialDirectoryContents = []
