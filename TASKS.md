@@ -23,29 +23,22 @@
 - Add highlight when hovering and clicking images and folders.
 - Add confirmation modal to folder deletion. Set [ENTER] to be "yes".
 - Unhide folder deletion icon.
-- Add highlight around `selectedIndex` item in `VirtualizedList`.
-- Handle situation where drive is inaccessible by either not rendering the drive, going back to the root, or displaying an error.
-- Fix incorrect vertical and horizontal padding between `VirtualizedList` items. Vertical padding is overlapping and horizontal padding is leaving 1px gaps between items and cutting off a few px of the right-most item.
+- Handle situation where drive is inaccessible because either it's disconnected or this user doesn't have permissions. By either not rendering the drive, going back to the root, or displaying an error.
 - When folders take forever to load a directory listing, there's no loading indicator. This causes `VirtualizedList` to scroll to the top of the current view making it seems as if the current view is the selected folder (which it's not).
-- Fix issue where leaving a folder resets scroll. Maybe save all directories and scroll positions in context and set them to `0` only when it's a new folder. Should these be stored in localStorage along with an image cache?
 - Show `filePath` as the window title.
 
 ## Image Viewer
 - Add ability to zoom with mouse-wheel and pinch. This changes the functionality of clicking the center of an image.
 - Make it so you can edit the URL with `history` pathing potentially using React-Router-DOM.
 - Add highlight when hovering and clicking controls.
-- Assign [ENTER] key as "return to `FileBrowser`".
 - Fix hover state still getting stuck sometimes.
 - Add the ability to delete images with `[DELETE]`. Make sure to implement a confirmation modal that responds to key commands. Right now, both `[ENTER]` and `[ESCAPE]` leave the `ImageViewer`. With this confirmation dialog, that should change to swapping `filePath` rather than leaving `ImageViewer`.
 
 ## Future
 Potentially unnecessary additions.
 
-### Key Commands
-- Stop listening to `SHIFT` and `CTRL` when held for different commands like grabbing a screenshot.
-
 ### Directory List
-- It would also probably be good to cache directory listings. Cache would include the parent directory and each subdirectory.
+- It would probably be good to cache directory listings. Cache would include the parent directory and each subdirectory.
 - When loading a new directory, it will still list the files, but first use the cache SWR style.
 
 ### Image Thumbnail Storage
