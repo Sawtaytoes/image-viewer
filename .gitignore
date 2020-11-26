@@ -1,14 +1,14 @@
-# build output
-.eslintcache
-
-# configs
+# Configs
 config/local.js
 
-# generated
+# Generated
+/.eslintcache
 /.serverBundleCache/*.js
+/.webpack
 /build
 /node_modules
+/out
 *.log
 
-# misc
+# Misc
 .DS_Store

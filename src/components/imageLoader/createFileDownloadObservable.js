@@ -70,7 +70,7 @@ const createFileDownloadObservable = filePath => (
 		xmlHttpRequest
 		.open(
 			'GET',
-			webSafeFilePath,
+			`safe-file-protocol://${webSafeFilePath}`,
 			true,
 		)
 

@@ -4,6 +4,7 @@
 - Add arrow-key navigation to select images for viewing.
 - [ESCAPE] key un-highlights from view where as clicking re-highlights.
 - Update number of images per row when screen width changes.
+- Create custom scrollbar overlay to prevent shaky resize when scrollbar appears and disappears.
 
 ## Image Loader
 - Ensure 4-image pipeline is respected.

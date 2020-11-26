@@ -1,6 +1,4 @@
 import PropTypes from 'prop-types'
-import { BrowserRouter } from 'react-router-dom'
-import { hot } from 'react-hot-loader/root'
 
 import ConfigContext from './ConfigContext'
 
@@ -8,16 +6,14 @@ const propTypes = {
 	children: PropTypes.node.isRequired,
 }
 
-const ClientRoot = ({
+const ConfigContextProvider = ({
 	children,
 }) => (
 	<ConfigContext.Provider value={window.config}>
-		<BrowserRouter>
-			{children}
-		</BrowserRouter>
+		{children}
 	</ConfigContext.Provider>
 )
 
-ClientRoot.propTypes = propTypes
+ConfigContextProvider.propTypes = propTypes
 
-export default hot(ClientRoot)
+export default ConfigContextProvider

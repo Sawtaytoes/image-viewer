@@ -1,5 +1,4 @@
 import { Fragment } from 'react'
-import { hot } from 'react-hot-loader/root'
 
 import FileBrowser from './fileBrowser/FileBrowser'
 import FileSystemProvider from './fileBrowser/FileSystemProvider'
@@ -45,4 +44,4 @@ const App = () => {
 	)
 }
 
-export default hot(App)
+export default App
