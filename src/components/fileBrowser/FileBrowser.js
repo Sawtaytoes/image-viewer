@@ -4,6 +4,7 @@ import {
 	useContext,
 	useEffect,
 	useMemo,
+	useRef,
 	useState,
 } from 'react'
 
@@ -31,6 +32,7 @@ const FileBrowser = () => {
 	] = (
 		useState('')
 	)
+
 	const [
 		previousImageFilePath,
 		setPreviousImageFilePath,
@@ -97,25 +99,54 @@ const FileBrowser = () => {
 		],
 	)
 
+	const imageFilePathRef = useRef()
+
+	imageFilePathRef
+	.current = (
+		imageFilePath
+	)
+
 	const selectedImageIndex = (
 		useMemo(
 			() => (
-				previousImageFilePath
+				// Cannot listen directly to `imageFilePath` because this will update twice when it should only update once.
+				(
+					imageFilePathRef
+					.current
+				)
 				? (
 					imageFiles
 					.findIndex(({
 						path,
 					}) => (
-						path === previousImageFilePath
+						Object
+						.is(
+							path,
+							(
+								imageFilePathRef
+								.current
+							),
+						)
 					))
 				)
 				: (
-					directories
-					.findIndex(({
-						path,
-					}) => (
-						path === previousFilePath
-					))
+					previousImageFilePath
+					? (
+						imageFiles
+						.findIndex(({
+							path,
+						}) => (
+							path === previousImageFilePath
+						))
+					)
+					: (
+						directories
+						.findIndex(({
+							path,
+						}) => (
+							path === previousFilePath
+						))
+					)
 				)
 			),
 			[
@@ -132,8 +163,8 @@ const FileBrowser = () => {
 			<FolderControls />
 
 			<VirtualizedList
-				itemPadding="4px"
-				numberOfColumns={4}
+				itemPadding="2px"
+				numberOfColumns={3}
 				selectedIndex={selectedImageIndex}
 			>
 				{
