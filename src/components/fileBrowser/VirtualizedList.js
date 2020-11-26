@@ -142,29 +142,31 @@ const VirtualizedList = ({
 			)
 
 			if (
-				(
-					itemTopPosition
-					< viewTop
-				)
-				|| (
-					itemBottomPosition
-					> viewBottom
-				)
+				itemTopPosition
+				< viewTop
 			) {
-				const halfViewHeight = (
-					viewHeight
-					* 0.5
-				)
-
-				const halfItemSize = (
-					itemSize
-					* 0.5
-				)
-
 				const scrollYPosition = (
 					itemTopPosition
-					- halfViewHeight
-					+ halfItemSize
+				)
+
+				scrollContainerRef
+				.current
+				.scrollTo(
+					0,
+					scrollYPosition,
+				)
+			}
+
+			if (
+				itemBottomPosition
+				> viewBottom
+			) {
+				const scrollYPosition = (
+					viewTop
+					+ (
+						itemBottomPosition
+						- viewBottom
+					)
 				)
 
 				scrollContainerRef
