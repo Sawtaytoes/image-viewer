@@ -11,6 +11,15 @@ const os = require('os')
 
 global.processArgs = process.argv
 
+const isLocalDevelopment = (
+	(
+		process
+		.env
+		.NODE_ENV
+	)
+	=== 'development'
+)
+
 if (os.platform() === 'win32') {
 	exec(
 		'wmic logicaldisk get caption',
