@@ -1,6 +1,7 @@
 import PropTypes from 'prop-types'
 import {
 	memo,
+	useCallback,
 	useEffect,
 	useMemo,
 	useState,
@@ -169,6 +170,59 @@ const FileSystemProvider = ({
 		[filePath],
 	)
 
+	const isRootFilePath = (
+		useMemo(
+			() => (
+				!filePath
+				|| (
+					Object
+					.is(
+						filePath,
+						(
+							path
+							.sep
+						),
+					)
+				)
+			),
+			[filePath],
+		)
+	)
+
+	const navigateUpFolderTree = (
+		useCallback(
+			() => {
+				if (isRootFilePath) {
+					return
+				}
+
+				const nextFilePath = (
+					path
+					.join(
+						filePath,
+						'..',
+					)
+				)
+
+				if (filePath === nextFilePath) {
+					setFilePath(
+						''
+					)
+				}
+				else {
+					setFilePath(
+						nextFilePath
+					)
+				}
+			},
+			[
+				filePath,
+				isRootFilePath,
+				setFilePath,
+			],
+		)
+	)
+
 	const directories = (
 		useDirectories(
 			directoryContents
@@ -187,25 +241,16 @@ const FileSystemProvider = ({
 				directories,
 				filePath,
 				imageFiles,
-				isRootFilePath: (
-					!filePath
-					|| (
-						Object
-						.is(
-							filePath,
-							(
-								path
-								.sep
-							),
-						)
-					)
-				),
+				isRootFilePath,
+				navigateUpFolderTree,
 				setFilePath,
 			}),
 			[
 				directories,
 				filePath,
 				imageFiles,
+				isRootFilePath,
+				navigateUpFolderTree,
 				setFilePath,
 			],
 		)

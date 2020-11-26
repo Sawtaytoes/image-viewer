@@ -10,7 +10,6 @@ import {
 import FileSystemContext from './FileSystemContext'
 
 const fs = global.require('fs')
-const path = global.require('path')
 
 const folderControlsStyles = css`
 	align-items: center;
@@ -31,44 +30,10 @@ const FolderControls = () => {
 	const {
 		filePath,
 		isRootFilePath,
-		setFilePath,
+		navigateUpFolderTree,
 	} = (
 		useContext(
 			FileSystemContext
-		)
-	)
-
-	const goUpFolderTree = (
-		useCallback(
-			() => {
-				if (isRootFilePath) {
-					return
-				}
-
-				const nextFilePath = (
-					path
-					.join(
-						filePath,
-						'..',
-					)
-				)
-
-				if (filePath === nextFilePath) {
-					setFilePath(
-						''
-					)
-				}
-				else {
-					setFilePath(
-						nextFilePath
-					)
-				}
-			},
-			[
-				filePath,
-				isRootFilePath,
-				setFilePath,
-			],
 		)
 	)
 
@@ -93,7 +58,7 @@ const FolderControls = () => {
 	return (
 		<div
 			css={folderControlsStyles}
-			onClick={goUpFolderTree}
+			onClick={navigateUpFolderTree}
 		>
 			{
 				!isRootFilePath
