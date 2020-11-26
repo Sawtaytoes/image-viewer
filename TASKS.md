@@ -10,7 +10,7 @@
 - Load images from directory rather than `Image`. This will make it easier to queue up images independent of React components.
 
 ## Performance
-- Stop loading images in `FileBrowser` until `ImageViewer` image is loaded.
+- Stop loading images in `FileBrowser` until `ImageViewer` image is loaded. This is somewhat solved, but it requires a high-priority and low-priority queue state.
 - Fix memory leak associated with loading and unloading folders containing images. They're probably getting stored somewhere other than state.
 
 ## File Browser

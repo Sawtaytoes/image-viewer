@@ -1,6 +1,7 @@
 const queueStates = {
 	fulfilled: 'fulfilled',
-	prioritized: 'prioritized',
+	prioritizedHigh: 'prioritizedHigh',
+	prioritizedLow: 'prioritizedLow',
 	processing: 'processing',
 	standingBy: 'standingBy',
 }
