@@ -51,8 +51,8 @@ const ImageViewControls = () => {
 			const keyConfigurations = {
 				ArrowLeft: goToPreviousImage,
 				ArrowRight: goToNextImage,
-				ControlLeft: goToPreviousImage,
-				ShiftLeft: goToNextImage,
+				ControlLeft: goToNextImage,
+				ShiftLeft: goToPreviousImage,
 			}
 
 			const onKeyDown = ({
