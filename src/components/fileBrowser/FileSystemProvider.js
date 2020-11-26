@@ -19,7 +19,7 @@ import useImageFiles from './useImageFiles'
 
 const fs = global.require('fs')
 const path = global.require('path')
-const yargs = global.require('yargs')
+// const yargs = global.require('yargs')
 const { remote } = global.require('electron')
 
 const windowsDrivePaths = (
@@ -42,12 +42,9 @@ const initialFilePath = (
 		.getItem('filePath')
 	)
 	|| (
-		yargs(
-			remote
-			.getGlobal('processArgs')
-		)
-		.argv
-		.filePath
+		remote
+		.getGlobal('processArgs')
+		[1]
 	)
 	|| ''
 )
