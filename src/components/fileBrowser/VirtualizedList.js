@@ -82,6 +82,7 @@ const VirtualizedList = ({
 		() => {
 			const {
 				itemSize,
+				numberOfItemsInView,
 			} = (
 				viewDataRef
 				.current
@@ -92,17 +93,24 @@ const VirtualizedList = ({
 			.scrollTo(
 				0,
 				(
-					Math
-					.floor(
-						(
-							Math
-							.max(
-								0,
-								selectedIndex,
-							)
-						) / numberOfColumnsRef.current
+					(
+						Math
+						.floor(
+							(
+								Math
+								.max(
+									0,
+									selectedIndex,
+								)
+							) / numberOfColumnsRef.current
+						)
+						* itemSize
 					)
-					* itemSize
+					- (
+						((numberOfItemsInView / numberOfColumnsRef.current) / 2)
+						* itemSize
+					)
+					+ itemSize
 				),
 			)
 		},
