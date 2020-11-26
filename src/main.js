@@ -91,14 +91,7 @@ const createWindow = () => {
 	)
 
 	// Open the DevTools.
-	if (
-		(
-			process
-			.env
-			.NODE_ENV
-		)
-		=== 'development'
-	) {
+	if (isLocalDevelopment) {
 		mainWindow
 		.webContents
 		.openDevTools()
