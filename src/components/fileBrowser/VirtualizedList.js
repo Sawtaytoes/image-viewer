@@ -10,7 +10,7 @@ import {
 	useState,
 } from 'react'
 
-const scrollContainerStyles = css`
+const virtualizedListStyles = css`
 	height: auto;
 	position: relative;
 	width: 100%;
@@ -20,7 +20,7 @@ const selectedListItemStyles = css`
 	border: 4px dotted lightgray;
 `
 
-const virtualizedListStyles = css`
+const scrollContainerStyles = css`
 	height: 100%;
 	overflow-x: hidden;
 	overflow-y: auto;
@@ -109,6 +109,11 @@ const VirtualizedList = ({
 				)
 			)
 
+			// const itemPositionY = (
+			// 	virtualizedListRef
+			// 	.current
+			// )
+
 			const itemPositionY = (
 				Math
 				.floor(
@@ -121,7 +126,7 @@ const VirtualizedList = ({
 
 			const halfViewHeight = (
 				(
-					virtualizedListRef
+					scrollContainerRef
 					.current
 					.clientHeight
 				)
@@ -141,7 +146,7 @@ const VirtualizedList = ({
 
 			// Have this scroll only when the item isn't fully in-view; otherwise, it will be jarring to users.
 			// Break this apart into named variables.
-			virtualizedListRef
+			scrollContainerRef
 			.current
 			.scrollTo(
 				0,
@@ -158,13 +163,13 @@ const VirtualizedList = ({
 		() => {
 			const calculateViewData = () => {
 				const viewWidth = (
-					virtualizedListRef
+					scrollContainerRef
 					.current
 					.clientWidth
 				)
 
 				const viewHeight = (
-					virtualizedListRef
+					scrollContainerRef
 					.current
 					.clientHeight
 				)
@@ -204,7 +209,7 @@ const VirtualizedList = ({
 					* numberOfRows
 				)
 
-				scrollContainerRef
+				virtualizedListRef
 				.current
 				.style
 				.setProperty(
@@ -247,7 +252,7 @@ const VirtualizedList = ({
 
 			resizeObserver
 			.observe(
-				virtualizedListRef
+				scrollContainerRef
 				.current
 			)
 
@@ -275,7 +280,7 @@ const VirtualizedList = ({
 		() => {
 			const updateScrollPosition = () => {
 				setScrollYPosition(
-					virtualizedListRef
+					scrollContainerRef
 					.current
 					.scrollTop
 				)
@@ -298,7 +303,7 @@ const VirtualizedList = ({
 				)
 			}
 
-			virtualizedListRef
+			scrollContainerRef
 			.current
 			.addEventListener(
 				'scroll',
@@ -306,7 +311,7 @@ const VirtualizedList = ({
 			)
 
 			return () => {
-				virtualizedListRef
+				scrollContainerRef
 				.current // eslint-disable-line react-hooks/exhaustive-deps
 				.removeEventListener(
 					'scroll',
@@ -478,12 +483,12 @@ const VirtualizedList = ({
 
 	return (
 		<div
-			css={virtualizedListStyles}
-			ref={virtualizedListRef}
+			css={scrollContainerStyles}
+			ref={scrollContainerRef}
 		>
 			<div
-				css={scrollContainerStyles}
-				ref={scrollContainerRef}
+				css={virtualizedListStyles}
+				ref={virtualizedListRef}
 			>
 				{virtualizedChildren}
 			</div>
