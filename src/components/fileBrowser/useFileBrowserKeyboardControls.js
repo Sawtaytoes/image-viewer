@@ -12,6 +12,9 @@ const useFileBrowserKeyboardControls = callback => {
 	useEffect(
 		() => {
 			const onKeyDown = event => {
+				event
+				.preventDefault()
+
 				callbackRef
 				.current(event)
 			}
