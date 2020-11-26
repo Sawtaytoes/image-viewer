@@ -19,7 +19,6 @@ import useImageFiles from './useImageFiles'
 
 const fs = global.require('fs')
 const path = global.require('path')
-// const yargs = global.require('yargs')
 const { remote } = global.require('electron')
 
 const windowsDrivePaths = (
@@ -36,15 +35,34 @@ const windowsDrivePaths = (
 	}))
 )
 
+const filePathArg = (
+	remote
+	.getGlobal('processArgs')
+	[1]
+)
+
 const initialFilePath = (
 	(
 		sessionStorage
 		.getItem('filePath')
 	)
 	|| (
-		remote
-		.getGlobal('processArgs')
-		[1]
+		(
+			fs
+			.lstatSync(
+				filePathArg
+			)
+			.isDirectory()
+		)
+		? (
+			filePathArg
+		)
+		: (
+			path
+			.dirname(
+				filePathArg
+			)
+		)
 	)
 	|| ''
 )
