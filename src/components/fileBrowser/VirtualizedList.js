@@ -24,11 +24,9 @@ const virtualizedListStyles = css`
 `
 
 const initialViewData = {
-	containerHeight: 0,
 	itemSize: 1,
 	numberOfChildren: 0,
 	numberOfItemsInView: 0,
-	numberOfRows: 0,
 }
 
 const propTypes = {
@@ -173,11 +171,9 @@ const VirtualizedList = ({
 				)
 
 				setViewData({
-					containerHeight,
 					itemSize,
 					numberOfChildren,
 					numberOfItemsInView,
-					numberOfRows,
 				})
 			}
 
