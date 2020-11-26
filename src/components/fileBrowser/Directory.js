@@ -22,9 +22,8 @@ const fs = global.require('fs')
 const path = global.require('path')
 
 const directoryStyles = css`
-	background-color: #fffffb;
-	border: 2px solid lightgray;
-	color: #333;
+	background-color: #fbfbfb;
+	color: #444;
 	cursor: pointer;
 	font-family: 'Source Sans Pro', sans-serif;
 	padding-bottom: 100%;
