@@ -1,23 +1,13 @@
 # Tasks
 
-- Highlight selected item with an outline, so it's clear which one hitting `[ENTER]` affects.
-- Add arrow-key navigation to select images for viewing.
 - [ESCAPE] key un-highlights from view where as clicking re-highlights.
-- Update number of images per row when screen width changes.
 - Create custom scrollbar overlay to prevent shaky resize when scrollbar appears and disappears.
-- Make fonts part of the package rather than pulling them from the Internet.
 - Figure out why opening a second instance in `ImageViewer` causes it to only show a white screen. This is most-likely because the `isVisible` flag isn't set correctly.
 
 ## Image Loader
 - Ensure 4-image pipeline is respected.
 - Create a single queue with states instead of multiple queues.
 - Load images from directory rather than `Image`. This will make it easier to queue up images independent of React components.
-
-## Build
-- Create Docker container or use existing one to build.
-	+ https://github.com/develar/electron-builder/blob/master/docker/node/Dockerfile
-	+ https://hub.docker.com/r/electronuserland/builder/
-	+ https://www.electron.build/multi-platform-build#docker
 
 ## Performance
 - Stop loading images in `FileBrowser` until `ImageViewer` image is loaded.
