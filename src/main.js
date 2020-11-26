@@ -1,10 +1,11 @@
 const { exec } = require('child_process')
 // const config = require('config')
 const {
-  app,
-  BrowserWindow,
-  protocol,
+	app,
+	BrowserWindow,
+	protocol,
 } = require('electron')
+const windowStateKeeper = require('electron-window-state')
 const os = require('os')
 
 global.processArgs = process.argv
@@ -54,15 +55,30 @@ if (require('electron-squirrel-startup')) { // eslint-disable-line global-requir
 }
 
 const createWindow = () => {
-	// Create the browser window.
-	const mainWindow = new BrowserWindow({
-		webPreferences: {
-			enableRemoteModule: true,
-			nodeIntegration: true,
-			// eslint-disable-next-line no-undef
-			preload: MAIN_WINDOW_PRELOAD_WEBPACK_ENTRY,
-		},
-	})
+	const mainWindowState = (
+		windowStateKeeper({
+			defaultHeight: 800,
+			defaultWidth: 1000,
+		})
+	)
+
+	const mainWindow = (
+		new BrowserWindow({
+			height: mainWindowState.height,
+			webPreferences: {
+				enableRemoteModule: true,
+				nodeIntegration: true,
+				// eslint-disable-next-line no-undef
+				preload: MAIN_WINDOW_PRELOAD_WEBPACK_ENTRY,
+			},
+			width: mainWindowState.width,
+			x: mainWindowState.x,
+			y: mainWindowState.y,
+		})
+	)
+
+	mainWindowState
+	.manage(mainWindow)
 
 	// and load the index.html of the app.
 	mainWindow

@@ -62,6 +62,7 @@
     "string-natural-compare": "^3.0.1"
   },
   "dependencies": {
-    "electron-squirrel-startup": "^1.0.0"
+    "electron-squirrel-startup": "^1.0.0",
+    "electron-window-state": "^5.0.3"
   }
 }
