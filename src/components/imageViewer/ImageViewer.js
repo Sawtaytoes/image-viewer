@@ -44,7 +44,11 @@ const ImageViewer = () => {
 			const onKeyDown = ({
 				code,
 			}) => {
-				if (code === 'Escape') {
+				if (
+					code === 'Backspace'
+					|| code === 'Enter'
+					|| code === 'Escape'
+				) {
 					leaveImageViewer()
 				}
 			}
