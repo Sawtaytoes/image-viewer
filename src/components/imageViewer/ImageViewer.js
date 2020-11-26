@@ -41,13 +41,14 @@ const ImageViewer = () => {
 				return
 			}
 
-			const onKeyDown = ({
-				code,
-			}) => {
+			const onKeyDown = event => {
+				event
+				.preventDefault()
+
 				if (
-					code === 'Backspace'
-					|| code === 'Enter'
-					|| code === 'Escape'
+					event.code === 'Backspace'
+					|| event.code === 'Enter'
+					|| event.code === 'Escape'
 				) {
 					leaveImageViewer()
 				}
