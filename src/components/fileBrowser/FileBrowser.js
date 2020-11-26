@@ -32,10 +32,14 @@ const virtualizedListContainerStyles = css`
 `
 
 const FileBrowser = () => {
+	const animationFrameIdRef = useRef()
 	const virtualizedListContainerRef = useRef()
 
-	const [numberOfColumns] = (
-		useState(3)
+	const [
+		numberOfColumns,
+		setNumberOfColumns,
+	] = (
+		useState(1)
 	)
 
 	const [
@@ -335,6 +339,77 @@ const FileBrowser = () => {
 			)
 		}
 	})
+
+	useLayoutEffect(
+		() => {
+			const calculateNumberOfColumns = () => {
+				const viewWidth = (
+					virtualizedListContainerRef
+					.current
+					.clientWidth
+				)
+
+				const nextNumberOfColumns = (
+					Math.floor(viewWidth / 300)
+				)
+
+				setNumberOfColumns(
+					Math
+					.max(
+						1,
+						nextNumberOfColumns,
+					)
+				)
+			}
+
+			const throttleColumnCountCalculation = () => {
+				if (
+					animationFrameIdRef
+					.current
+				) {
+					return
+				}
+
+				animationFrameIdRef
+				.current = (
+					window
+					.requestAnimationFrame(() => {
+						animationFrameIdRef
+						.current = null
+
+						calculateNumberOfColumns()
+					})
+				)
+			}
+
+			const resizeObserver = (
+				new ResizeObserver(
+					throttleColumnCountCalculation
+				)
+			)
+
+			resizeObserver
+			.observe(
+				virtualizedListContainerRef
+				.current
+			)
+
+			return () => {
+				window
+				.cancelAnimationFrame(
+					animationFrameIdRef
+					.current
+				)
+
+				animationFrameIdRef
+				.current = null
+
+				resizeObserver
+				.disconnect()
+			}
+		},
+		[],
+	)
 
 	return (
 		<div css={fileBrowserStyles}>
