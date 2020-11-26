@@ -109,12 +109,7 @@ const VirtualizedList = ({
 				)
 			)
 
-			// const itemPositionY = (
-			// 	virtualizedListRef
-			// 	.current
-			// )
-
-			const itemPositionY = (
+			const itemTopPosition = (
 				Math
 				.floor(
 					(
@@ -124,34 +119,61 @@ const VirtualizedList = ({
 				* itemSize
 			)
 
-			const halfViewHeight = (
+			const itemBottomPosition = (
+				itemTopPosition
+				+ itemSize
+			)
+
+			const viewTop = (
+				scrollContainerRef
+				.current
+				.scrollTop
+			)
+
+			const viewHeight = (
+				scrollContainerRef
+				.current
+				.clientHeight
+			)
+
+			const viewBottom = (
+				viewTop
+				+ viewHeight
+			)
+
+			if (
 				(
-					scrollContainerRef
-					.current
-					.clientHeight
+					itemTopPosition
+					< viewTop
 				)
-				* 0.5
-			)
+				|| (
+					itemBottomPosition
+					> viewBottom
+				)
+			) {
+				const halfViewHeight = (
+					viewHeight
+					* 0.5
+				)
 
-			const halfItemSize = (
-				itemSize
-				* 0.5
-			)
+				const halfItemSize = (
+					itemSize
+					* 0.5
+				)
 
-			const scrollYPosition = (
-				itemPositionY
-				- halfViewHeight
-				+ halfItemSize
-			)
+				const scrollYPosition = (
+					itemTopPosition
+					- halfViewHeight
+					+ halfItemSize
+				)
 
-			// Have this scroll only when the item isn't fully in-view; otherwise, it will be jarring to users.
-			// Break this apart into named variables.
-			scrollContainerRef
-			.current
-			.scrollTo(
-				0,
-				scrollYPosition,
-			)
+				scrollContainerRef
+				.current
+				.scrollTo(
+					0,
+					scrollYPosition,
+				)
+			}
 		},
 		[
 			children, // We're using `children` to listen for updates.
