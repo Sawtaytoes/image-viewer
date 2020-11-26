@@ -304,7 +304,7 @@ const VirtualizedList = ({
 					numberOfItemsInView,
 				} = viewData
 
-				const numberOfRowsToPad = 4
+				const numberOfRowsToPad = 8
 
 				const numberOfItemsToPad = (
 					numberOfRowsToPad
