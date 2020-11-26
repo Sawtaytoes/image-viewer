@@ -20,7 +20,7 @@ const imageFileStyles = css`
 	position: relative;
 `
 
-const imageStyles = css`
+const imageFileContentStyles = css`
 	height: 100%;
 	left: 0;
 	position: absolute;
@@ -66,7 +66,7 @@ const ImageFile = ({
 			css={imageFileStyles}
 			onClick={goToImage}
 		>
-			<div css={imageStyles}>
+			<div css={imageFileContentStyles}>
 				<Image
 					fileName={fileName}
 					filePath={filePath}
