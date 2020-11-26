@@ -6,6 +6,7 @@
 - Update number of images per row when screen width changes.
 - Create custom scrollbar overlay to prevent shaky resize when scrollbar appears and disappears.
 - Make fonts part of the package rather than pulling them from the Internet.
+- Figure out why opening a second instance in `ImageViewer` causes it to only show a white screen. This is most-likely because the `isVisible` flag isn't set correctly.
 
 ## Image Loader
 - Ensure 4-image pipeline is respected.
