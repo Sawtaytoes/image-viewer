@@ -55,11 +55,25 @@ const ImageViewControls = () => {
 				ShiftLeft: goToPreviousImage,
 			}
 
-			const onKeyDown = ({
-				code,
-			}) => {
-				keyConfigurations[code]
-				&& keyConfigurations[code]()
+			const onKeyDown = event => {
+				// Prevent taking screenshots in Windows with `[META][SHIFT][S]` to shift the image.
+				if (
+					event
+					.metaKey
+				) {
+					return
+				}
+
+				event
+				.preventDefault()
+
+				if (
+					keyConfigurations
+					[event.code]
+				) {
+					keyConfigurations
+					[event.code]()
+				}
 			}
 
 			window
