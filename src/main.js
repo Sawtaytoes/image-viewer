@@ -133,14 +133,14 @@ const createWindow = ({
 		},
 	)
 
-	console.log('---------------\nloaded')
+	console.time('started')
 
 	mainWindowRef
 	.current
 	.once(
 		'ready-to-show',
 		() => {
-			console.log('---------------\nready to show')
+			console.timeEnd('started')
 			mainWindowRef
 			.current
 			.show()
