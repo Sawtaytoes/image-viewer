@@ -40,6 +40,7 @@
 - Add highlight when hovering and clicking controls.
 - Fix hover state still getting stuck sometimes.
 - Add the ability to delete images with `[DELETE]`. Make sure to implement a confirmation modal that responds to key commands. Right now, both `[ENTER]` and `[ESCAPE]` leave the `ImageViewer`. With this confirmation dialog, that should change to swapping `filePath` rather than leaving `ImageViewer`.
+- Switch back to `canvas` when viewing images as it's significantly higher quality.
 
 ## Future
 Potentially unnecessary additions.
