@@ -1,10 +1,3 @@
-const config = require('config')
-
-const isLocalDevelopment = (
-	config
-	.get('isLocalDevelopment')
-)
-
 const electronForgeConfig = {
 	makers: [
 		{
