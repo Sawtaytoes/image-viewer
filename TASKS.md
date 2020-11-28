@@ -30,6 +30,8 @@
 - Handle situation where drive is inaccessible because either it's disconnected or this user doesn't have permissions. By either not rendering the drive, going back to the root, or displaying an error.
 - When folders take forever to load a directory listing, there's no loading indicator. This causes `VirtualizedList` to scroll to the top of the current view making it seems as if the current view is the selected folder (which it's not).
 - Show `filePath` as the window title.
+- Show a message as to which file or folder is being deleted.
+- Rename all Directory to Folder.
 
 ## Image Viewer
 - Add ability to zoom with mouse-wheel and pinch. This changes the functionality of clicking the center of an image.
