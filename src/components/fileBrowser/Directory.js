@@ -18,8 +18,8 @@ import FileSystemContext from './FileSystemContext'
 import Image from '../imageViewer/Image'
 import useImageFiles from './useImageFiles'
 
-const fs = global.require('fs')
-const path = global.require('path')
+const fs = require('fs')
+const path = require('path')
 
 const directoryStyles = css`
 	background-color: #666;

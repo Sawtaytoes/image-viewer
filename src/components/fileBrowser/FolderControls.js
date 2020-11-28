@@ -9,7 +9,7 @@ import {
 
 import FileSystemContext from './FileSystemContext'
 
-const fs = global.require('fs')
+const fs = require('fs')
 
 const folderControlsStyles = css`
 	align-items: center;

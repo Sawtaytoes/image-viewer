@@ -17,7 +17,7 @@ import {
 
 import catchEpicError from './catchEpicError'
 
-const path = global.require('path')
+const path = require('path')
 
 const isLocalDevelopment = (
 	true

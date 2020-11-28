@@ -11,7 +11,7 @@ import {
 
 import compareNaturalStrings from './compareNaturalStrings'
 
-const path = global.require('path')
+const path = require('path')
 
 const validImageExtensions = [
 	'.apng',

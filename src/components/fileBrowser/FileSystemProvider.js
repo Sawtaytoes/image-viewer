@@ -17,9 +17,9 @@ import FileSystemContext from './FileSystemContext'
 import useDirectories from './useDirectories'
 import useImageFiles from './useImageFiles'
 
-const fs = global.require('fs')
-const path = global.require('path')
-const { remote } = global.require('electron')
+const fs = require('fs')
+const path = require('path')
+const { remote } = require('electron')
 
 const windowsDrivePaths = (
 	(
