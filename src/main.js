@@ -6,10 +6,10 @@ const {
 	ipcMain,
 	protocol,
 	screen,
+	shell,
 } = require('electron')
 const windowStateKeeper = require('electron-window-state')
 const os = require('os')
-// const trash = require('trash')
 
 global.processArgs = process.argv
 
@@ -60,6 +60,7 @@ if (os.platform() === 'win32') {
 		}
 	)
 }
+
 // Handle creating/removing shortcuts on Windows when installing/uninstalling.
 if (require('electron-squirrel-startup')) { // eslint-disable-line global-require
 	app
@@ -218,10 +219,10 @@ app
 			event,
 			{ filePath },
 		) => (
-			// trash(
-			// 	filePath
-			// )
-			Promise.resolve(filePath)
+			shell
+			.moveItemToTrash(
+				filePath
+			)
 		),
 	)
 })
