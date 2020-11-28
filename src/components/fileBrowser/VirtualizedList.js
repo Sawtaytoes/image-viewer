@@ -68,122 +68,7 @@ const VirtualizedList = ({
 		)
 	)
 
-	const numberOfColumnsRef = useRef()
-
-	numberOfColumnsRef
-	.current = (
-		numberOfColumns
-	)
-
-	const viewDataRef = useRef()
-
-	viewDataRef
-	.current = (
-		viewData
-	)
-
 	useLayoutEffect(
-		() => {
-			const {
-				itemSize,
-				numberOfChildren,
-			} = (
-				viewDataRef
-				.current
-			)
-
-			const clampedIndex = (
-				Math
-				.min(
-					(
-						numberOfChildren
-						- 1
-					),
-					(
-						Math
-						.max(
-							0,
-							selectedIndex,
-						)
-					),
-				)
-			)
-
-			const itemTopPosition = (
-				Math
-				.floor(
-					(
-						clampedIndex
-					) / numberOfColumnsRef.current
-				)
-				* itemSize
-			)
-
-			const itemBottomPosition = (
-				itemTopPosition
-				+ itemSize
-			)
-
-			const viewTop = (
-				scrollContainerRef
-				.current
-				.scrollTop
-			)
-
-			const viewHeight = (
-				scrollContainerRef
-				.current
-				.clientHeight
-			)
-
-			const viewBottom = (
-				viewTop
-				+ viewHeight
-			)
-
-			if (
-				itemTopPosition
-				< viewTop
-			) {
-				const scrollYPosition = (
-					itemTopPosition
-				)
-
-				scrollContainerRef
-				.current
-				.scrollTo(
-					0,
-					scrollYPosition,
-				)
-			}
-
-			if (
-				itemBottomPosition
-				> viewBottom
-			) {
-				const scrollYPosition = (
-					viewTop
-					+ (
-						itemBottomPosition
-						- viewBottom
-					)
-				)
-
-				scrollContainerRef
-				.current
-				.scrollTo(
-					0,
-					scrollYPosition,
-				)
-			}
-		},
-		[
-			children, // We're using `children` to listen for updates.
-			selectedIndex,
-		],
-	)
-
-	useEffect(
 		() => {
 			const calculateViewData = () => {
 				const viewWidth = (
@@ -297,6 +182,107 @@ const VirtualizedList = ({
 		[
 			children,
 			numberOfColumns,
+		],
+	)
+
+	useLayoutEffect(
+		() => {
+			const {
+				itemSize,
+				numberOfChildren,
+			} = (
+				viewData
+			)
+
+			const clampedIndex = (
+				Math
+				.min(
+					(
+						numberOfChildren
+						- 1
+					),
+					(
+						Math
+						.max(
+							0,
+							selectedIndex,
+						)
+					),
+				)
+			)
+
+			const itemTopPosition = (
+				Math
+				.floor(
+					(
+						clampedIndex
+					) / numberOfColumns
+				)
+				* itemSize
+			)
+
+			const itemBottomPosition = (
+				itemTopPosition
+				+ itemSize
+			)
+
+			const viewTop = (
+				scrollContainerRef
+				.current
+				.scrollTop
+			)
+
+			const viewHeight = (
+				scrollContainerRef
+				.current
+				.clientHeight
+			)
+
+			const viewBottom = (
+				viewTop
+				+ viewHeight
+			)
+
+			if (
+				itemTopPosition
+				< viewTop
+			) {
+				const scrollYPosition = (
+					itemTopPosition
+				)
+
+				scrollContainerRef
+				.current
+				.scrollTo(
+					0,
+					scrollYPosition,
+				)
+			}
+
+			if (
+				itemBottomPosition
+				> viewBottom
+			) {
+				const scrollYPosition = (
+					viewTop
+					+ (
+						itemBottomPosition
+						- viewBottom
+					)
+				)
+
+				scrollContainerRef
+				.current
+				.scrollTo(
+					0,
+					scrollYPosition,
+				)
+			}
+		},
+		[
+			numberOfColumns,
+			selectedIndex,
+			viewData,
 		],
 	)
 
