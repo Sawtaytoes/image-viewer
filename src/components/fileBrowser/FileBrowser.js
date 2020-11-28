@@ -1,6 +1,7 @@
 import { css } from '@emotion/core'
 import {
 	memo,
+	useCallback,
 	useContext,
 	useEffect,
 	useLayoutEffect,
@@ -8,9 +9,10 @@ import {
 	useState,
 } from 'react'
 
+import DeleteFileModal from '../toolkit/DeleteFileModal'
 import Directory from './Directory'
+import DirectoryControls from './DirectoryControls'
 import FileSystemContext from './FileSystemContext'
-import FolderControls from './FolderControls'
 import ImageFile from './ImageFile'
 import ImageLoaderContext from '../imageLoader/ImageLoaderContext'
 import ImageViewerContext from '../imageViewer/ImageViewerContext'
@@ -35,6 +37,15 @@ const virtualizedListContainerStyles = css`
 const FileBrowser = () => {
 	const animationFrameIdRef = useRef()
 	const virtualizedListContainerRef = useRef()
+
+	const [
+		isDeleteFileModalVisible,
+		setIsDeleteFileModalVisible,
+	] = (
+		useState(
+			false
+		)
+	)
 
 	const [
 		numberOfColumns,
@@ -90,6 +101,84 @@ const FileBrowser = () => {
 	} = (
 		useContext(
 			ImageLoaderContext
+		)
+	)
+
+	const closeDeleteFileModal = (
+		useCallback(
+			() => {
+				setIsDeleteFileModalVisible(
+					false
+				)
+			},
+			[],
+		)
+	)
+
+	const openDeleteFileModal = (
+		useCallback(
+			() => {
+				setIsDeleteFileModalVisible(
+					true
+				)
+			},
+			[],
+		)
+	)
+
+	const deleteFolder = (
+		useCallback(
+			() => {
+				const numberOfDirectories = (
+					directories
+					.length
+				)
+
+				ipcRenderer
+				.invoke(
+					'deleteFilePath',
+					{
+						filePath: (
+							selectedIndex
+							< numberOfDirectories
+						)
+						? (
+							directories
+							[selectedIndex]
+							.path
+						)
+						: (
+							imageFiles
+							[
+								selectedIndex
+								- numberOfDirectories
+							]
+							.path
+						),
+					},
+				)
+				.then(() => {
+					setFilePath(
+						''
+					)
+				})
+				.then(() => {
+					setFilePath(
+						filePath
+					)
+				})
+				.then(
+					closeDeleteFileModal
+				)
+			},
+			[
+				closeDeleteFileModal,
+				directories,
+				filePath,
+				imageFiles,
+				selectedIndex,
+				setFilePath,
+			],
 		)
 	)
 
@@ -194,7 +283,10 @@ const FileBrowser = () => {
 	)
 
 	useKeyboardControls(event => {
-		if (imageFilePath) {
+		if (
+			isDeleteFileModalVisible
+			|| imageFilePath
+		) {
 			return
 		}
 
@@ -262,6 +354,11 @@ const FileBrowser = () => {
 		}
 
 		if (
+			code === 'Delete'
+		) {
+			openDeleteFileModal()
+		}
+		else if (
 			code === 'Backspace'
 			|| code === 'Escape'
 		) {
@@ -451,7 +548,7 @@ const FileBrowser = () => {
 
 	return (
 		<div css={fileBrowserStyles}>
-			<FolderControls />
+			<DirectoryControls />
 
 			<div
 				css={virtualizedListContainerStyles}
@@ -491,6 +588,12 @@ const FileBrowser = () => {
 					}
 				</VirtualizedList>
 			</div>
+
+			<DeleteFileModal
+				isVisible={isDeleteFileModalVisible}
+				onClose={closeDeleteFileModal}
+				onConfirm={deleteFolder}
+			/>
 		</div>
 	)
 }
