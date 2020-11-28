@@ -19,7 +19,7 @@ const folderControlsStyles = css`
 const folderNameStyles = css`
 	flex: 1 1 auto;
 	font-family: 'Source Sans Pro', sans-serif;
-	font-weight: 300;
+	font-weight: 400;
 	user-select: none;
 `
 

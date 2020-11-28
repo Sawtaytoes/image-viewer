@@ -26,7 +26,7 @@ const directoryStyles = css`
 	color: #fafafa;
 	cursor: pointer;
 	font-family: 'Source Sans Pro', sans-serif;
-	font-weight: 200;
+	font-weight: 300;
 	padding-bottom: 100%;
 	position: relative;
 	width: 100%;
