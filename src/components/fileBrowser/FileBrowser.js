@@ -14,7 +14,7 @@ import FolderControls from './FolderControls'
 import ImageFile from './ImageFile'
 import ImageLoaderContext from '../imageLoader/ImageLoaderContext'
 import ImageViewerContext from '../imageViewer/ImageViewerContext'
-import useFileBrowserKeyboardControls from './useFileBrowserKeyboardControls'
+import useKeyboardControls from '../convenience/useKeyboardControls'
 import VirtualizedList from './VirtualizedList'
 
 const { ipcRenderer } = require('electron')
@@ -193,12 +193,16 @@ const FileBrowser = () => {
 		],
 	)
 
-	useFileBrowserKeyboardControls(({
-		code,
-	}) => {
+	useKeyboardControls(event => {
 		if (imageFilePath) {
 			return
 		}
+
+		const {
+			code,
+			ctrlKey: isCtrlKeyHeld,
+			shiftKey: isShiftKeyHeld,
+		} = event
 
 		const keyCodeIndexValues = {
 			ArrowDown: () => (
@@ -263,14 +267,47 @@ const FileBrowser = () => {
 		) {
 			navigateUpFolderTree()
 		}
-
-		if (code === 'Enter') {
+		else if (code === 'Enter') {
 			const numberOfDirectories = (
 				directories
 				.length
 			)
 
-			if (
+			if (isShiftKeyHeld) {
+				ipcRenderer
+				.send(
+					'createNewWindow',
+					{ filePath }
+				)
+			}
+			else if (isCtrlKeyHeld) {
+				ipcRenderer
+				.send(
+					'createNewWindow',
+					{
+						filePath: (
+							(
+								selectedIndex
+								< numberOfDirectories
+							)
+							? (
+								directories
+								[selectedIndex]
+								.path
+							)
+							: (
+								imageFiles
+								[
+									selectedIndex
+									- numberOfDirectories
+								]
+								.path
+							)
+						),
+					}
+				)
+			}
+			else if (
 				selectedIndex
 				< numberOfDirectories
 			) {

@@ -3,7 +3,7 @@ import {
 	useRef,
 } from 'react'
 
-const useFileBrowserKeyboardControls = callback => {
+const useKeyboardControls = callback => {
 	const callbackRef = useRef()
 
 	callbackRef
@@ -34,4 +34,4 @@ const useFileBrowserKeyboardControls = callback => {
 	)
 }
 
-export default useFileBrowserKeyboardControls
+export default useKeyboardControls

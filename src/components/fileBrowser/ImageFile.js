@@ -4,10 +4,14 @@ import {
 	memo,
 	useCallback,
 	useContext,
+	useRef,
 } from 'react'
 
 import Image from '../imageViewer/Image'
 import ImageViewerContext from '../imageViewer/ImageViewerContext'
+import useKeyboardControls from '../convenience/useKeyboardControls'
+
+const { ipcRenderer } = require('electron')
 
 const imageFileStyles = css`
 	align-items: center;
@@ -36,6 +40,8 @@ const ImageFile = ({
 	fileName,
 	filePath,
 }) => {
+	const isCtrlKeyHeldRef = useRef(false)
+
 	const {
 		setImageFile,
 	} = (
@@ -44,13 +50,33 @@ const ImageFile = ({
 		)
 	)
 
+	useKeyboardControls(event => {
+		isCtrlKeyHeldRef
+		.current = (
+			event
+			.ctrlKey
+		)
+	})
+
 	const goToImage = (
 		useCallback(
 			() => {
-				setImageFile({
-					name: fileName,
-					path: filePath,
-				})
+				if (
+					isCtrlKeyHeldRef
+					.current
+				) {
+					ipcRenderer
+					.send(
+						'createNewWindow',
+						{ filePath },
+					)
+				}
+				else {
+					setImageFile({
+						name: fileName,
+						path: filePath,
+					})
+				}
 			},
 			[
 				fileName,

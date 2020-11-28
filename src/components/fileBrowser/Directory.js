@@ -6,6 +6,7 @@ import {
 	useContext,
 	useEffect,
 	useState,
+	useRef,
 } from 'react'
 import { bindNodeCallback } from 'rxjs'
 import {
@@ -17,9 +18,11 @@ import {
 import FileSystemContext from './FileSystemContext'
 import Image from '../imageViewer/Image'
 import useImageFiles from './useImageFiles'
+import useKeyboardControls from '../convenience/useKeyboardControls'
 
 const fs = require('fs')
 const path = require('path')
+const { ipcRenderer } = require('electron')
 
 const directoryStyles = css`
 	background-color: #666;
@@ -63,6 +66,8 @@ const Directory = ({
 	directoryName,
 	directoryPath,
 }) => {
+	const isCtrlKeyHeldRef = useRef(false)
+
 	const {
 		setFilePath,
 	} = (
@@ -80,12 +85,34 @@ const Directory = ({
 		)
 	)
 
+	useKeyboardControls(event => {
+		isCtrlKeyHeldRef
+		.current = (
+			event
+			.ctrlKey
+		)
+	})
+
 	const goToDirectory = (
 		useCallback(
 			() => {
-				setFilePath(
-					directoryPath
-				)
+				if (
+					isCtrlKeyHeldRef
+					.current
+				) {
+					ipcRenderer
+					.send(
+						'createNewWindow',
+						{
+							filePath: directoryPath,
+						},
+					)
+				}
+				else {
+					setFilePath(
+						directoryPath
+					)
+				}
 			},
 			[
 				directoryPath,
