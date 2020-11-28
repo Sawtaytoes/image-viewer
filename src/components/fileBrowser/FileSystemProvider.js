@@ -35,10 +35,46 @@ const windowsDrivePaths = (
 	}))
 )
 
-const filePathArg = (
+const filePathMainProcessArg = (
 	remote
 	.getGlobal('processArgs')
 	[1]
+)
+
+const filePathRendererProcessArg = (
+	(
+		(
+			process
+			.argv
+			.find(arg => (
+				arg
+				.startsWith('--filePath')
+			))
+		)
+		|| ''
+	)
+	.replace(
+		'--filePath=',
+		''
+	)
+)
+
+const filePathArg = (
+	filePathRendererProcessArg
+	|| (
+		(
+			filePathMainProcessArg
+			=== '.'
+		)
+		? (
+			// TEMP hack until some sort of usable `.env` files are added.
+			'D:\\Pictures'
+		)
+		: (
+			filePathMainProcessArg
+			|| ''
+		)
+	)
 )
 
 const initialFilePath = (

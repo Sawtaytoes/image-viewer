@@ -12,11 +12,39 @@ const fs = require('fs')
 const path = require('path')
 const { remote } = require('electron')
 
-const filePathArg = (
+const filePathMainProcessArg = (
 	remote
 	.getGlobal('processArgs')
 	[1]
 )
+
+const filePathRendererProcessArg = (
+	(
+		(
+			process
+			.argv
+			.find(arg => (
+				arg
+				.startsWith('--filePath')
+			))
+		)
+		|| ''
+	)
+	.replace(
+		'--filePath=',
+		''
+	)
+)
+
+console.log({ filePathRendererProcessArg })
+
+const filePathArg = (
+	filePathRendererProcessArg
+	|| filePathMainProcessArg
+	|| ''
+)
+
+console.log({ filePathArg })
 
 const initialImageFile = (
 	(

@@ -17,6 +17,8 @@ import ImageViewerContext from '../imageViewer/ImageViewerContext'
 import useFileBrowserKeyboardControls from './useFileBrowserKeyboardControls'
 import VirtualizedList from './VirtualizedList'
 
+const { ipcRenderer } = require('electron')
+
 const fileBrowserStyles = css`
 	background-color: #444;
 	color: #fafafa;

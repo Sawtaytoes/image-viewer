@@ -3,6 +3,7 @@ const { exec } = require('child_process')
 const {
 	app,
 	BrowserWindow,
+	ipcMain,
 	protocol,
 	screen,
 } = require('electron')
@@ -64,8 +65,13 @@ if (require('electron-squirrel-startup')) { // eslint-disable-line global-requir
 	.quit()
 }
 
-const createWindow = () => {
-	const mainDisplay = screen.getPrimaryDisplay()
+const createWindow = ({
+	filePath,
+} = {}) => {
+	const mainDisplay = (
+		screen
+		.getPrimaryDisplay()
+	)
 
 	const mainWindowState = (
 		windowStateKeeper({
@@ -74,41 +80,76 @@ const createWindow = () => {
 		})
 	)
 
-	const mainWindow = (
-		new BrowserWindow({
-			autoHideMenuBar: true,
-			backgroundThrottling: true,
-			// frame: false,
-			height: mainWindowState.height,
-			// titleBarStyle: 'hiddenInset',
-			useContentSize: true,
-			webPreferences: {
-				enableRemoteModule: true,
-				nodeIntegration: true,
-				// offscreen: true,
-				plugins: isLocalDevelopment,
-				// eslint-disable-next-line no-undef
-				preload: MAIN_WINDOW_PRELOAD_WEBPACK_ENTRY,
-			},
-			width: mainWindowState.width,
-			x: mainWindowState.x,
-			y: mainWindowState.y,
-		})
-	)
+	const mainWindowRef = {
+		current: (
+			new BrowserWindow({
+				autoHideMenuBar: true,
+				backgroundThrottling: true,
+				// frame: false,
+				height: mainWindowState.height,
+				show: false,
+				// titleBarStyle: 'hiddenInset',
+				useContentSize: true,
+				webPreferences: {
+					additionalArguments: (
+						filePath
+						&& [`--filePath=${filePath}`]
+					),
+					enableRemoteModule: true,
+					nodeIntegration: true,
+					// offscreen: true,
+					plugins: isLocalDevelopment,
+					// eslint-disable-next-line no-undef
+					preload: MAIN_WINDOW_PRELOAD_WEBPACK_ENTRY,
+				},
+				width: mainWindowState.width,
+				x: mainWindowState.x,
+				y: mainWindowState.y,
+			})
+		),
+	}
 
 	mainWindowState
-	.manage(mainWindow)
+	.manage(
+		mainWindowRef
+		.current
+	)
 
-	// and load the index.html of the app.
-	mainWindow
+	mainWindowRef
+	.current
 	.loadURL(
 		// eslint-disable-next-line no-undef
 		MAIN_WINDOW_WEBPACK_ENTRY
 	)
 
+	mainWindowRef
+	.current
+	.once(
+		'closed',
+		() => {
+			mainWindowRef
+			.current = null
+		},
+	)
+
+	console.log('---------------\nloaded')
+
+	mainWindowRef
+	.current
+	.once(
+		'ready-to-show',
+		() => {
+			console.log('---------------\nready to show')
+			mainWindowRef
+			.current
+			.show()
+		},
+	)
+
 	// Open the DevTools.
 	if (isLocalDevelopment) {
-		mainWindow
+		mainWindowRef
+		.current
 		.webContents
 		.openDevTools()
 	}
@@ -152,6 +193,20 @@ app
 				console.error(error)
 			}
 		}
+	)
+})
+.then(() => {
+	ipcMain
+	.on(
+		'createNewWindow',
+		(
+			event,
+			data,
+		) => {
+			createWindow(
+				data
+			)
+		},
 	)
 })
 .then(createWindow)
