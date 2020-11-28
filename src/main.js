@@ -9,6 +9,7 @@ const {
 } = require('electron')
 const windowStateKeeper = require('electron-window-state')
 const os = require('os')
+const trash = require('trash')
 
 global.processArgs = process.argv
 
@@ -207,6 +208,20 @@ app
 				data
 			)
 		},
+	)
+})
+.then(() => {
+	ipcMain
+	.handle(
+		'deleteFilePath',
+		(
+			event,
+			{ filePath },
+		) => (
+			trash(
+				filePath
+			)
+		),
 	)
 })
 .then(createWindow)
