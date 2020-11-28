@@ -79,8 +79,12 @@ const filePathArg = (
 
 const initialFilePath = (
 	(
-		sessionStorage
-		.getItem('filePath')
+		new URLSearchParams(
+			window
+			.location
+			.search
+		)
+		.get('filePath')
 	)
 	|| (
 		filePathArg
@@ -138,10 +142,31 @@ const FileSystemProvider = ({
 
 	useEffect(
 		() => {
-			sessionStorage
-			.setItem(
+			const urlSearchParams = (
+				new URLSearchParams(
+					window
+					.location
+					.search
+				)
+			)
+
+			urlSearchParams
+			.set(
 				'filePath',
 				filePath,
+			)
+
+			window
+			.history
+			.replaceState(
+				null,
+				'',
+				(
+					'?'
+					.concat(
+						urlSearchParams
+					)
+				),
 			)
 		},
 		[filePath],
