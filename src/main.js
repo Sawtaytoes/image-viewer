@@ -9,7 +9,7 @@ const {
 } = require('electron')
 const windowStateKeeper = require('electron-window-state')
 const os = require('os')
-const trash = require('trash')
+// const trash = require('trash')
 
 global.processArgs = process.argv
 
@@ -218,9 +218,10 @@ app
 			event,
 			{ filePath },
 		) => (
-			trash(
-				filePath
-			)
+			// trash(
+			// 	filePath
+			// )
+			Promise.resolve(filePath)
 		),
 	)
 })
