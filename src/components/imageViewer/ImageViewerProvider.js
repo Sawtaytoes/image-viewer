@@ -36,15 +36,11 @@ const filePathRendererProcessArg = (
 	)
 )
 
-console.log({ filePathRendererProcessArg })
-
 const filePathArg = (
 	filePathRendererProcessArg
 	|| filePathMainProcessArg
 	|| ''
 )
-
-console.log({ filePathArg })
 
 const initialImageFile = (
 	(
