@@ -3,6 +3,10 @@
 - [ESCAPE] key un-highlights from view where as clicking re-highlights.
 - Create custom scrollbar overlay to prevent shaky resize when scrollbar appears and disappears.
 - Figure out why opening a second instance in `ImageViewer` causes it to only show a white screen. This is most-likely because the `isVisible` flag isn't set correctly.
+- "Are you sure?" Modal confirmation dialog. Used for file or folder deletion.
+- Figure out multi-window not loading. This is noticeable when using the executable.
+- Fix hover issue (active?) when clicking image viewer navigation.
+- Keyboard keys screen state provider so each keyboard component can enable or disable keys based on a screen state.
 
 ## Image Loader
 - Ensure 4-image pipeline is respected.
