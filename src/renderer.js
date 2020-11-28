@@ -1,4 +1,4 @@
-// 'react-hot-loader' has to import prior to React.
+// 'react-hot-loader' has to be imported prior to React.
 import 'react-hot-loader'
 
 import { render } from 'react-dom'
