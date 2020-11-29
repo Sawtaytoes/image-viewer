@@ -14,7 +14,6 @@ const usePointerHover = ({
 	callback,
 	domElementRef,
 }) => {
-	const animationFrameIdRef = useRef()
 	const callbackRef = useRef()
 
 	callbackRef
@@ -33,30 +32,8 @@ const usePointerHover = ({
 				})
 			}
 
-			const throttleHoverStateNotification = event => {
-				if (
-					animationFrameIdRef
-					.current
-				) {
-					return
-				}
-
-				animationFrameIdRef
-				.current = (
-					window
-					.requestAnimationFrame(() => {
-						animationFrameIdRef
-						.current = null
-
-						hoverStateNotification(
-							event
-						)
-					})
-				)
-			}
-
 			const onPointerInitialMovement = event => {
-				throttleHoverStateNotification(
+				hoverStateNotification(
 					event
 				)
 
@@ -67,14 +44,6 @@ const usePointerHover = ({
 				)
 			}
 
-			const onMouseUp = event => {
-				if (event.pointerType !== 'touch') {
-					throttleHoverStateNotification(
-						event
-					)
-				}
-			}
-
 			const domElement = (
 				domElementRef
 				.current
@@ -83,13 +52,13 @@ const usePointerHover = ({
 			domElement
 			.addEventListener(
 				'pointerup',
-				onMouseUp,
+				hoverStateNotification,
 			)
 
 			domElement
 			.addEventListener(
 				'pointerenter',
-				throttleHoverStateNotification,
+				hoverStateNotification,
 			)
 
 			domElement
@@ -101,29 +70,20 @@ const usePointerHover = ({
 			domElement
 			.addEventListener(
 				'pointerout',
-				throttleHoverStateNotification,
+				hoverStateNotification,
 			)
 
 			return () => {
-				window
-				.cancelAnimationFrame(
-					animationFrameIdRef
-					.current
-				)
-
-				animationFrameIdRef
-				.current = null
-
 				domElement
 				.removeEventListener(
 					'pointerup',
-					onMouseUp,
+					hoverStateNotification,
 				)
 
 				domElement
 				.removeEventListener(
 					'pointerenter',
-					throttleHoverStateNotification,
+					hoverStateNotification,
 				)
 
 				domElement
@@ -135,7 +95,7 @@ const usePointerHover = ({
 				domElement
 				.removeEventListener(
 					'pointerout',
-					throttleHoverStateNotification,
+					hoverStateNotification,
 				)
 			}
 		},
