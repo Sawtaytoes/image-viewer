@@ -1,5 +1,10 @@
 # Tasks
 
+## Priority
+- Unified data store between windows.
+- Title bar text image name and dir.
+- Window placement on right side of screen.
+
 - [ESCAPE] key un-highlights from view where as clicking re-highlights.
 - Create custom scrollbar overlay to prevent shaky resize when scrollbar appears and disappears.
 - Figure out why opening a second instance in `ImageViewer` causes it to only show a white screen. This is most-likely because the `isVisible` flag isn't set correctly.
