@@ -7,7 +7,7 @@
 - Figure out multi-window not loading. This is noticeable when using the executable.
 - Fix hover issue (active?) when clicking image viewer navigation.
 - Keyboard keys screen state provider so each keyboard component can enable or disable keys based on a screen state.
-- Load Google Fonts locally rather than from the web to speed up multiple instances.
+- Load Google Fonts locally rather than from the web to speed up multiple instances. Might require pulling in fonts via EmotionJS, but they might not register in Webpack that way.
 
 ## Image Loader
 - Ensure 4-image pipeline is respected.
