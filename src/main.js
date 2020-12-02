@@ -8,7 +8,6 @@ const {
 	screen,
 	shell,
 } = require('electron')
-const windowStateKeeper = require('electron-window-state')
 const os = require('os')
 
 global.processArgs = process.argv
@@ -75,20 +74,6 @@ const createWindow = ({
 		.getPrimaryDisplay()
 	)
 
-	console.log(mainDisplay)
-
-	// const mainWindowState = (
-	// 	windowStateKeeper({
-	// 		defaultHeight: mainDisplay.workAreaSize.height,
-	// 		defaultWidth: mainDisplay.workAreaSize.width * 0.5,
-	// 	})
-	// )
-
-	console.log(
-		mainDisplay.workAreaSize.width * mainDisplay.scaleFactor,
-		(mainDisplay.workAreaSize.width * mainDisplay.scaleFactor) / 2,
-	)
-
 	const mainWindowRef = {
 		current: (
 			new BrowserWindow({
@@ -112,8 +97,6 @@ const createWindow = ({
 					preload: MAIN_WINDOW_PRELOAD_WEBPACK_ENTRY,
 				},
 				width: Math.floor((mainDisplay.workAreaSize.width) / 2),
-				// x: typeof mainWindowState.x !== 'number' ? mainDisplay.workAreaSize.width * 0.5 : mainWindowState.x,
-				// y: mainWindowState.y,
 				x: Math.floor(
 					(mainDisplay.workAreaSize.width) / 2
 				) - 8,
@@ -121,12 +104,6 @@ const createWindow = ({
 			})
 		),
 	}
-
-	// mainWindowState
-	// .manage(
-	// 	mainWindowRef
-	// 	.current
-	// )
 
 	mainWindowRef
 	.current
