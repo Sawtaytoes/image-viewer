@@ -101,7 +101,7 @@ if (os.platform() === 'win32') {
 }
 
 // Handle creating/removing shortcuts on Windows when installing/uninstalling.
-if (require('electron-squirrel-startup')) { // eslint-disable-line global-require
+if (require('electron-squirrel-startup')) {
 	app
 	.quit()
 }
