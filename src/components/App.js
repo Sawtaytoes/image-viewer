@@ -9,6 +9,7 @@ import FileSystemProvider from './fileBrowser/FileSystemProvider'
 import ImageLoaderProvider from './imageLoader/ImageLoaderProvider'
 import ImageViewer from './imageViewer/ImageViewer'
 import ImageViewerProvider from './imageViewer/ImageViewerProvider'
+import TitleBar from './convenience/TitleBar'
 import useDisableScrollKeyFunctions from './convenience/useDisableScrollKeyFunctions'
 import useWindowRefreshKeys from './convenience/useWindowRefreshKeys'
 
@@ -38,6 +39,7 @@ const App = () => {
 			<ImageViewerProvider>
 				<FileSystemProvider>
 					<ImageLoaderProvider>
+						<TitleBar />
 						<FileBrowser />
 						<ImageViewer />
 					</ImageLoaderProvider>
