@@ -1,13 +1,23 @@
+const config = require('config')
+
 const rules = require('./webpack.rules')
 
+const isLocalDevelopment = (
+	config
+	.get('isLocalDevelopment')
+)
+
 module.exports = {
-  /**
-   * This is the main entry point for your application, it's the first file
-   * that runs in the main process.
-   */
-  entry: './src/main.js',
-  // Put your normal webpack config below here
-  module: {
-    rules,
-  },
+	devtool: (
+		isLocalDevelopment
+		&& 'eval-source-map'
+	),
+	entry: './src/main.js',
+	module: {
+		rules,
+	},
+	stats: {
+		colors: true,
+		// preset: 'errors-warnings',
+	},
 }

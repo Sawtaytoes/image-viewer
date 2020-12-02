@@ -1,4 +1,5 @@
 const config = require('config')
+
 const rules = require('./webpack.rules')
 
 const isLocalDevelopment = (
