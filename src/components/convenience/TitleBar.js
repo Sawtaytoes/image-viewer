@@ -1,3 +1,4 @@
+import path from 'path'
 import {
 	useContext,
 	useEffect,
@@ -5,8 +6,6 @@ import {
 
 import FileSystemContext from '../fileBrowser/FileSystemContext'
 import ImageViewerContext from '../imageViewer/ImageViewerContext'
-
-const path = require('path')
 
 const TitleBar = () => {
 	const {

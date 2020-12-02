@@ -1,4 +1,7 @@
 import { css } from '@emotion/core'
+import { ipcRenderer } from 'electron'
+import fs from 'fs'
+import path from 'path'
 import PropTypes from 'prop-types'
 import {
 	memo,
@@ -19,10 +22,6 @@ import FileSystemContext from './FileSystemContext'
 import Image from '../imageViewer/Image'
 import useImageFiles from './useImageFiles'
 import useKeyboardControls from '../convenience/useKeyboardControls'
-
-const fs = require('fs')
-const path = require('path')
-const { ipcRenderer } = require('electron')
 
 const directoryStyles = css`
 	background-color: #666;

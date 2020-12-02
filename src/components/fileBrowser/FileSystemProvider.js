@@ -1,3 +1,6 @@
+import { remote } from 'electron'
+import fs from 'fs'
+import path from 'path'
 import PropTypes from 'prop-types'
 import {
 	memo,
@@ -16,10 +19,6 @@ import {
 import FileSystemContext from './FileSystemContext'
 import useDirectories from './useDirectories'
 import useImageFiles from './useImageFiles'
-
-const fs = require('fs')
-const path = require('path')
-const { remote } = require('electron')
 
 const windowsDrivePaths = (
 	(

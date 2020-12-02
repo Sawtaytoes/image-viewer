@@ -1,17 +1,16 @@
+import path from 'path'
+import {
+ useEffect,
+ useState,
+} from 'react'
 import { from } from 'rxjs'
 import {
 	filter,
 	map,
 	toArray,
 } from 'rxjs/operators'
-import {
- useEffect,
- useState,
-} from 'react'
 
 import compareNaturalStrings from './compareNaturalStrings'
-
-const path = require('path')
 
 const validImageExtensions = [
 	'.apng',

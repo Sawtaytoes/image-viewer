@@ -1,14 +1,15 @@
-const { exec } = require('child_process')
-// const config = require('config')
-const {
+import { exec } from 'child_process'
+import {
 	app,
 	BrowserWindow,
 	ipcMain,
 	protocol,
 	screen,
 	shell,
-} = require('electron')
-const os = require('os')
+	webContents,
+} from 'electron'
+import electronSquirrelStartup from 'electron-squirrel-startup'
+import os from 'os'
 
 const singleInstanceLock = (
 	app
@@ -101,7 +102,7 @@ if (os.platform() === 'win32') {
 }
 
 // Handle creating/removing shortcuts on Windows when installing/uninstalling.
-if (require('electron-squirrel-startup')) {
+if (electronSquirrelStartup) {
 	app
 	.quit()
 }
@@ -120,7 +121,11 @@ const createWindow = ({
 				autoHideMenuBar: true,
 				backgroundThrottling: true,
 				// frame: false,
-				height: Math.floor(mainDisplay.workAreaSize.height * mainDisplay.scaleFactor),
+				height: (
+					mainDisplay
+					.workAreaSize
+					.height
+				),
 				show: false,
 				// titleBarStyle: 'hiddenInset',
 				useContentSize: true,
@@ -129,17 +134,37 @@ const createWindow = ({
 						filePath
 						&& [`--filePath=${filePath}`]
 					),
+					contextIsolation: false,
 					enableRemoteModule: true,
 					nodeIntegration: true,
 					// offscreen: true,
 					plugins: isLocalDevelopment,
-					// eslint-disable-next-line no-undef
-					preload: MAIN_WINDOW_PRELOAD_WEBPACK_ENTRY,
+					preload: (
+						// eslint-disable-next-line no-undef
+						MAIN_WINDOW_PRELOAD_WEBPACK_ENTRY
+					),
 				},
-				width: Math.floor((mainDisplay.workAreaSize.width) / 2),
-				x: Math.floor(
-					(mainDisplay.workAreaSize.width) / 2
-				) - 8,
+				width: (
+					Math
+					.floor(
+						(
+							mainDisplay
+							.workAreaSize
+							.width
+						) / 2
+					)
+				),
+				x: (
+					Math
+					.floor(
+						(
+							mainDisplay
+							.workAreaSize
+							.width
+						) / 2
+					)
+					- 8
+				),
 				y: 0,
 			})
 		),
@@ -252,6 +277,14 @@ app
 	)
 })
 .then(createWindow)
+.then(() => {
+	setTimeout(() => {
+		console.log(
+			webContents
+			.getAllWebContents()
+		)
+	})
+})
 
 // Quit when all windows are closed, except on macOS. There, it's common
 // for applications and their menu bar to stay active until the user quits

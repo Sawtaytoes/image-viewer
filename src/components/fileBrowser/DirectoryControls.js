@@ -1,6 +1,7 @@
 import ArrowUpwardRoundedIcon from '@material-ui/icons/ArrowUpwardRounded'
 import DeleteForeverRoundedIcon from '@material-ui/icons/DeleteForeverRounded'
 import { css } from '@emotion/core'
+import { ipcRenderer } from 'electron'
 import {
 	memo,
 	useCallback,
@@ -10,8 +11,6 @@ import {
 
 import DeleteFileModal from '../toolkit/DeleteFileModal'
 import FileSystemContext from './FileSystemContext'
-
-const { ipcRenderer } = require('electron')
 
 const directoryControlsStyles = css`
 	align-items: center;

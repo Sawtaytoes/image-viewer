@@ -1,5 +1,6 @@
-import PropTypes from 'prop-types'
 import { css } from '@emotion/core'
+import { ipcRenderer } from 'electron'
+import PropTypes from 'prop-types'
 import {
 	memo,
 	useCallback,
@@ -10,8 +11,6 @@ import {
 import Image from '../imageViewer/Image'
 import ImageViewerContext from '../imageViewer/ImageViewerContext'
 import useKeyboardControls from '../convenience/useKeyboardControls'
-
-const { ipcRenderer } = require('electron')
 
 const imageFileStyles = css`
 	align-items: center;

@@ -1,3 +1,4 @@
+import path from 'path'
 import {
 	BehaviorSubject,
 	from,
@@ -16,8 +17,6 @@ import {
 } from 'rxjs/operators'
 
 import catchEpicError from './catchEpicError'
-
-const path = require('path')
 
 const isLocalDevelopment = (
 	true

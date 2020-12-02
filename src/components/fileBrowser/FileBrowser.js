@@ -1,4 +1,5 @@
 import { css } from '@emotion/core'
+import { ipcRenderer } from 'electron'
 import {
 	memo,
 	useCallback,
@@ -18,8 +19,6 @@ import ImageLoaderContext from '../imageLoader/ImageLoaderContext'
 import ImageViewerContext from '../imageViewer/ImageViewerContext'
 import useKeyboardControls from '../convenience/useKeyboardControls'
 import VirtualizedList from './VirtualizedList'
-
-const { ipcRenderer } = require('electron')
 
 const fileBrowserStyles = css`
 	background-color: #444;

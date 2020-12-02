@@ -1,3 +1,6 @@
+import { remote } from 'electron'
+import fs from 'fs'
+import path from 'path'
 import PropTypes from 'prop-types'
 import {
 	memo,
@@ -7,10 +10,6 @@ import {
 } from 'react'
 
 import ImageViewerContext from './ImageViewerContext'
-
-const fs = require('fs')
-const path = require('path')
-const { remote } = require('electron')
 
 const filePathMainProcessArg = (
 	remote
