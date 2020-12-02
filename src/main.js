@@ -10,6 +10,46 @@ const {
 } = require('electron')
 const os = require('os')
 
+const singleInstanceLock = (
+	app
+	.requestSingleInstanceLock()
+)
+
+if (singleInstanceLock) {
+	app
+	.on(
+		'second-instance',
+		(
+			event,
+			commandLine,
+			workingDirectory,
+		) => {
+			const lastCommandLineItem = (
+				(
+					commandLine
+					.length
+				)
+				- 1
+			)
+
+			createWindow({
+				filePath: (
+					(
+						commandLine
+						[lastCommandLineItem]
+					)
+					|| workingDirectory
+				),
+			})
+		}
+	)
+}
+else {
+	// Early-fail when creating a second instance.
+	app
+	.quit()
+}
+
 global.processArgs = process.argv
 
 const isLocalDevelopment = (
