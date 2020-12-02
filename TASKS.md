@@ -5,6 +5,7 @@
 - Title bar text image name and dir.
 - Window placement on right side of screen.
 
+## Global
 - [ESCAPE] key un-highlights from view where as clicking re-highlights.
 - Create custom scrollbar overlay to prevent shaky resize when scrollbar appears and disappears.
 - Figure out why opening a second instance in `ImageViewer` causes it to only show a white screen. This is most-likely because the `isVisible` flag isn't set correctly.
@@ -13,6 +14,11 @@
 - Fix hover issue (active?) when clicking image viewer navigation.
 - Keyboard keys screen state provider so each keyboard component can enable or disable keys based on a screen state.
 - Load Google Fonts locally rather than from the web to speed up multiple instances. Might require pulling in fonts via EmotionJS, but they might not register in Webpack that way.
+- Add multiple states of priority. When something is prioritized, it's technically prioritized at a certain priority level. Either the state is `prioritized` with an added `priorityLevel` or `priority3`. `priorityLevel` is more versatile.
+- When a window is focused, that should bump the priority level of those images over other windows which are not currently in focus.
+- Images that are in the folder but currently not in view should be the lowest priority.
+- Add the ability to throttle download speed of super low priority images.
+- Images should be stored indefinitely until some max size is reached to allow for faster reloading when quickly switching between folders. If this occurs, these residual images would be at the lowest priority.
 
 ## Image Loader
 - Ensure 4-image pipeline is respected.
