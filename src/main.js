@@ -75,11 +75,18 @@ const createWindow = ({
 		.getPrimaryDisplay()
 	)
 
-	const mainWindowState = (
-		windowStateKeeper({
-			defaultHeight: mainDisplay.workAreaSize.height,
-			defaultWidth: mainDisplay.workAreaSize.width * 0.5,
-		})
+	console.log(mainDisplay)
+
+	// const mainWindowState = (
+	// 	windowStateKeeper({
+	// 		defaultHeight: mainDisplay.workAreaSize.height,
+	// 		defaultWidth: mainDisplay.workAreaSize.width * 0.5,
+	// 	})
+	// )
+
+	console.log(
+		mainDisplay.workAreaSize.width * mainDisplay.scaleFactor,
+		(mainDisplay.workAreaSize.width * mainDisplay.scaleFactor) / 2,
 	)
 
 	const mainWindowRef = {
@@ -88,7 +95,7 @@ const createWindow = ({
 				autoHideMenuBar: true,
 				backgroundThrottling: true,
 				// frame: false,
-				height: mainWindowState.height,
+				height: Math.floor(mainDisplay.workAreaSize.height * mainDisplay.scaleFactor),
 				show: false,
 				// titleBarStyle: 'hiddenInset',
 				useContentSize: true,
@@ -104,18 +111,22 @@ const createWindow = ({
 					// eslint-disable-next-line no-undef
 					preload: MAIN_WINDOW_PRELOAD_WEBPACK_ENTRY,
 				},
-				width: mainWindowState.width,
-				x: mainWindowState.x,
-				y: mainWindowState.y,
+				width: Math.floor((mainDisplay.workAreaSize.width) / 2),
+				// x: typeof mainWindowState.x !== 'number' ? mainDisplay.workAreaSize.width * 0.5 : mainWindowState.x,
+				// y: mainWindowState.y,
+				x: Math.floor(
+					(mainDisplay.workAreaSize.width) / 2
+				) - 8,
+				y: 0,
 			})
 		),
 	}
 
-	mainWindowState
-	.manage(
-		mainWindowRef
-		.current
-	)
+	// mainWindowState
+	// .manage(
+	// 	mainWindowRef
+	// 	.current
+	// )
 
 	mainWindowRef
 	.current
