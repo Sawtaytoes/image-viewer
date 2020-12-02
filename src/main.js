@@ -162,14 +162,11 @@ const createWindow = ({
 		},
 	)
 
-	console.time('started')
-
 	mainWindowRef
 	.current
 	.once(
 		'ready-to-show',
 		() => {
-			console.timeEnd('started')
 			mainWindowRef
 			.current
 			.show()
