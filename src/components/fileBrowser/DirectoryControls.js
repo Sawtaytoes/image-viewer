@@ -76,7 +76,10 @@ const DirectoryControls = () => {
 				ipcRenderer
 				.invoke(
 					'deleteFilePath',
-					{ filePath },
+					{
+						filePath,
+						isDirectory: true,
+					},
 				)
 				.then(
 					navigateUpFolderTree

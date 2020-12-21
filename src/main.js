@@ -270,11 +270,13 @@ app
 		'deleteFilePath',
 		(
 			event,
-			{ filePath },
+			{
+				filePath,
+				isDirectory,
+			},
 		) => {
 			const isDeleted = (
-				// `moveItemToTrash` is deprecated in favor of the `trashItem`.
-				// While `trashItem` returns a promise, it's not obvious if this has the option to delete files on failure.
+				// `moveItemToTrash` is deprecated in favor of the `trashItem` in Electron v12 and removed completely in Electron v13+.
 				shell
 				.moveItemToTrash(
 					filePath,
@@ -282,21 +284,40 @@ app
 			)
 
 			if (!isDeleted) {
-				fs
-				.rmdirSync(
-					filePath,
-					{ recursive: true },
-				)
+				if (isDirectory) {
+					fs
+					.rmdirSync(
+						filePath,
+						{ recursive: true },
+					)
+				}
+				else {
+					fs
+					.unlinkSync(
+						filePath
+					)
+				}
 			}
 
+			// `trashItem` will be used in Electron v12+.
 			// shell
 			// .trashItem(
 			// 	filePath
 			// )
 			// .catch(() => (
-			// 	fsPromises
-			// 	.rmdir(
-			// 		filePath
+			// 	isDirectory
+			// 	? (
+			// 		fsPromises
+			// 		.rmdir(
+			// 			filePath,
+			// 			{ recursive: true },
+			// 		)
+			// 	)
+			// 	: (
+			// 		fsPromises
+			// 		.unlink(
+			// 			filePath
+			// 		)
 			// 	)
 			// ))
 

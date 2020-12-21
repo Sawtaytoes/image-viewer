@@ -125,7 +125,7 @@ const FileBrowser = () => {
 		)
 	)
 
-	const deleteFolder = (
+	const deleteFileOrFolder = (
 		useCallback(
 			() => {
 				const numberOfDirectories = (
@@ -133,27 +133,32 @@ const FileBrowser = () => {
 					.length
 				)
 
+				const isDirectory = (
+					selectedIndex
+					< numberOfDirectories
+				)
+
 				ipcRenderer
 				.invoke(
 					'deleteFilePath',
 					{
 						filePath: (
-							selectedIndex
-							< numberOfDirectories
-						)
-						? (
-							directories
-							[selectedIndex]
-							.path
-						)
-						: (
-							imageFiles
-							[
-								selectedIndex
-								- numberOfDirectories
-							]
-							.path
+							isDirectory
+							? (
+								directories
+								[selectedIndex]
+								.path
+							)
+							: (
+								imageFiles
+								[
+									selectedIndex
+									- numberOfDirectories
+								]
+								.path
+							)
 						),
+						isDirectory,
 					},
 				)
 				.then(() => {
@@ -591,7 +596,7 @@ const FileBrowser = () => {
 			<DeleteFileModal
 				isVisible={isDeleteFileModalVisible}
 				onClose={closeDeleteFileModal}
-				onConfirm={deleteFolder}
+				onConfirm={deleteFileOrFolder}
 			/>
 		</div>
 	)
