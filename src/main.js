@@ -9,6 +9,7 @@ import {
 	webContents,
 } from 'electron'
 import electronSquirrelStartup from 'electron-squirrel-startup'
+import fs from 'fs'
 import os from 'os'
 
 // const singleInstanceLock = (
@@ -268,12 +269,25 @@ app
 		(
 			event,
 			{ filePath },
-		) => (
-			shell
+		) => {
+			const isDeleted = (
 			.moveItemToTrash(
-				filePath
+				shell
+				.moveItemToTrash(
+					filePath,
+				)
 			)
-		),
+
+			if (!isDeleted) {
+				fs
+				.rmdirSync(
+					filePath,
+					{ recursive: true },
+				)
+			}
+
+			return true
+		},
 	)
 })
 .then(createWindow)
