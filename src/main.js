@@ -9,6 +9,8 @@ import {
 	webContents,
 } from 'electron'
 import electronSquirrelStartup from 'electron-squirrel-startup'
+// import fsPromises from 'fs/promises' // Node.js v14+
+// import { promises as fsPromises } from 'fs' // Use 'fs/promises' instead when in Node.js v14.
 import fs from 'fs'
 import os from 'os'
 
@@ -271,7 +273,8 @@ app
 			{ filePath },
 		) => {
 			const isDeleted = (
-			.moveItemToTrash(
+				// `moveItemToTrash` is deprecated in favor of the `trashItem`.
+				// While `trashItem` returns a promise, it's not obvious if this has the option to delete files on failure.
 				shell
 				.moveItemToTrash(
 					filePath,
@@ -285,6 +288,17 @@ app
 					{ recursive: true },
 				)
 			}
+
+			// shell
+			// .trashItem(
+			// 	filePath
+			// )
+			// .catch(() => (
+			// 	fsPromises
+			// 	.rmdir(
+			// 		filePath
+			// 	)
+			// ))
 
 			return true
 		},
