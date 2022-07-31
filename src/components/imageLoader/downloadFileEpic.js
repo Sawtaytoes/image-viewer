@@ -17,7 +17,8 @@ const downloadFileEpic = (
 ) => (
 	action$
 	.pipe(
-		ofType(addFilePathToProcessingQueue.type),
+		ofType(addFilePathToProcessingQueue
+		.type),
 		pluck('payload'),
 		map(({
 			filePath,

@@ -12,8 +12,12 @@ const catchEpicError = epicName => (
 				'\n'
 			),
 			(
-				error.constructor.name === 'ErrorEvent'
-				? error.error.stack
+				error
+				.constructor
+				.name === 'ErrorEvent'
+				? error
+				.error
+				.stack
 				: error
 			),
 		)

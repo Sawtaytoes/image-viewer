@@ -84,8 +84,10 @@ export const createReduxObservable = ({
 									!(
 										Object
 										.is(
-											previousState[stateKey],
-											nextState[stateKey],
+											previousState
+											[stateKey],
+											nextState
+											[stateKey],
 										)
 									)
 								))
@@ -154,7 +156,8 @@ export const createReduxObservable = ({
 			.pipe(
 				filter(epic => (
 					!(
-						Object.is(
+						Object
+						.is(
 							typeof epic,
 							'boolean',
 						)

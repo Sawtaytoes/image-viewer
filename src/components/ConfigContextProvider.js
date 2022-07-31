@@ -3,7 +3,9 @@ import PropTypes from 'prop-types'
 import ConfigContext from './ConfigContext'
 
 const propTypes = {
-	children: PropTypes.node.isRequired,
+	children: PropTypes
+	.node
+	.isRequired,
 }
 
 const ConfigContextProvider = ({

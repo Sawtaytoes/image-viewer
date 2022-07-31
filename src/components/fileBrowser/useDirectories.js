@@ -5,8 +5,8 @@ import {
 	toArray,
 } from 'rxjs/operators'
 import {
- useEffect,
- useState,
+	useEffect,
+	useState,
 } from 'react'
 
 import compareNaturalStrings from './compareNaturalStrings'
@@ -64,8 +64,10 @@ const useDirectories = directoryContents => {
 							b,
 						) => (
 							compareNaturalStrings(
-								a.name,
-								b.name,
+								a
+								.name,
+								b
+								.name,
 							)
 						))
 					)),

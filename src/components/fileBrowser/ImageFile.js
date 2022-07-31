@@ -1,4 +1,4 @@
-import { css } from '@emotion/core'
+import { css } from '@emotion/react'
 import { ipcRenderer } from 'electron'
 import PropTypes from 'prop-types'
 import {
@@ -31,8 +31,12 @@ const imageFileContentStyles = css`
 `
 
 const propTypes = {
-	fileName: PropTypes.string.isRequired,
-	filePath: PropTypes.string.isRequired,
+	fileName: PropTypes
+	.string
+	.isRequired,
+	filePath: PropTypes
+	.string
+	.isRequired,
 }
 
 const ImageFile = ({

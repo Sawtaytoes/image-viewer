@@ -9,7 +9,8 @@ import {
 const initialState = null
 
 const reducerActions = {
-	[addFilePathToQueue.type]: (
+	[addFilePathToQueue
+	.type]: (
 		previousState,
 		{ payload }
 	) => (
@@ -17,7 +18,8 @@ const reducerActions = {
 		.queueState
 	),
 
-	[removeFilePathFromQueue.type]: () => (
+	[removeFilePathFromQueue
+	.type]: () => (
 		initialState
 	),
 }

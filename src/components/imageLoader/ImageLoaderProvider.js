@@ -18,7 +18,9 @@ import {
 } from './createdReduxObservable'
 
 const propTypes = {
-	children: PropTypes.node.isRequired,
+	children: PropTypes
+	.node
+	.isRequired,
 }
 
 const ImageLoaderProvider = ({

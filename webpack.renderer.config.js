@@ -1,5 +1,6 @@
 const config = require('config')
 
+const plugins = require('./webpack.plugins')
 const rules = require('./webpack.rules')
 
 const isLocalDevelopment = (
@@ -7,7 +8,11 @@ const isLocalDevelopment = (
 	.get('isLocalDevelopment')
 )
 
-module.exports = {
+module
+.exports = {
+	devServer: {
+		hot: true,
+	},
 	devtool: (
 		isLocalDevelopment
 		&& 'eval-source-map'
@@ -15,17 +20,8 @@ module.exports = {
 	module: {
 		rules,
 	},
+	plugins,
 	resolve: {
-		alias: {
-			'react-dom': (
-				isLocalDevelopment
-				? '@hot-loader/react-dom'
-				: 'react-dom'
-			),
-			'rxjs': (
-				'rxjs/_esm2015'
-			),
-		},
 		extensions: ['.js'],
 	},
 	stats: {

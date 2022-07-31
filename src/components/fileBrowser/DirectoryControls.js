@@ -1,6 +1,6 @@
 import ArrowUpwardRoundedIcon from '@material-ui/icons/ArrowUpwardRounded'
 import DeleteForeverRoundedIcon from '@material-ui/icons/DeleteForeverRounded'
-import { css } from '@emotion/core'
+import { css } from '@emotion/react'
 import { ipcRenderer } from 'electron'
 import {
 	memo,

@@ -2,8 +2,12 @@ import PropTypes from 'prop-types'
 import React from 'react'
 
 const propTypes = {
-	children: PropTypes.node.isRequired,
-	renderTargetId: PropTypes.string.isRequired,
+	children: PropTypes
+	.node
+	.isRequired,
+	renderTargetId: PropTypes
+	.string
+	.isRequired,
 }
 
 const ReactRenderTarget = ({

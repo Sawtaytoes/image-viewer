@@ -21,7 +21,8 @@ const removeFilePathEpic = (
 ) => (
 	action$
 	.pipe(
-		ofType(removeFilePath.type),
+		ofType(removeFilePath
+		.type),
 		pluck('payload'),
 		tap(({
 			filePath,

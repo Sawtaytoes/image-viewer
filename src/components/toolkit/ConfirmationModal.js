@@ -1,4 +1,4 @@
-import { css } from '@emotion/core'
+import { css } from '@emotion/react'
 import PropTypes from 'prop-types'
 import { memo } from 'react'
 
@@ -44,12 +44,22 @@ const messageStyles = css`
 `
 
 const propTypes = {
-	children: PropTypes.node.isRequired,
-	closeButtonText: PropTypes.string.isRequired,
-	confirmButtonText: PropTypes.string.isRequired,
+	children: PropTypes
+	.node
+	.isRequired,
+	closeButtonText: PropTypes
+	.string
+	.isRequired,
+	confirmButtonText: PropTypes
+	.string
+	.isRequired,
 	isVisible: PropTypes.bool,
-	onClose: PropTypes.func.isRequired,
-	onConfirm: PropTypes.func.isRequired,
+	onClose: PropTypes
+	.func
+	.isRequired,
+	onConfirm: PropTypes
+	.func
+	.isRequired,
 }
 
 const ConfirmationModal = ({

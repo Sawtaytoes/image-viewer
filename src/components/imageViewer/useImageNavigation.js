@@ -48,10 +48,10 @@ const useImageNavigation = () => {
 				setImageFile(
 					imageFiles
 					[
-						Math.min(
-							imageFileIndex + 1,
-							imageFiles.length - 1,
-						)
+					Math.min(
+						imageFileIndex + 1,
+						imageFiles.length - 1,
+					)
 					]
 				)
 			},
@@ -69,10 +69,10 @@ const useImageNavigation = () => {
 				setImageFile(
 					imageFiles
 					[
-						Math.max(
-							imageFileIndex - 1,
-							0,
-						)
+					Math.max(
+						imageFileIndex - 1,
+						0,
+					)
 					]
 				)
 			},

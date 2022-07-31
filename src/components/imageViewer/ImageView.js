@@ -1,5 +1,5 @@
 import PropTypes from 'prop-types'
-import { css } from '@emotion/core'
+import { css } from '@emotion/react'
 import {
 	memo,
 	useContext,
@@ -57,8 +57,12 @@ const unavailableNavigationStyles = css`
 `
 
 const propTypes = {
-	imageFileName: PropTypes.string.isRequired,
-	imageFilePath: PropTypes.string.isRequired,
+	imageFileName: PropTypes
+	.string
+	.isRequired,
+	imageFilePath: PropTypes
+	.string
+	.isRequired,
 }
 
 const ImageView = ({
@@ -128,14 +132,14 @@ const ImageView = ({
 					right: 0;
 
 					${
-						isHoveringNextOverlay
+				isHoveringNextOverlay
 						&& showNavigationControlStyles
-					}
+				}
 
 					${
-						isAtEnd
+				isAtEnd
 						&& unavailableNavigationStyles
-					}
+				}
 				`
 			),
 			[
@@ -154,14 +158,14 @@ const ImageView = ({
 					left: 0;
 
 					${
-						isHoveringPreviousOverlay
+				isHoveringPreviousOverlay
 						&& showNavigationControlStyles
-					}
+				}
 
 					${
-						isAtBeginning
+				isAtBeginning
 						&& unavailableNavigationStyles
-					}
+				}
 				`
 			),
 			[

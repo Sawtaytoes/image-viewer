@@ -18,7 +18,8 @@ const downloadFileCancelationEpic = (
 ) => (
 	action$
 	.pipe(
-		ofType(stopFilePathDownload.type),
+		ofType(stopFilePathDownload
+		.type),
 		pluck('payload'),
 		map(({
 			filePath,

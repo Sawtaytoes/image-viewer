@@ -18,7 +18,8 @@ const downloadFileCompletionEpic = (
 ) => (
 	action$
 	.pipe(
-		ofType(finishedFilePathDownload.type),
+		ofType(finishedFilePathDownload
+		.type),
 		pluck('payload'),
 		map(({
 			filePath,

@@ -9,11 +9,13 @@ import {
 const initialState = null
 
 const reducerActions = {
-	[resetDownloadedPercentage.type]: () => (
+	[resetDownloadedPercentage
+	.type]: () => (
 		initialState
 	),
 
-	[updateDownloadPercentage.type]: (
+	[updateDownloadPercentage
+	.type]: (
 		state,
 		{ payload },
 	) => (

@@ -5,9 +5,11 @@ const createReducer = (
 	state = initialState,
 	action,
 ) => (
-	reducerActions[action.type]
+	reducerActions
+	[action.type]
 	? (
-		reducerActions[action.type](
+		reducerActions
+		[action.type](
 			state,
 			action,
 		)

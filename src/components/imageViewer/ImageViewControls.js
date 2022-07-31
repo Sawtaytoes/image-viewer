@@ -1,6 +1,6 @@
 import ArrowBackRoundedIcon from '@material-ui/icons/ArrowBackRounded'
 import ArrowForwardRoundedIcon from '@material-ui/icons/ArrowForwardRounded'
-import { css } from '@emotion/core'
+import { css } from '@emotion/react'
 import {
 	memo,
 	useContext,
@@ -100,9 +100,9 @@ const ImageViewControls = () => {
 				css={css`
 					${navigationIconStyles}
 					${
-						isAtBeginning
+		isAtBeginning
 						&& 'visibility: hidden;'
-					}
+		}
 				`}
 				onClick={goToPreviousImage}
 				title="< Previous Photo"
@@ -122,9 +122,9 @@ const ImageViewControls = () => {
 				css={css`
 					${navigationIconStyles}
 					${
-						isAtEnd
+		isAtEnd
 						&& 'visibility: hidden;'
-					}
+		}
 				`}
 				onClick={goToNextImage}
 				title="Next Photo >"

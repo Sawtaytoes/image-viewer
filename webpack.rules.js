@@ -1,4 +1,5 @@
-module.exports = [
+module
+.exports = [
 	// Add support for native node modules
 	{
 		test: /\.node$/,
@@ -15,17 +16,6 @@ module.exports = [
 		},
 	},
 	// Put your webpack loader rules in this array.
-	{
-		enforce: 'pre',
-		exclude: /node_modules/,
-		test: /\.(js|jsx)$/,
-		use: {
-			loader: 'eslint-loader',
-			options: {
-				fix: true,
-			},
-		},
-	},
 	{
 		exclude: /node_modules/,
 		test: /\.(js|jsx)$/,

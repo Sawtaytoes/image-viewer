@@ -26,7 +26,8 @@ const imageDomElementLoaderEpic = (
 ) => (
 	action$
 	.pipe(
-		ofType(addDownloadedFile.type),
+		ofType(addDownloadedFile
+		.type),
 		pluck('payload'),
 		map(({
 			fileBlobUrl,
@@ -60,7 +61,8 @@ const imageDomElementLoaderEpic = (
 				takeUntil(
 					action$
 					.pipe(
-						ofType(removeImageDomElement.type),
+						ofType(removeImageDomElement
+						.type),
 						filter(({
 							namespace,
 						}) => (

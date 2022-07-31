@@ -9,11 +9,13 @@ import {
 const initialState = null
 
 const reducerActions = {
-	[addFilePathToStandbyQueue.type]: () => (
+	[addFilePathToStandbyQueue
+	.type]: () => (
 		true
 	),
 
-	[removeFilePathFromStandbyQueue.type]: () => (
+	[removeFilePathFromStandbyQueue
+	.type]: () => (
 		initialState
 	),
 }

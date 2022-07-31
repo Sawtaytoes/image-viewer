@@ -2,9 +2,12 @@ import PropTypes from 'prop-types'
 import React from 'react'
 
 const propTypes = {
-	children: PropTypes.node.isRequired,
+	children: PropTypes
+	.node
+	.isRequired,
 	htmlComponents: (
-		PropTypes.shape({
+		PropTypes
+		.shape({
 			body: PropTypes.node,
 			head: PropTypes.node,
 			htmlProps: PropTypes.object,

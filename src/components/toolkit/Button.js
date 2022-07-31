@@ -1,4 +1,4 @@
-import { css } from '@emotion/core'
+import { css } from '@emotion/react'
 import PropTypes from 'prop-types'
 import {
 	memo,
@@ -24,13 +24,15 @@ const buttonTypes = {
 }
 
 const buttonTypeStyles = {
-	[buttonTypes.negative]: (
+	[buttonTypes
+	.negative]: (
 		css`
 			color: white;
 			background-color: red;
 		`
 	),
-	[buttonTypes.positive]: (
+	[buttonTypes
+	.positive]: (
 		css`
 			color: white;
 			background-color: green;
@@ -39,8 +41,12 @@ const buttonTypeStyles = {
 }
 
 const propTypes = {
-	children: PropTypes.node.isRequired,
-	onClick: PropTypes.func.isRequired,
+	children: PropTypes
+	.node
+	.isRequired,
+	onClick: PropTypes
+	.func
+	.isRequired,
 	type: (
 		PropTypes
 		.oneOf(
@@ -63,7 +69,8 @@ const ConfirmationModal = ({
 			() => (
 				css`
 					${buttonStyles}
-					${buttonTypeStyles[type]}
+					${buttonTypeStyles
+				[type]}
 				`
 			),
 			[type],

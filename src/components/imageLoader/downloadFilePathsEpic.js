@@ -26,7 +26,8 @@ const downloadFilePathsEpic = (
 ) => (
 	action$
 	.pipe(
-		ofType(startFilePathDownload.type),
+		ofType(startFilePathDownload
+		.type),
 		map(({
 			namespace,
 			payload,
@@ -48,7 +49,8 @@ const downloadFilePathsEpic = (
 				takeUntil(
 					action$
 					.pipe(
-						ofType(stopFilePathDownload.type),
+						ofType(stopFilePathDownload
+						.type),
 						pluck('namespace'),
 						filter(expectedNamespace => (
 							expectedNamespace === namespace

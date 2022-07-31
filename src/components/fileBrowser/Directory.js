@@ -1,4 +1,4 @@
-import { css } from '@emotion/core'
+import { css } from '@emotion/react'
 import { ipcRenderer } from 'electron'
 import fs from 'fs'
 import path from 'path'
@@ -57,8 +57,12 @@ const textStyles = css`
 const initialDirectoryContents = []
 
 const propTypes = {
-	directoryName: PropTypes.string.isRequired,
-	directoryPath: PropTypes.string.isRequired,
+	directoryName: PropTypes
+	.string
+	.isRequired,
+	directoryPath: PropTypes
+	.string
+	.isRequired,
 }
 
 const Directory = ({
@@ -193,12 +197,17 @@ const Directory = ({
 				</div>
 
 				{
-					imageFiles[0]
+					imageFiles
+					[0]
 					&& (
 						<div css={imageStyles}>
 							<Image
-								fileName={imageFiles[0].name}
-								filePath={imageFiles[0].path}
+								fileName={imageFiles
+								[0]
+								.name}
+								filePath={imageFiles
+								[0]
+								.path}
 								hasVisibilityDetection
 							/>
 						</div>

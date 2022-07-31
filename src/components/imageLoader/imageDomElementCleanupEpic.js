@@ -17,7 +17,8 @@ const imageDomElementCleanupEpic = (
 ) => (
 	action$
 	.pipe(
-		ofType(removeDownloadedFile.type),
+		ofType(removeDownloadedFile
+		.type),
 		pluck('payload'),
 		map(({
 			filePath,

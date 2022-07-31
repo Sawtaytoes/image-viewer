@@ -1,4 +1,4 @@
-import { css } from '@emotion/core'
+import { css } from '@emotion/react'
 import { ipcRenderer } from 'electron'
 import {
 	memo,
@@ -152,7 +152,7 @@ const FileBrowser = () => {
 							: (
 								imageFiles
 								[
-									selectedIndex
+								selectedIndex
 									- numberOfDirectories
 								]
 								.path
@@ -399,7 +399,7 @@ const FileBrowser = () => {
 							: (
 								imageFiles
 								[
-									selectedIndex
+								selectedIndex
 									- numberOfDirectories
 								]
 								.path
@@ -422,7 +422,7 @@ const FileBrowser = () => {
 				setImageFile(
 					imageFiles
 					[
-						selectedIndex
+					selectedIndex
 						- numberOfDirectories
 					]
 				)
@@ -489,7 +489,8 @@ const FileBrowser = () => {
 				)
 
 				const nextNumberOfColumns = (
-					Math.floor(viewWidth / 300)
+					Math
+					.floor(viewWidth / 300)
 				)
 
 				setNumberOfColumns(

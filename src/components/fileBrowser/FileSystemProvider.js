@@ -20,6 +20,8 @@ import FileSystemContext from './FileSystemContext'
 import useDirectories from './useDirectories'
 import useImageFiles from './useImageFiles'
 
+console.log(remote)
+
 const windowsDrivePaths = (
 	(
 		remote
@@ -115,7 +117,9 @@ const initialFilePath = (
 const initialDirectoryContents = []
 
 const propTypes = {
-	children: PropTypes.node.isRequired,
+	children: PropTypes
+	.node
+	.isRequired,
 }
 
 const FileSystemProvider = ({

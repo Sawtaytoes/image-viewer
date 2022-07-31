@@ -23,7 +23,8 @@ const addFilePathEpic = (
 ) => (
 	action$
 	.pipe(
-		ofType(addFilePath.type),
+		ofType(addFilePath
+		.type),
 		pluck('payload'),
 		filter(({
 			filePath,

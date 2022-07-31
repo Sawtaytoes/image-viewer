@@ -9,7 +9,8 @@ import {
 const initialState = null
 
 const reducerActions = {
-	[addImageDomElement.type]: (
+	[addImageDomElement
+	.type]: (
 		state,
 		{ payload },
 	) => (
@@ -17,7 +18,8 @@ const reducerActions = {
 		.imageDomElement
 	),
 
-	[removeImageDomElement.type]: () => (
+	[removeImageDomElement
+	.type]: () => (
 		initialState
 	),
 }

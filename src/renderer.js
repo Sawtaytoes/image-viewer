@@ -1,18 +1,21 @@
-// 'react-hot-loader' has to be imported prior to React.
-import 'react-hot-loader'
-
-import { render } from 'react-dom'
+import { createRoot } from 'react-dom/client'
 
 import ReactRoot from './components/ReactRoot'
 
-const rootElement = (
-	document
-	.getElementById(
-		'reactRoot'
+console.log('renderer 1')
+
+const root = (
+	createRoot(
+		document
+		.getElementById(
+			'react-root'
+		)
 	)
 )
 
-render(
-	<ReactRoot />,
-	rootElement,
+root
+.render(
+	<ReactRoot />
 )
+
+console.log('renderer 2')

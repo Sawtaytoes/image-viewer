@@ -13,6 +13,15 @@
 			name="viewport"
 		/>
 
+		<!-- <meta
+			content="
+				default-src 'self' 'unsafe-eval' 'unsafe-inline' localhost:* ws://localhost:*;
+				font-src 'self' fonts.gstatic.com;
+				style-src 'self' 'unsafe-inline' localhost:* fonts.googleapis.com;
+			"
+			http-equiv="Content-Security-Policy"
+		> -->
+
 		<!--
 		<link
 			href="/fonts/SourceSansPro.css"
@@ -21,6 +30,12 @@
 		-->
 
 		<link
+			href="https://fonts.googleapis.com"
+			rel="preconnect"
+		>
+
+		<link
+			crossorigin
 			href="https://fonts.gstatic.com"
 			rel="preconnect"
 		>
@@ -33,6 +48,6 @@
 		<title>Image Viewer</title>
 	</head>
 	<body>
-		<div id="reactRoot"></div>
+		<div id="react-root"></div>
 	</body>
 </html>

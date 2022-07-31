@@ -63,7 +63,8 @@ const processQueueEpic = (
 		filter(({
 			processingFilePaths,
 		}) => (
-			processingFilePaths.length
+			processingFilePaths
+			.length
 			< processingQueueSize
 		)),
 		map(({
@@ -75,7 +76,8 @@ const processQueueEpic = (
 				0,
 				(
 					processingQueueSize
-					- processingFilePaths.length
+					- processingFilePaths
+					.length
 				),
 			)
 		)),

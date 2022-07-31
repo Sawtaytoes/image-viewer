@@ -65,7 +65,9 @@ const initialImageFile = (
 )
 
 const propTypes = {
-	children: PropTypes.node.isRequired,
+	children: PropTypes
+	.node
+	.isRequired,
 }
 
 const ImageViewerProvider = ({

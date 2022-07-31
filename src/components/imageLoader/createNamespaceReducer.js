@@ -4,7 +4,8 @@ const getPreviousState = ({
 	namespace,
 	previousNamespaceState,
 }) => (
-	previousNamespaceState[namespace]
+	previousNamespaceState
+	[namespace]
 )
 
 const removeNamespaceFromState = ({

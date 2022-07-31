@@ -1,5 +1,5 @@
 import PropTypes from 'prop-types'
-import { css } from '@emotion/core'
+import { css } from '@emotion/react'
 import {
 	memo,
 	useContext,
@@ -33,8 +33,12 @@ const imageCanvasStyles = css`
 `
 
 const propTypes = {
-	fileName: PropTypes.string.isRequired,
-	filePath: PropTypes.string.isRequired,
+	fileName: PropTypes
+	.string
+	.isRequired,
+	filePath: PropTypes
+	.string
+	.isRequired,
 	hasVisibilityDetection: PropTypes.bool,
 }
 
@@ -169,10 +173,14 @@ const Image = ({
 				const isHeightRestricted = (
 					(
 						(imageDomElement.height / imageDomElement.width)
-						* canvasRef.current.clientWidth
+						* canvasRef
+						.current
+						.clientWidth
 					)
 					> (
-						canvasRef.current.clientHeight
+						canvasRef
+						.current
+						.clientHeight
 					)
 				)
 
@@ -180,21 +188,29 @@ const Image = ({
 					isHeightRestricted
 					? (
 						(imageDomElement.width / imageDomElement.height)
-						* canvasRef.current.clientHeight
+						* canvasRef
+						.current
+						.clientHeight
 					)
 					: (
-						canvasRef.current.clientWidth
+						canvasRef
+						.current
+						.clientWidth
 					)
 				)
 
 				const canvasImageHeight = (
 					isHeightRestricted
 					? (
-						canvasRef.current.clientHeight
+						canvasRef
+						.current
+						.clientHeight
 					)
 					: (
 						(imageDomElement.height / imageDomElement.width)
-						* canvasRef.current.clientWidth
+						* canvasRef
+						.current
+						.clientWidth
 					)
 				)
 
@@ -235,7 +251,8 @@ const Image = ({
 			}
 
 			const throttleCanvasLoading = () => {
-				if (animationFrameIdRef.current) {
+				if (animationFrameIdRef
+				.current) {
 					return
 				}
 

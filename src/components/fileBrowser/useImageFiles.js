@@ -1,7 +1,7 @@
 import path from 'path'
 import {
- useEffect,
- useState,
+	useEffect,
+	useState,
 } from 'react'
 import { from } from 'rxjs'
 import {
@@ -73,8 +73,10 @@ const useImageFiles = directoryContents => {
 							b,
 						) => (
 							compareNaturalStrings(
-								a.name,
-								b.name,
+								a
+								.name,
+								b
+								.name,
 							)
 						))
 					)),

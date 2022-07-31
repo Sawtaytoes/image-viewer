@@ -1,11 +1,10 @@
-module.exports = {
+module
+.exports = {
 	extends: [
 		'@ghadyani-eslint/node',
-		'@ghadyani-eslint/web',
+		'@ghadyani-eslint/react',
 	],
-	plugins: [
-		'react-hooks',
-	],
+	parser: '@babel/eslint-parser',
 	rules: {
 		'@ghadyani-eslint/arrow-body-parens/parens': 'off', // TEMP. Remove 'off' when fixed in @ghadyani-eslint
 		'import/no-unresolved': [

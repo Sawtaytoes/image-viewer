@@ -3,9 +3,18 @@ import { memo } from 'react'
 import ConfirmationModal from './ConfirmationModal'
 
 const propTypes = {
-	isVisible: ConfirmationModal.type.propTypes.isVisible,
-	onClose: ConfirmationModal.type.propTypes.onClose,
-	onConfirm: ConfirmationModal.type.propTypes.onConfirm,
+	isVisible: ConfirmationModal
+	.type
+	.propTypes
+	.isVisible,
+	onClose: ConfirmationModal
+	.type
+	.propTypes
+	.onClose,
+	onConfirm: ConfirmationModal
+	.type
+	.propTypes
+	.onConfirm,
 }
 
 const DeleteFileModal = ({

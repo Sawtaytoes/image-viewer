@@ -7,7 +7,8 @@ const createFileDownloadObservable = filePath => (
 			observer
 			.next({
 				downloadPercentage: (
-					Math.round(
+					Math
+					.round(
 						(event.loaded / event.total)
 						* 100
 					)

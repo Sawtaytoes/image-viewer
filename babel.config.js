@@ -5,33 +5,9 @@ const isLocalDevelopment = (
 	.get('isLocalDevelopment')
 )
 
-const emotionOptions = {
-	autoLabel: isLocalDevelopment,
-	cssPropOptimization: true,
-	labelFormat: '[local]',
-	sourceMap: isLocalDevelopment,
-}
-
-const plugins = [
-	'@babel/plugin-proposal-class-properties',
-	'@babel/plugin-proposal-object-rest-spread',
-	'@babel/plugin-syntax-dynamic-import',
-	'@babel/plugin-transform-runtime',
-	[
-		'emotion',
-		emotionOptions,
-	],
-]
-
-module.exports = {
-	plugins: (
-		isLocalDevelopment
-		? [
-			'react-hot-loader/babel',
-			...plugins,
-		]
-		: plugins
-	),
+module
+.exports = {
+	plugins: ['@emotion'],
 	presets: [
 		[
 			'@babel/preset-env',
@@ -42,11 +18,11 @@ module.exports = {
 		],
 		[
 			'@babel/preset-react',
-			{ development: isLocalDevelopment },
-		],
-		[
-			'@emotion/babel-preset-css-prop',
-			emotionOptions,
+			{
+				development: isLocalDevelopment,
+				importSource: '@emotion/react',
+				runtime: 'automatic',
+			},
 		],
 	],
 }

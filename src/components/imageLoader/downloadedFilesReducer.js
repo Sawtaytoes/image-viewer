@@ -9,7 +9,8 @@ import {
 const initialState = null
 
 const reducerActions = {
-	[addDownloadedFile.type]: (
+	[addDownloadedFile
+	.type]: (
 		state,
 		{ payload },
 	) => (
@@ -17,7 +18,8 @@ const reducerActions = {
 		.fileBlobUrl
 	),
 
-	[removeDownloadedFile.type]: () => (
+	[removeDownloadedFile
+	.type]: () => (
 		initialState
 	),
 }

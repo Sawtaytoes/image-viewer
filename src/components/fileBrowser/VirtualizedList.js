@@ -1,4 +1,4 @@
-import { css } from '@emotion/core'
+import { css } from '@emotion/react'
 import PropTypes from 'prop-types'
 import {
 	Children,
@@ -34,7 +34,9 @@ const initialViewData = {
 }
 
 const propTypes = {
-	children: PropTypes.node.isRequired,
+	children: PropTypes
+	.node
+	.isRequired,
 	itemPadding: PropTypes.string,
 	numberOfColumns: PropTypes.number,
 	selectedIndex: PropTypes.number,
@@ -297,7 +299,8 @@ const VirtualizedList = ({
 			}
 
 			const throttleScrollPositionUpdate = () => {
-				if (animationFrameIdRef.current) {
+				if (animationFrameIdRef
+				.current) {
 					return
 				}
 
@@ -460,9 +463,9 @@ const VirtualizedList = ({
 								top: ${Math.floor(shiftedIndex / numberOfColumns) * itemSize}px;
 
 								${
-									shiftedIndex === selectedIndex
+							shiftedIndex === selectedIndex
 									&& selectedListItemStyles
-								}
+							}
 							`
 						),
 					}))

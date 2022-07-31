@@ -18,7 +18,8 @@ const processQueueFilePathRemovalEpic = (
 ) => (
 	action$
 	.pipe(
-		ofType(removeFilePathFromProcessingQueue.type),
+		ofType(removeFilePathFromProcessingQueue
+		.type),
 		pluck('payload'),
 		map(({
 			filePath,

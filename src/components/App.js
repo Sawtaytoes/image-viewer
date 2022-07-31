@@ -1,7 +1,7 @@
 import {
- css,
- Global,
-} from '@emotion/core'
+	css,
+	Global,
+} from '@emotion/react'
 import { Fragment } from 'react'
 
 import FileBrowser from './fileBrowser/FileBrowser'
