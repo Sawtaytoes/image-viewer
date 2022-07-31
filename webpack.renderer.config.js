@@ -17,6 +17,7 @@ module
 		isLocalDevelopment
 		&& 'eval-source-map'
 	),
+	mode: 'development',
 	module: {
 		rules,
 	},
@@ -28,4 +29,5 @@ module
 		colors: true,
 		// preset: 'errors-warnings',
 	},
+	target: 'electron-renderer',
 }

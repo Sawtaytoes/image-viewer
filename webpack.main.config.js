@@ -26,4 +26,5 @@ module
 		colors: true,
 		// preset: 'errors-warnings',
 	},
+	target: 'electron-main',
 }

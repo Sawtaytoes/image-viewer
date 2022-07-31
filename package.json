@@ -20,20 +20,15 @@
   "devDependencies": {
     "@babel/core": "^7.18.9",
     "@babel/eslint-parser": "^7.18.9",
-    "@babel/plugin-proposal-class-properties": "^7.18.6",
-    "@babel/plugin-proposal-object-rest-spread": "^7.18.9",
-    "@babel/plugin-syntax-dynamic-import": "^7.8.3",
-    "@babel/plugin-transform-runtime": "^7.18.9",
     "@babel/preset-env": "^7.18.9",
     "@babel/preset-react": "^7.18.6",
-    "@babel/runtime": "^7.18.9",
     "@electron-forge/cli": "6.0.0-beta.54",
     "@electron-forge/maker-deb": "6.0.0-beta.54",
     "@electron-forge/maker-rpm": "6.0.0-beta.54",
     "@electron-forge/maker-squirrel": "6.0.0-beta.54",
     "@electron-forge/maker-zip": "6.0.0-beta.54",
     "@electron-forge/plugin-webpack": "6.0.0-beta.54",
-    "@emotion/babel-preset-css-prop": "^11.10.0",
+    "@emotion/babel-plugin": "^11.10.0",
     "@emotion/react": "^11.10.0",
     "@emotion/styled": "^11.10.0",
     "@ghadyani-eslint/eslint-config-node": "^2.2.10",
@@ -61,7 +56,6 @@
     "string-natural-compare": "^3.0.1"
   },
   "dependencies": {
-    "@emotion/babel-plugin": "^11.10.0",
     "electron-squirrel-startup": "^1.0.0"
   }
 }
