@@ -71,10 +71,9 @@ folder navigation, thumbnail loading via `safe-file-protocol`, opening an image,
 window (Ctrl/Shift+click), and **delete → Recycle Bin** — plus `yarn make` + installing the Squirrel
 package and smoke-testing the installed app.
 
-**Gitea push — blocked, needs a human step.** Work is committed on branch `phase-1-modernization`;
-the SSH remote `gitea` (`ssh://git@gitea.octen.dev:30009/sawtaytoes/image-viewer.git`) is configured
-and SSH auth works. But the repo couldn't be auto-created: the `GITEA_TOKEN` has scopes
-`write:issue, write:repository, read:user` and this Gitea requires `write:user` for `POST /user/repos`,
-and "push to create" is disabled. To finish: create an empty `image-viewer` repo on the Gitea account
-(or reissue the token with `write:user`), then:
-`git push -u gitea master && git push -u gitea phase-1-modernization`.
+**Gitea push — done.** After the `GITEA_TOKEN` was reissued with `write:user`, the repo
+`sawtaytoes/image-viewer` was created and both branches pushed over SSH
+(`ssh://git@gitea.octen.dev:30009/sawtaytoes/image-viewer.git`): `master` (original baseline) and
+`phase-1-modernization` (this work). Review PR opened:
+<https://gitea.octen.dev/sawtaytoes/image-viewer/pulls/1> (`phase-1-modernization` → `master`).
+(Initial blocker: the first token lacked `write:user`, and the server has "push to create" disabled.)
