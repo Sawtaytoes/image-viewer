@@ -4,6 +4,17 @@ Phase 1 (the current modernization — see [upgrade-plan.md](upgrade-plan.md)) i
 refactor + tooling + tests + docs only**. Everything below is deferred and tracked here so nothing
 from the original `TASKS.md` or the kickoff conversation is lost.
 
+## ⛔ Blocking bug to fix first
+
+- **Images don't load** after the upgrade (folder listing works, startup is faster). This blocks the
+  rest of manual verification. Full brief: [workers/fix-image-loading.md](workers/fix-image-loading.md);
+  summary in [known-issues.md](known-issues.md).
+
+## Release / distribution (future)
+
+- **CI release pipeline** → downloadable EXE on Gitea + GitHub Releases on a version tag. Brief:
+  [workers/release-pipeline.md](workers/release-pipeline.md). (Owner-requested as a future plan.)
+
 ## Owner's headline goals (from the kickoff)
 
 1. **Startup speed** — "takes forever to load"; the single most important improvement. Profile cold

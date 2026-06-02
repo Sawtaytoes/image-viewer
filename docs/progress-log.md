@@ -77,3 +77,17 @@ package and smoke-testing the installed app.
 `phase-1-modernization` (this work). Review PR opened:
 <https://gitea.octen.dev/sawtaytoes/image-viewer/pulls/1> (`phase-1-modernization` → `master`).
 (Initial blocker: the first token lacked `write:user`, and the server has "push to create" disabled.)
+
+## 2026-06-02 — First live run (owner, packaged app, Windows 11 / G:\Pictures)
+
+- PR #1 **merged** to `master`; Gitea repo set **public**. GitHub `origin` left untouched (owner pushes
+  there after verifying). Built `out/Image Viewer-win32-x64/Image Viewer.exe` via `yarn package`.
+- **Startup is noticeably faster** (owner confirmed) — a Phase-1 win.
+- **Folder browsing works** — directories/navigation/title-bar all correct (proves the `window.api`
+  bridge + drive enumeration).
+- **BUG: images/thumbnails don't load** — `safe-file-protocol` fetch path. Documented in
+  [known-issues.md](known-issues.md) + the fix brief [workers/fix-image-loading.md](workers/fix-image-loading.md).
+  Per the owner, we stop here and pick it up another day; everything the migrating agent knew is written
+  down for a fresh worker.
+- Future plan captured: CI release pipeline for downloadable EXEs
+  ([workers/release-pipeline.md](workers/release-pipeline.md), [roadmap.md](roadmap.md)).
