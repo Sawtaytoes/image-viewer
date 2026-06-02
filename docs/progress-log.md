@@ -91,3 +91,12 @@ package and smoke-testing the installed app.
   down for a fresh worker.
 - Future plan captured: CI release pipeline for downloadable EXEs
   ([workers/release-pipeline.md](workers/release-pipeline.md), [roadmap.md](roadmap.md)).
+
+## 2026-06-02 — Reconciled GitHub's divergent master
+
+- Discovered GitHub `master` had a **separate, earlier** modernization (Electron 12 / Webpack / Yarn 3,
+  4 commits) the local clone never had. Per owner, **superseded it with Phase 1** via a non-destructive
+  `ours` merge (their history preserved). Ported the one useful bit — the Surface-Pro
+  `webFrame.setZoomFactor(0.75)` (now in `src/preload.js`). Details: [research/0009](research/0009-github-master-reconciliation.md).
+- Fixed a CRLF/LF thrash (Git autocrlf vs Biome LF) via `.gitattributes` `eol=lf`.
+- Pushed `master` to **both** GitHub (`origin`) and Gitea.
