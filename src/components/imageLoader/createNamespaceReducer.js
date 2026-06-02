@@ -1,57 +1,49 @@
-import createNamespaceReducerCreator from './createNamespaceReducerCreator'
+import createNamespaceReducerCreator from "./createNamespaceReducerCreator"
 
 const getPreviousState = ({
-	namespace,
-	previousNamespaceState,
-}) => (
-	previousNamespaceState[namespace]
-)
+  namespace,
+  previousNamespaceState,
+}) => previousNamespaceState[namespace]
 
 const removeNamespaceFromState = ({
-	namespace,
-	previousNamespaceState,
+  namespace,
+  previousNamespaceState,
 }) => {
-	const nextNamespaceState = { ...previousNamespaceState }
+  const nextNamespaceState = { ...previousNamespaceState }
 
-	Reflect
-	.deleteProperty(
-		nextNamespaceState,
-		namespace,
-	)
+  Reflect.deleteProperty(nextNamespaceState, namespace)
 
-	return nextNamespaceState
+  return nextNamespaceState
 }
 
 const updateNamespaceState = ({
-	namespace,
-	nextState,
-	previousNamespaceState,
+  namespace,
+  nextState,
+  previousNamespaceState,
 }) => ({
-	...previousNamespaceState,
-	[namespace]: nextState,
+  ...previousNamespaceState,
+  [namespace]: nextState,
 })
 
 const createNamespaceReducer = (
-	reducer,
-	initialNamespaceState = {},
+  reducer,
+  initialNamespaceState = {},
 ) => {
-	if (typeof initialNamespaceState !== 'object') {
-		throw new Error(
-			'`initialNamespaceState` not set to type `object` in `createNamespaceReducer`.'
-		)
-	}
+  if (typeof initialNamespaceState !== "object") {
+    throw new Error(
+      "`initialNamespaceState` not set to type `object` in `createNamespaceReducer`.",
+    )
+  }
 
-	return (
-		createNamespaceReducerCreator(
-			reducer,
-			initialNamespaceState,
-			{
-				getPreviousState,
-				removeNamespaceFromState,
-				updateNamespaceState,
-			},
-		)
-	)
+  return createNamespaceReducerCreator(
+    reducer,
+    initialNamespaceState,
+    {
+      getPreviousState,
+      removeNamespaceFromState,
+      updateNamespaceState,
+    },
+  )
 }
 
 export default createNamespaceReducer

@@ -1,114 +1,76 @@
-import { Observable } from 'rxjs'
+import { Observable } from "rxjs"
 
-const createFileDownloadObservable = filePath => (
-	Observable
-	.create(observer => {
-		const updateProgress = event => {
-			observer
-			.next({
-				downloadPercentage: (
-					Math.round(
-						(event.loaded / event.total)
-						* 100
-					)
-				),
-				filePath,
-			})
-		}
+const createFileDownloadObservable = (filePath) =>
+  Observable.create((observer) => {
+    const updateProgress = (event) => {
+      observer.next({
+        downloadPercentage: Math.round(
+          (event.loaded / event.total) * 100,
+        ),
+        filePath,
+      })
+    }
 
-		const saveImageDataUrl = function() {
-			if (
-				!xmlHttpRequest
-				.status
-				.toString()
-				.match(/^2/)
-			) {
-				return
-			}
+    const saveImageDataUrl = function () {
+      if (!xmlHttpRequest.status.toString().match(/^2/)) {
+        return
+      }
 
-			const headers = (
-				xmlHttpRequest
-				.getAllResponseHeaders()
-			)
+      const headers = xmlHttpRequest.getAllResponseHeaders()
 
-			const mimeType = (
-				headers
-				.replace(
-					/^Content-Type:\s*(.*?)$/mi,
-					'$1',
-				)
-			)
+      const mimeType = headers.replace(
+        /^Content-Type:\s*(.*?)$/im,
+        "$1",
+      )
 
-			const fileBlob = (
-				new Blob(
-					[this.response],
-					{ type: mimeType }
-				)
-			)
+      const fileBlob = new Blob([this.response], {
+        type: mimeType,
+      })
 
-			observer
-			.next({
-				fileBlob,
-			})
+      observer.next({
+        fileBlob,
+      })
 
-			observer
-			.complete()
-		}
+      observer.complete()
+    }
 
-		const xmlHttpRequest = (
-			new XMLHttpRequest()
-		)
+    const xmlHttpRequest = new XMLHttpRequest()
 
-		const webSafeFilePath = (
-			filePath
-			.replace(
-				'#',
-				'%23',
-			)
-		)
+    const webSafeFilePath = filePath.replace("#", "%23")
 
-		xmlHttpRequest
-		.open(
-			'GET',
-			`safe-file-protocol://${webSafeFilePath}`,
-			true,
-		)
+    xmlHttpRequest.open(
+      "GET",
+      `safe-file-protocol://${webSafeFilePath}`,
+      true,
+    )
 
-		xmlHttpRequest
-		.responseType = 'arraybuffer'
+    xmlHttpRequest.responseType = "arraybuffer"
 
-		xmlHttpRequest
-		.addEventListener(
-			'progress',
-			updateProgress,
-		)
+    xmlHttpRequest.addEventListener(
+      "progress",
+      updateProgress,
+    )
 
-		xmlHttpRequest
-		.addEventListener(
-			'loadend',
-			saveImageDataUrl,
-		)
+    xmlHttpRequest.addEventListener(
+      "loadend",
+      saveImageDataUrl,
+    )
 
-		xmlHttpRequest
-		.send()
+    xmlHttpRequest.send()
 
-		return () => {
-			xmlHttpRequest
-			.abort()
+    return () => {
+      xmlHttpRequest.abort()
 
-			xmlHttpRequest
-			.removeEventListener(
-				'progress',
-				updateProgress,
-			)
+      xmlHttpRequest.removeEventListener(
+        "progress",
+        updateProgress,
+      )
 
-			xmlHttpRequest
-			.removeEventListener(
-				'loadend',
-				saveImageDataUrl,
-			)
-		}
-	})
-)
+      xmlHttpRequest.removeEventListener(
+        "loadend",
+        saveImageDataUrl,
+      )
+    }
+  })
 
 export default createFileDownloadObservable
