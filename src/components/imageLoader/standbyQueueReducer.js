@@ -1,30 +1,21 @@
-import createNamespaceReducer from './createNamespaceReducer'
-import createReducer from './createReducer'
+import createNamespaceReducer from "./createNamespaceReducer"
+import createReducer from "./createReducer"
 
 import {
-	addFilePathToStandbyQueue,
-	removeFilePathFromStandbyQueue,
-} from './imageLoaderActions'
+  addFilePathToStandbyQueue,
+  removeFilePathFromStandbyQueue,
+} from "./imageLoaderActions"
 
 const initialState = null
 
 const reducerActions = {
-	[addFilePathToStandbyQueue.type]: () => (
-		true
-	),
+  [addFilePathToStandbyQueue.type]: () => true,
 
-	[removeFilePathFromStandbyQueue.type]: () => (
-		initialState
-	),
+  [removeFilePathFromStandbyQueue.type]: () => initialState,
 }
 
-const standbyQueueReducer = (
-	createNamespaceReducer(
-		createReducer(
-			reducerActions,
-			initialState,
-		)
-	)
+const standbyQueueReducer = createNamespaceReducer(
+  createReducer(reducerActions, initialState),
 )
 
 export default standbyQueueReducer

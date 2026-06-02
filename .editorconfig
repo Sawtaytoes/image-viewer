@@ -1,11 +1,10 @@
 root = true
 
 [*]
-charset = utf-8
-indent_size = 3
-indent_style = tab
+end_of_line = lf
 insert_final_newline = true
 
-[{.babelrc,.browserslistrc,.eslintrc,.stylintrc,*.json,*.yml}]
+[*.{js,jsx,ts,tsx,json,yml}]
+charset = utf-8
 indent_style = space
 indent_size = 2

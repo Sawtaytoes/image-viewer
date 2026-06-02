@@ -1,205 +1,117 @@
-import path from 'path'
 import {
-	BehaviorSubject,
-	from,
-	Observable,
-	Subject,
-} from 'rxjs'
+  BehaviorSubject,
+  from,
+  Observable,
+  Subject,
+} from "rxjs"
 import {
-	distinctUntilChanged,
-	filter,
-	map,
-	mergeAll,
-	mergeMap,
-	scan,
-	startWith,
-	switchMap,
-} from 'rxjs/operators'
+  distinctUntilChanged,
+  filter,
+  map,
+  mergeAll,
+  mergeMap,
+  scan,
+  startWith,
+  switchMap,
+} from "rxjs/operators"
 
-import catchEpicError from './catchEpicError'
+import catchEpicError from "./catchEpicError"
 
-const isLocalDevelopment = (
-	true
-	// config
-	// .get(
-	// 	'isLocalDevelopment'
-	// )
-)
+const isLocalDevelopment = true
 
 export const createReduxObservable = ({
-	dependencies = {},
-	epics,
-	initialState = {},
+  dependencies = {},
+  epics,
+  initialState = {},
 }) => {
-	const action$ = new Subject()
+  const action$ = new Subject()
 
-	const dispatchReduxAction = action => {
-		action$
-		.next(action)
+  const dispatchReduxAction = (action) => {
+    action$.next(action)
 
-		return action
-	}
+    return action
+  }
 
-	const state$ = (
-		new BehaviorSubject(
-			initialState
-		)
-	)
+  const state$ = new BehaviorSubject(initialState)
 
-	const hotReload$ = (
-		new BehaviorSubject([])
-	)
+  const hotReload$ = new BehaviorSubject([])
 
-	const createStateObservable = stateSelector => (
-		Observable
-		.create(observer => {
-			const subscriber = (
-				state$
-				.pipe(
-					map(stateSelector),
-					scan(
-						(
-							previousState,
-							nextState,
-						) => {
-							const isStateChanged = (
-								Array
-								.from(
-									new Set([
-										...(
-											Object
-											.keys(
-												previousState,
-											)
-										),
-										...(
-											Object
-											.keys(
-												nextState,
-											)
-										),
-									])
-								)
-								.some(stateKey => (
-									!(
-										Object
-										.is(
-											previousState[stateKey],
-											nextState[stateKey],
-										)
-									)
-								))
-							)
+  const createStateObservable = (stateSelector) =>
+    Observable.create((observer) => {
+      const subscriber = state$
+        .pipe(
+          map(stateSelector),
+          scan((previousState, nextState) => {
+            const isStateChanged = Array.from(
+              new Set([
+                ...Object.keys(previousState),
+                ...Object.keys(nextState),
+              ]),
+            ).some(
+              (stateKey) =>
+                !Object.is(
+                  previousState[stateKey],
+                  nextState[stateKey],
+                ),
+            )
 
-							return (
-								isStateChanged
-								? nextState
-								: previousState
-							)
-						},
-						initialState,
-					),
-					distinctUntilChanged(),
-				)
-				.subscribe(state => {
-					observer
-					.next(
-						state
-					)
-				})
-			)
+            return isStateChanged
+              ? nextState
+              : previousState
+          }, initialState),
+          distinctUntilChanged(),
+        )
+        .subscribe((state) => {
+          observer.next(state)
+        })
 
-			return () => {
-				subscriber
-				.unsubscribe()
-			}
-		})
-	)
+      return () => {
+        subscriber.unsubscribe()
+      }
+    })
 
-	const onHotReload = changedFilePaths => {
-		hotReload$
-		.next(changedFilePaths)
-	}
+  const onHotReload = (changedFilePaths) => {
+    hotReload$.next(changedFilePaths)
+  }
 
-	if (isLocalDevelopment) {
-		window
-		.dispatchReduxAction = (
-			dispatchReduxAction
-		)
+  if (isLocalDevelopment) {
+    window.dispatchReduxAction = dispatchReduxAction
+    window.state$ = state$
+  }
 
-		// action$
-		// .subscribe(action => (
-		// 	console.info(
-		// 		'[ACTION]',
-		// 		action,
-		// 	)
-		// ))
+  const epicDependencies = {
+    ...dependencies,
+    createStateObservable,
+    dispatch: dispatchReduxAction,
+  }
 
-		window
-		.state$ = state$
-	}
-
-	const epicDependencies = {
-		...dependencies,
-		createStateObservable,
-		dispatch: dispatchReduxAction,
-	}
-
-	return {
-		createStateObservable,
-		dispatchReduxAction,
-		onHotReload,
-		reduxObservable$: (
-			from(epics)
-			.pipe(
-				filter(epic => (
-					!(
-						Object.is(
-							typeof epic,
-							'boolean',
-						)
-					)
-				)),
-				mergeMap(epic => (
-					hotReload$
-					.pipe(
-						mergeAll(),
-						filter(changedFilePath => (
-							Object
-							.is(
-								(
-									path
-									.basename(
-										changedFilePath,
-										'.js'
-									)
-								),
-								(
-									epic
-									.name
-								),
-							)
-						)),
-						startWith(null),
-						switchMap(() => (
-							epic(
-								action$,
-								state$,
-								epicDependencies,
-							)
-							.pipe(
-								catchEpicError(
-									epic
-									.name
-								),
-							)
-						))
-					)
-				)),
-				catchEpicError(
-					'rootEpic'
-				),
-			)
-		),
-	}
+  return {
+    createStateObservable,
+    dispatchReduxAction,
+    onHotReload,
+    reduxObservable$: from(epics).pipe(
+      filter((epic) => !Object.is(typeof epic, "boolean")),
+      mergeMap((epic) =>
+        hotReload$.pipe(
+          mergeAll(),
+          filter((changedFilePath) =>
+            Object.is(
+              window.api.path.basename(
+                changedFilePath,
+                ".js",
+              ),
+              epic.name,
+            ),
+          ),
+          startWith(null),
+          switchMap(() =>
+            epic(action$, state$, epicDependencies).pipe(
+              catchEpicError(epic.name),
+            ),
+          ),
+        ),
+      ),
+      catchEpicError("rootEpic"),
+    ),
+  }
 }

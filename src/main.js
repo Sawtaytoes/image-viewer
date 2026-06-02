@@ -1,365 +1,180 @@
-import { exec } from 'child_process'
+import fs from "node:fs"
+import path from "node:path"
+import { pathToFileURL } from "node:url"
 import {
-	app,
-	BrowserWindow,
-	ipcMain,
-	protocol,
-	screen,
-	shell,
-	webContents,
-} from 'electron'
-import electronSquirrelStartup from 'electron-squirrel-startup'
-// import fsPromises from 'fs/promises' // Node.js v14+
-// import { promises as fsPromises } from 'fs' // Use 'fs/promises' instead when in Node.js v14.
-import fs from 'fs'
-import os from 'os'
+  app,
+  BrowserWindow,
+  ipcMain,
+  net,
+  protocol,
+  screen,
+  shell,
+} from "electron"
+import started from "electron-squirrel-startup"
 
-// const singleInstanceLock = (
-// 	app
-// 	.requestSingleInstanceLock()
-// )
-
-// if (singleInstanceLock) {
-// 	app
-// 	.on(
-// 		'second-instance',
-// 		(
-// 			event,
-// 			commandLine,
-// 			workingDirectory,
-// 		) => {
-// 			const lastCommandLineItem = (
-// 				(
-// 					commandLine
-// 					.length
-// 				)
-// 				- 1
-// 			)
-
-// 			createWindow({
-// 				filePath: (
-// 					(
-// 						commandLine
-// 						[lastCommandLineItem]
-// 					)
-// 					|| workingDirectory
-// 				),
-// 			})
-// 		}
-// 	)
-// }
-// else {
-// 	// Early-fail when creating a second instance.
-// 	app
-// 	.quit()
-// }
-
-global.processArgs = process.argv
-
-const isLocalDevelopment = (
-	(
-		process
-		.env
-		.NODE_ENV
-	)
-	=== 'development'
-)
-
-if (os.platform() === 'win32') {
-	exec(
-		'wmic logicaldisk get caption',
-		(
-			error,
-			stdout,
-			stderr,
-		) => {
-			if (
-				error
-				|| stderr
-			) {
-				console
-				.error(
-					'Failed to get drive info',
-					error,
-					stderr,
-				)
-			}
-
-			const windowsDrives = (
-				stdout
-				.split('\n')
-				.slice(1)
-				.map(driveLetter => (
-					driveLetter
-					.trim()
-				))
-				.filter(Boolean)
-				.map(driveLetter => (
-					`${driveLetter}\\`
-				))
-			)
-
-			global.windowsDrives = windowsDrives
-		}
-	)
-}
+const PROTOCOL_NAME = "safe-file-protocol"
 
 // Handle creating/removing shortcuts on Windows when installing/uninstalling.
-if (electronSquirrelStartup) {
-	app
-	.quit()
+if (started) {
+  app.quit()
 }
 
-const createWindow = ({
-	filePath,
-} = {}) => {
-	const mainDisplay = (
-		screen
-		.getPrimaryDisplay()
-	)
+// A privileged custom scheme lets the renderer load local images by URL
+// (safe-file-protocol://<path>) without Node access. Must be registered before
+// the app is ready. Kept non-standard so the opaque Windows path survives.
+protocol.registerSchemesAsPrivileged([
+  {
+    scheme: PROTOCOL_NAME,
+    privileges: {
+      supportFetchAPI: true,
+      stream: true,
+      bypassCSP: true,
+    },
+  },
+])
 
-	const mainWindowRef = {
-		current: (
-			new BrowserWindow({
-				autoHideMenuBar: true,
-				backgroundThrottling: true,
-				// frame: false,
-				height: (
-					mainDisplay
-					.workAreaSize
-					.height
-				),
-				show: false,
-				// titleBarStyle: 'hiddenInset',
-				useContentSize: true,
-				webPreferences: {
-					additionalArguments: (
-						filePath
-						&& [`--filePath=${filePath}`]
-					),
-					contextIsolation: false,
-					enableRemoteModule: true,
-					nodeIntegration: true,
-					// offscreen: true,
-					plugins: isLocalDevelopment,
-					preload: (
-						// eslint-disable-next-line no-undef
-						MAIN_WINDOW_PRELOAD_WEBPACK_ENTRY
-					),
-				},
-				width: (
-					Math
-					.floor(
-						(
-							mainDisplay
-							.workAreaSize
-							.width
-						) / 2
-					)
-				),
-				x: (
-					Math
-					.floor(
-						(
-							mainDisplay
-							.workAreaSize
-							.width
-						) / 2
-					)
-					- 8
-				),
-				y: 0,
-			})
-		),
-	}
+const isDevelopment = !app.isPackaged
 
-	mainWindowRef
-	.current
-	.loadURL(
-		// eslint-disable-next-line no-undef
-		MAIN_WINDOW_WEBPACK_ENTRY
-	)
+// Enumerate available Windows drive letters without spawning a shell. The old
+// `wmic logicaldisk` call is removed on modern Windows 11; probing A:..Z: with
+// fs.existsSync is instant and reliable. See docs/research/0006.
+const getWindowsDrives = () => {
+  if (process.platform !== "win32") {
+    return []
+  }
 
-	mainWindowRef
-	.current
-	.once(
-		'closed',
-		() => {
-			mainWindowRef
-			.current = null
-		},
-	)
+  const drives = []
 
-	mainWindowRef
-	.current
-	.once(
-		'ready-to-show',
-		() => {
-			mainWindowRef
-			.current
-			.show()
-		},
-	)
+  for (let charCode = 65; charCode <= 90; charCode++) {
+    const driveRoot = `${String.fromCharCode(charCode)}:\\`
 
-	// Open the DevTools.
-	if (isLocalDevelopment) {
-		mainWindowRef
-		.current
-		.webContents
-		.openDevTools()
-	}
+    if (fs.existsSync(driveRoot)) {
+      drives.push(driveRoot)
+    }
+  }
+
+  return drives
 }
 
-// This method will be called when Electron has finished
-// initialization and is ready to create browser windows.
-// Some APIs can only be used after this event occurs.
-app
-.whenReady()
-.then(() => {
-	const protocolName = 'safe-file-protocol'
+// The file/folder path the app was launched with (e.g. "Open with" from
+// Explorer). Flags and the dev "." placeholder are passed through unchanged so
+// the renderer can apply its own fallbacks.
+const getLaunchFilePath = () => {
+  const launchArg = process.argv[1]
 
-	protocol
-	.registerFileProtocol(
-		protocolName,
-		(
-			request,
-			callback,
-		) => {
-			const url = (
-				request
-				.url
-				.replace(
-					`${protocolName}://`,
-					'',
-				)
-			)
+  if (!launchArg || launchArg.startsWith("--")) {
+    return ""
+  }
 
-			try {
-				return (
-					callback(
-						decodeURIComponent(
-							url
-						)
-					)
-				)
-			}
-			catch (error) {
-				// Handle the error as needed
-				console.error(error)
-			}
-		}
-	)
-})
-.then(() => {
-	ipcMain
-	.on(
-		'createNewWindow',
-		(
-			event,
-			data,
-		) => {
-			createWindow(
-				data
-			)
-		},
-	)
-})
-.then(() => {
-	ipcMain
-	.handle(
-		'deleteFilePath',
-		(
-			event,
-			{
-				filePath,
-				isDirectory,
-			},
-		) => {
-			const isDeleted = (
-				// `moveItemToTrash` is deprecated in favor of the `trashItem` in Electron v12 and removed completely in Electron v13+.
-				shell
-				.moveItemToTrash(
-					filePath,
-				)
-			)
+  return launchArg
+}
 
-			if (!isDeleted) {
-				if (isDirectory) {
-					fs
-					.rmdirSync(
-						filePath,
-						{ recursive: true },
-					)
-				}
-				else {
-					fs
-					.unlinkSync(
-						filePath
-					)
-				}
-			}
+const createWindow = ({ filePath } = {}) => {
+  const mainDisplay = screen.getPrimaryDisplay()
+  const { width, height } = mainDisplay.workAreaSize
 
-			// `trashItem` will be used in Electron v12+.
-			// shell
-			// .trashItem(
-			// 	filePath
-			// )
-			// .catch(() => (
-			// 	isDirectory
-			// 	? (
-			// 		fsPromises
-			// 		.rmdir(
-			// 			filePath,
-			// 			{ recursive: true },
-			// 		)
-			// 	)
-			// 	: (
-			// 		fsPromises
-			// 		.unlink(
-			// 			filePath
-			// 		)
-			// 	)
-			// ))
+  const mainWindow = new BrowserWindow({
+    autoHideMenuBar: true,
+    backgroundThrottling: true,
+    height,
+    show: false,
+    useContentSize: true,
+    width: Math.floor(width / 2),
+    x: Math.floor(width / 2) - 8,
+    y: 0,
+    webPreferences: {
+      additionalArguments: filePath
+        ? [`--filePath=${filePath}`]
+        : [],
+      contextIsolation: true,
+      nodeIntegration: false,
+      preload: path.join(__dirname, "preload.js"),
+      sandbox: false,
+    },
+  })
 
-			return true
-		},
-	)
-})
-.then(createWindow)
-.then(() => {
-	setTimeout(() => {
-		console.log(
-			webContents
-			.getAllWebContents()
-		)
-	})
+  if (MAIN_WINDOW_VITE_DEV_SERVER_URL) {
+    mainWindow.loadURL(MAIN_WINDOW_VITE_DEV_SERVER_URL)
+  } else {
+    mainWindow.loadFile(
+      path.join(
+        __dirname,
+        `../renderer/${MAIN_WINDOW_VITE_NAME}/index.html`,
+      ),
+    )
+  }
+
+  mainWindow.once("ready-to-show", () => {
+    mainWindow.show()
+  })
+
+  if (isDevelopment) {
+    mainWindow.webContents.openDevTools()
+  }
+}
+
+// Synchronous bridge for the drive list (consumed at renderer module-load time).
+ipcMain.on("get-windows-drives", (event) => {
+  event.returnValue = getWindowsDrives()
 })
 
-// Quit when all windows are closed, except on macOS. There, it's common
-// for applications and their menu bar to stay active until the user quits
-// explicitly with Cmd + Q.
-app
-.on(
-	'window-all-closed',
-	() => {
-		if (process.platform !== 'darwin') {
-			app
-			.quit()
-		}
-	}
+// Open another window pointed at a file or folder (Ctrl/Shift+click, etc.).
+ipcMain.on("createNewWindow", (_event, data) => {
+  createWindow(data)
+})
+
+// Delete a file or folder: send to the OS trash, falling back to a permanent
+// delete only if trashing fails. `shell.moveItemToTrash` was removed in
+// Electron 13 — `shell.trashItem` is the replacement. See docs/research/0002.
+ipcMain.handle(
+  "deleteFilePath",
+  async (_event, { filePath }) => {
+    try {
+      await shell.trashItem(filePath)
+      return true
+    } catch (trashError) {
+      try {
+        await fs.promises.rm(filePath, {
+          force: true,
+          recursive: true,
+        })
+        return true
+      } catch (removeError) {
+        console.error(
+          "Failed to delete",
+          filePath,
+          trashError,
+          removeError,
+        )
+        return false
+      }
+    }
+  },
 )
 
-app
-.on(
-	'activate',
-	() => {
-		// On OS X it's common to re-create a window in the app when the
-		// dock icon is clicked and there are no other windows open.
-		if (BrowserWindow.getAllWindows().length === 0) {
-			createWindow()
-		}
-	}
-)
+app.whenReady().then(() => {
+  protocol.handle(PROTOCOL_NAME, (request) => {
+    const encodedPath = request.url.slice(
+      `${PROTOCOL_NAME}://`.length,
+    )
+    const filePath = decodeURIComponent(encodedPath)
 
-// In this file you can include the rest of your app's specific main process
-// code. You can also put them in separate files and import them here.
+    return net.fetch(pathToFileURL(filePath).toString())
+  })
+
+  createWindow({ filePath: getLaunchFilePath() })
+})
+
+// Quit when all windows are closed, except on macOS.
+app.on("window-all-closed", () => {
+  if (process.platform !== "darwin") {
+    app.quit()
+  }
+})
+
+app.on("activate", () => {
+  // On macOS re-create a window when the dock icon is clicked and none are open.
+  if (BrowserWindow.getAllWindows().length === 0) {
+    createWindow()
+  }
+})

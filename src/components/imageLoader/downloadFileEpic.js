@@ -1,33 +1,20 @@
+import { map, pluck, tap } from "rxjs/operators"
 import {
-	map,
-	pluck,
-	tap,
-} from 'rxjs/operators'
+  addFilePathToProcessingQueue,
+  startFilePathDownload,
+} from "./imageLoaderActions"
+import ofType from "./ofType"
 
-import ofType from './ofType'
-import {
-	addFilePathToProcessingQueue,
-	startFilePathDownload,
-} from './imageLoaderActions'
-
-const downloadFileEpic = (
-	action$,
-	state$,
-	{ dispatch },
-) => (
-	action$
-	.pipe(
-		ofType(addFilePathToProcessingQueue.type),
-		pluck('payload'),
-		map(({
-			filePath,
-		}) => (
-			startFilePathDownload({
-				filePath,
-			})
-		)),
-		tap(dispatch),
-	)
-)
+const downloadFileEpic = (action$, _state$, { dispatch }) =>
+  action$.pipe(
+    ofType(addFilePathToProcessingQueue.type),
+    pluck("payload"),
+    map(({ filePath }) =>
+      startFilePathDownload({
+        filePath,
+      }),
+    ),
+    tap(dispatch),
+  )
 
 export default downloadFileEpic

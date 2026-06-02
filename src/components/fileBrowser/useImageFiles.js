@@ -1,98 +1,62 @@
-import path from 'path'
-import {
- useEffect,
- useState,
-} from 'react'
-import { from } from 'rxjs'
-import {
-	filter,
-	map,
-	toArray,
-} from 'rxjs/operators'
+import { useEffect, useState } from "react"
+import { from } from "rxjs"
+import { filter, map, toArray } from "rxjs/operators"
 
-import compareNaturalStrings from './compareNaturalStrings'
+import compareNaturalStrings from "./compareNaturalStrings"
 
 const validImageExtensions = [
-	'.apng',
-	'.avif',
-	'.bmp',
-	'.gif',
-	'.ico',
-	'.cur',
-	'.jpg',
-	'.jpeg',
-	'.jfif',
-	'.pjpeg',
-	'.pjp',
-	'.png',
-	'.svg',
-	'.webp',
+  ".apng",
+  ".avif",
+  ".bmp",
+  ".gif",
+  ".ico",
+  ".cur",
+  ".jpg",
+  ".jpeg",
+  ".jfif",
+  ".pjpeg",
+  ".pjp",
+  ".png",
+  ".svg",
+  ".webp",
 ]
 
-const useImageFiles = directoryContents => {
-	const [
-		imageFiles,
-		setImageFiles,
-	] = useState([])
+const useImageFiles = (directoryContents) => {
+  const [imageFiles, setImageFiles] = useState([])
 
-	useEffect(
-		() => {
-			const subscriber = (
-				from(directoryContents)
-				.pipe(
-					filter(({
-						isFile,
-					}) => (
-						isFile
-					)),
-					filter(({
-						fileName,
-					}) => (
-						validImageExtensions
-						.includes(
-							path
-							.extname(
-								fileName
-							)
-							.toLowerCase()
-						)
-					)),
-					map(({
-						fileName,
-						filePath,
-					}) => ({
-						name: fileName,
-						path: filePath,
-					})),
-					toArray(),
-					map(imageFiles => (
-						imageFiles
-						.slice()
-						.sort((
-							a,
-							b,
-						) => (
-							compareNaturalStrings(
-								a.name,
-								b.name,
-							)
-						))
-					)),
-				)
-				.subscribe(
-					setImageFiles
-				)
-			)
+  useEffect(() => {
+    const subscription = from(directoryContents)
+      .pipe(
+        filter(({ isFile }) => isFile),
+        filter(({ fileName }) =>
+          validImageExtensions.includes(
+            window.api.path.extname(fileName).toLowerCase(),
+          ),
+        ),
+        map(({ fileName, filePath }) => ({
+          name: fileName,
+          path: filePath,
+        })),
+        toArray(),
+        map((unsortedImageFiles) =>
+          unsortedImageFiles
+            .slice()
+            .sort((firstImage, secondImage) =>
+              compareNaturalStrings(
+                firstImage.name,
+                secondImage.name,
+              ),
+            ),
+        ),
+      )
+      .subscribe(setImageFiles)
 
-			return () => {
-				subscriber
-				.unsubscribe()
-			}
-		},
-		[directoryContents],
-	)
+    return () => {
+      subscription.unsubscribe()
+    }
+  }, [directoryContents])
 
-	return imageFiles
+  return imageFiles
 }
 
 export default useImageFiles
