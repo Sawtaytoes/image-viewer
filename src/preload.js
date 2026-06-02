@@ -1,10 +1,19 @@
 import fs from "node:fs"
 import path from "node:path"
-import { contextBridge, ipcRenderer } from "electron"
+import {
+  contextBridge,
+  ipcRenderer,
+  webFrame,
+} from "electron"
 
 // This preload runs with Node access (sandbox:false) while the renderer does
 // not. It exposes a single curated, serializable `window.api` so renderer code
 // never imports electron/fs/path/process directly. See docs/research/0002.
+
+// Surface Pro / high-DPI tablets are scaled up; shrink the UI to fit more on
+// screen. Ported from the previous GitHub line (was in renderer.js, which can
+// no longer import `electron` under contextIsolation).
+webFrame.setZoomFactor(0.75)
 
 // File/folder path the window was launched with (passed via
 // `additionalArguments` from main). Replaces the old renderer process.argv +
