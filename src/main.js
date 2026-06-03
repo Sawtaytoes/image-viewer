@@ -39,7 +39,9 @@ const loadDotEnv = () => {
   }
 
   for (const line of envFileContents.split(/\r?\n/)) {
-    const match = line.match(/^\s*([\w.-]+)\s*=\s*(.*?)\s*$/)
+    const match = line.match(
+      /^\s*([\w.-]+)\s*=\s*(.*?)\s*$/,
+    )
 
     if (!match || line.trimStart().startsWith("#")) {
       continue
@@ -48,7 +50,8 @@ const loadDotEnv = () => {
     const [, key, rawValue] = match
 
     const value =
-      (rawValue.startsWith('"') && rawValue.endsWith('"')) ||
+      (rawValue.startsWith('"') &&
+        rawValue.endsWith('"')) ||
       (rawValue.startsWith("'") && rawValue.endsWith("'"))
         ? rawValue.slice(1, -1)
         : rawValue
@@ -96,7 +99,11 @@ const getWindowsDrives = () => {
 const getLaunchFilePath = () => {
   const launchArg = process.argv[1]
 
-  if (!launchArg || launchArg === "." || launchArg.startsWith("--")) {
+  if (
+    !launchArg ||
+    launchArg === "." ||
+    launchArg.startsWith("--")
+  ) {
     return getDefaultDirectory()
   }
 

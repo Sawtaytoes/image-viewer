@@ -1,5 +1,12 @@
 # Worker brief: fix image loading (safe-file-protocol)
 
+> **✅ RESOLVED (2026-06-03)** via **Fix C** below: the custom `safe-file-protocol` scheme was dropped
+> entirely. Images are read off disk in preload (`window.api.readImageData` → `{ data: ArrayBuffer,
+> mimeType }`) and turned into a `Blob` in `createFileDownloadObservable.js`; `registerSchemesAsPrivileged`
+> + `protocol.handle` + `net`/`pathToFileURL` were removed from `src/main.js`. MIME mapping lives in
+> `src/imageMimeTypes.js` (unit-tested). Still owed: a packaged-build (`yarn package`) human verification.
+> The original investigation is kept below for context.
+
 - **Priority:** HIGH — images don't render after the Phase 1 upgrade (folder listing works).
 - **Owner-observed:** packaged app on Windows 11, `G:\Pictures`. Folders list (fast!), every image tile
   is blank with a stuck thin white progress bar.

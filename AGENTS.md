@@ -37,6 +37,7 @@ read `process`. All of that goes through the preload bridge, exposed as **`windo
 | `getWindowsDrives()` | `["C:\\", "D:\\", …]` (sync IPC) |
 | `statPath(p)` | `{ exists, isFile, isDirectory }` (sync) |
 | `readDirectory(dir)` | `Promise<[{ fileName, filePath, isDirectory, isFile }]>` |
+| `readImageData(filePath)` | `Promise<{ data: ArrayBuffer, mimeType }>` — image bytes for the renderer Blob |
 | `deleteFilePath({ filePath, isDirectory })` | `Promise<boolean>` — trash, then permanent-delete fallback |
 | `createNewWindow({ filePath })` | open another window |
 | `path.{dirname,basename,join,resolve,extname,sep}` | path helpers |
@@ -51,9 +52,12 @@ everything crossing `contextBridge` **plain/serializable** (map `Dirent`/`Stats`
   Don't rename without updating preload + renderer.
 - **Delete** = `shell.trashItem` → on failure, `fs.promises.rm({recursive,force})`. (`moveItemToTrash`
   was removed in Electron 13.) Keep delete going to the Recycle Bin.
-- **`safe-file-protocol://<path>`** serves local images via `protocol.handle` + `net.fetch`. The
-  scheme is registered privileged (`registerSchemesAsPrivileged`) before app-ready. The renderer loads
-  images by XHR to this scheme ([`createFileDownloadObservable.js`](src/components/imageLoader/createFileDownloadObservable.js)).
+- **Image bytes** are read off disk in preload via `window.api.readImageData(filePath)` (returns
+  `{ data: ArrayBuffer, mimeType }`) and turned into a `Blob` in
+  ([`createFileDownloadObservable.js`](src/components/imageLoader/createFileDownloadObservable.js)).
+  There is **no custom protocol** — the old `safe-file-protocol://` scheme (`protocol.handle` +
+  `net.fetch` + XHR) was removed because it was fragile on Windows paths; see
+  [`docs/workers/fix-image-loading.md`](docs/workers/fix-image-loading.md).
 - **Drive list** comes from probing `A:`–`Z:` with `fs.existsSync` (NOT `wmic`, which is gone on
   Win11 — see [`docs/research/0006`](docs/research/0006-drive-enumeration-wmic.md)).
 - The launch file path is read from `process.argv` and passed to every window via

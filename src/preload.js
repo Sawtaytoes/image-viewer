@@ -6,6 +6,8 @@ import {
   webFrame,
 } from "electron"
 
+import getImageMimeType from "./imageMimeTypes"
+
 // This preload runs with Node access (sandbox:false) while the renderer does
 // not. It exposes a single curated, serializable `window.api` so renderer code
 // never imports electron/fs/path/process directly. See docs/research/0002.
@@ -58,6 +60,20 @@ const readDirectory = (directoryPath) =>
       })),
     )
 
+// Reads an image off disk and hands the renderer the raw bytes (as a
+// cloneable ArrayBuffer) plus a MIME type, replacing the old custom-scheme XHR
+// fetch. `fs.promises.readFile` returns a Buffer that may be a view into a
+// shared pool, so slice out exactly this file's bytes before crossing the
+// bridge.
+const readImageData = (filePath) =>
+  fs.promises.readFile(filePath).then((buffer) => ({
+    data: buffer.buffer.slice(
+      buffer.byteOffset,
+      buffer.byteOffset + buffer.byteLength,
+    ),
+    mimeType: getImageMimeType(path.extname(filePath)),
+  }))
+
 contextBridge.exposeInMainWorld("api", {
   cliFilePath,
   createNewWindow: (payload) =>
@@ -67,6 +83,7 @@ contextBridge.exposeInMainWorld("api", {
   getWindowsDrives: () =>
     ipcRenderer.sendSync("get-windows-drives"),
   readDirectory,
+  readImageData,
   statPath,
   path: {
     basename: (targetPath) => path.basename(targetPath),
