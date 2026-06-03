@@ -25,11 +25,9 @@ const windowsDrivePaths = window.api
     isFile: false,
   }))
 
-const filePathArg =
-  window.api.cliFilePath === "."
-    ? // TEMP hack until some sort of usable `.env` files are added.
-      "D:\\Pictures"
-    : window.api.cliFilePath
+// Resolved in the main process from the launch path or the configured default
+// directory (IMAGE_VIEWER_DEFAULT_DIRECTORY). Empty string ⇒ show the drive list.
+const filePathArg = window.api.cliFilePath
 
 const initialFilePath =
   new URLSearchParams(window.location.search).get(

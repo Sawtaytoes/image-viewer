@@ -1,39 +1,73 @@
 import fs from "node:fs"
 import path from "node:path"
-import { pathToFileURL } from "node:url"
 import {
   app,
   BrowserWindow,
   ipcMain,
-  net,
-  protocol,
   screen,
   shell,
 } from "electron"
 import started from "electron-squirrel-startup"
-
-const PROTOCOL_NAME = "safe-file-protocol"
 
 // Handle creating/removing shortcuts on Windows when installing/uninstalling.
 if (started) {
   app.quit()
 }
 
-// A privileged custom scheme lets the renderer load local images by URL
-// (safe-file-protocol://<path>) without Node access. Must be registered before
-// the app is ready. Kept non-standard so the opaque Windows path survives.
-protocol.registerSchemesAsPrivileged([
-  {
-    scheme: PROTOCOL_NAME,
-    privileges: {
-      supportFetchAPI: true,
-      stream: true,
-      bypassCSP: true,
-    },
-  },
-])
-
 const isDevelopment = !app.isPackaged
+
+// In development, load key=value pairs from the project-root `.env` into
+// process.env (without overriding anything already set). Production reads real
+// OS environment variables instead, so this dev-only loader keeps the two paths
+// reading from the same `process.env` source. Minimal on purpose — no quotes/
+// multiline/expansion handling beyond stripping surrounding quotes.
+const loadDotEnv = () => {
+  if (!isDevelopment) {
+    return
+  }
+
+  let envFileContents
+
+  try {
+    envFileContents = fs.readFileSync(
+      path.join(process.cwd(), ".env"),
+      "utf8",
+    )
+  } catch {
+    // No `.env` file is fine — fall back to the OS environment.
+    return
+  }
+
+  for (const line of envFileContents.split(/\r?\n/)) {
+    const match = line.match(/^\s*([\w.-]+)\s*=\s*(.*?)\s*$/)
+
+    if (!match || line.trimStart().startsWith("#")) {
+      continue
+    }
+
+    const [, key, rawValue] = match
+
+    const value =
+      (rawValue.startsWith('"') && rawValue.endsWith('"')) ||
+      (rawValue.startsWith("'") && rawValue.endsWith("'"))
+        ? rawValue.slice(1, -1)
+        : rawValue
+
+    if (!(key in process.env)) {
+      process.env[key] = value
+    }
+  }
+}
+
+loadDotEnv()
+
+// The directory the file browser opens to when the app is launched without an
+// explicit file/folder. Configure it via the IMAGE_VIEWER_DEFAULT_DIRECTORY
+// environment variable: in development put it in `.env`; in production set it as
+// an OS user-level environment variable (Windows GUI apps inherit those). When
+// unset, the renderer falls back to the drive list.
+const getDefaultDirectory = () =>
+  process.env.IMAGE_VIEWER_DEFAULT_DIRECTORY ?? ""
 
 // Enumerate available Windows drive letters without spawning a shell. The old
 // `wmic logicaldisk` call is removed on modern Windows 11; probing A:..Z: with
@@ -57,13 +91,13 @@ const getWindowsDrives = () => {
 }
 
 // The file/folder path the app was launched with (e.g. "Open with" from
-// Explorer). Flags and the dev "." placeholder are passed through unchanged so
-// the renderer can apply its own fallbacks.
+// Explorer). When there's no real launch path — nothing passed, a CLI flag, or
+// the dev "." placeholder — fall back to the configured default directory.
 const getLaunchFilePath = () => {
   const launchArg = process.argv[1]
 
-  if (!launchArg || launchArg.startsWith("--")) {
-    return ""
+  if (!launchArg || launchArg === "." || launchArg.startsWith("--")) {
+    return getDefaultDirectory()
   }
 
   return launchArg
@@ -153,15 +187,8 @@ ipcMain.handle(
 )
 
 app.whenReady().then(() => {
-  protocol.handle(PROTOCOL_NAME, (request) => {
-    const encodedPath = request.url.slice(
-      `${PROTOCOL_NAME}://`.length,
-    )
-    const filePath = decodeURIComponent(encodedPath)
-
-    return net.fetch(pathToFileURL(filePath).toString())
-  })
-
+  // Images are read off disk through the preload bridge
+  // (window.api.readImageData), so no custom protocol registration is needed.
   createWindow({ filePath: getLaunchFilePath() })
 })
 
