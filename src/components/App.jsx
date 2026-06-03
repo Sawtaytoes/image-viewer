@@ -8,6 +8,7 @@ import FileSystemProvider from "./fileBrowser/FileSystemProvider"
 import ImageLoaderProvider from "./imageLoader/ImageLoaderProvider"
 import ImageViewer from "./imageViewer/ImageViewer"
 import ImageViewerProvider from "./imageViewer/ImageViewerProvider"
+import WorkspaceProvider from "./workspace/WorkspaceProvider"
 
 const App = () => {
   useDisableScrollKeyFunctions()
@@ -32,15 +33,17 @@ const App = () => {
 				`}
       />
 
-      <ImageViewerProvider>
-        <FileSystemProvider>
-          <ImageLoaderProvider>
-            <TitleBar />
-            <FileBrowser />
-            <ImageViewer />
-          </ImageLoaderProvider>
-        </FileSystemProvider>
-      </ImageViewerProvider>
+      <WorkspaceProvider>
+        <ImageViewerProvider>
+          <FileSystemProvider>
+            <ImageLoaderProvider>
+              <TitleBar />
+              <FileBrowser />
+              <ImageViewer />
+            </ImageLoaderProvider>
+          </FileSystemProvider>
+        </ImageViewerProvider>
+      </WorkspaceProvider>
     </Fragment>
   )
 }

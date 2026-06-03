@@ -5,18 +5,24 @@ import {
   useContext,
   useEffect,
   useLayoutEffect,
+  useMemo,
   useRef,
   useState,
 } from "react"
 
 import useKeyboardControls from "../convenience/useKeyboardControls"
+import PlayArrowIcon from "../icons/PlayArrowIcon"
 import ImageLoaderContext from "../imageLoader/ImageLoaderContext"
 import ImageViewerContext from "../imageViewer/ImageViewerContext"
+import Button from "../toolkit/Button"
 import DeleteFileModal from "../toolkit/DeleteFileModal"
+import FolderTabStrip from "../workspace/FolderTabStrip"
+import WorkspaceContext from "../workspace/WorkspaceContext"
 import Directory from "./Directory"
 import DirectoryControls from "./DirectoryControls"
 import FileSystemContext from "./FileSystemContext"
 import ImageFile from "./ImageFile"
+import MultiSelectContext from "./MultiSelectContext"
 import VirtualizedList from "./VirtualizedList"
 
 const fileBrowserStyles = css`
@@ -25,12 +31,39 @@ const fileBrowserStyles = css`
 	display: grid;
 	height: 100vh;
 	width: 100%;
-	grid-template-rows: auto 1fr;
+	grid-template-rows: auto auto 1fr;
 `
 
 const virtualizedListContainerStyles = css`
+	grid-row: 3;
 	overflow: hidden;
 `
+
+const multiSelectActionBarStyles = css`
+	align-items: center;
+	background-color: rgba(51, 51, 51, 0.95);
+	border-radius: 12px;
+	bottom: 24px;
+	box-shadow: 0 4px 16px rgba(0, 0, 0, 0.4);
+	display: flex;
+	gap: 16px;
+	left: 50%;
+	padding: 12px 20px;
+	position: fixed;
+	transform: translateX(-50%);
+	z-index: 9999;
+`
+
+const actionButtonContentStyles = css`
+	align-items: center;
+	display: inline-flex;
+	gap: 4px;
+	justify-content: center;
+`
+
+// Reused as both the initial value and the cleared value — toggling always
+// builds a fresh Set, so this is never mutated.
+const initialSelectedFolderPaths = new Set()
 
 const FileBrowser = () => {
   const animationFrameIdRef = useRef()
@@ -41,6 +74,9 @@ const FileBrowser = () => {
     setIsDeleteFileModalVisible,
   ] = useState(false)
 
+  const [isMultiSelectMode, setIsMultiSelectMode] =
+    useState(false)
+
   const [numberOfColumns, setNumberOfColumns] = useState(1)
 
   const [previousFilePath, setPreviousFilePath] =
@@ -48,6 +84,9 @@ const FileBrowser = () => {
 
   const [previousImageFilePath, setPreviousImageFilePath] =
     useState("")
+
+  const [selectedFolderPaths, setSelectedFolderPaths] =
+    useState(initialSelectedFolderPaths)
 
   const [selectedIndex, setSelectedIndex] = useState(0)
 
@@ -63,7 +102,11 @@ const FileBrowser = () => {
     ImageViewerContext,
   )
 
-  const { unloadImage } = useContext(ImageLoaderContext)
+  const { releaseImage, retainImage } = useContext(
+    ImageLoaderContext,
+  )
+
+  const { addFoldersToQueue } = useContext(WorkspaceContext)
 
   const closeDeleteFileModal = useCallback(() => {
     setIsDeleteFileModalVisible(false)
@@ -72,6 +115,45 @@ const FileBrowser = () => {
   const openDeleteFileModal = useCallback(() => {
     setIsDeleteFileModalVisible(true)
   }, [])
+
+  const enterMultiSelect = useCallback(() => {
+    setIsMultiSelectMode(true)
+  }, [])
+
+  const toggleFolder = useCallback((folderPath) => {
+    setSelectedFolderPaths((previousPaths) => {
+      const nextPaths = new Set(previousPaths)
+
+      if (nextPaths.has(folderPath)) {
+        nextPaths.delete(folderPath)
+      } else {
+        nextPaths.add(folderPath)
+      }
+
+      return nextPaths
+    })
+  }, [])
+
+  const clearMultiSelect = useCallback(() => {
+    setIsMultiSelectMode(false)
+
+    setSelectedFolderPaths(initialSelectedFolderPaths)
+  }, [])
+
+  const openSelectedFolders = useCallback(() => {
+    addFoldersToQueue(
+      directories.filter(({ path }) =>
+        selectedFolderPaths.has(path),
+      ),
+    )
+
+    clearMultiSelect()
+  }, [
+    addFoldersToQueue,
+    clearMultiSelect,
+    directories,
+    selectedFolderPaths,
+  ])
 
   const deleteFileOrFolder = useCallback(() => {
     const numberOfDirectories = directories.length
@@ -102,14 +184,21 @@ const FileBrowser = () => {
     setFilePath,
   ])
 
-  useEffect(
-    () => () => {
+  // This folder pane holds every image it lists, so a path stays cached while
+  // the folder is open and only becomes eligible for eviction once released.
+  // With overlapping panes (side-by-side columns showing the same folder),
+  // closing one pane decrements rather than nuking blobs the other still shows.
+  useEffect(() => {
+    imageFiles.forEach(({ path }) => {
+      retainImage({ filePath: path })
+    })
+
+    return () => {
       imageFiles.forEach(({ path }) => {
-        unloadImage({ filePath: path })
+        releaseImage({ filePath: path })
       })
-    },
-    [imageFiles, unloadImage],
-  )
+    }
+  }, [imageFiles, releaseImage, retainImage])
 
   useEffect(
     () => () => {
@@ -149,6 +238,17 @@ const FileBrowser = () => {
 
   useKeyboardControls((event) => {
     if (isDeleteFileModalVisible || imageFilePath) {
+      return
+    }
+
+    // Multi-select owns its own affordances (tap to toggle, action bar to
+    // confirm); the single-selection keyboard nav would fight it, so no-op
+    // here and let Escape back out.
+    if (isMultiSelectMode) {
+      if (event.code === "Escape") {
+        clearMultiSelect()
+      }
+
       return
     }
 
@@ -266,43 +366,87 @@ const FileBrowser = () => {
     }
   }, [])
 
+  const multiSelectProviderValue = useMemo(
+    () => ({
+      enterMultiSelect,
+      isMultiSelectMode,
+      selectedFolderPaths,
+      toggleFolder,
+    }),
+    [
+      enterMultiSelect,
+      isMultiSelectMode,
+      selectedFolderPaths,
+      toggleFolder,
+    ],
+  )
+
+  const selectedCount = selectedFolderPaths.size
+
   return (
-    <div css={fileBrowserStyles}>
-      <DirectoryControls />
+    <MultiSelectContext.Provider
+      value={multiSelectProviderValue}
+    >
+      <div css={fileBrowserStyles}>
+        <DirectoryControls />
 
-      <div
-        css={virtualizedListContainerStyles}
-        ref={virtualizedListContainerRef}
-      >
-        <VirtualizedList
-          itemPadding="2px"
-          numberOfColumns={numberOfColumns}
-          selectedIndex={selectedIndex}
+        <FolderTabStrip />
+
+        <div
+          css={virtualizedListContainerStyles}
+          ref={virtualizedListContainerRef}
         >
-          {directories.map(({ name, path }) => (
-            <Directory
-              directoryName={name}
-              directoryPath={path}
-              key={path}
-            />
-          ))}
+          <VirtualizedList
+            itemPadding="2px"
+            numberOfColumns={numberOfColumns}
+            selectedIndex={selectedIndex}
+          >
+            {directories.map(({ name, path }) => (
+              <Directory
+                directoryName={name}
+                directoryPath={path}
+                key={path}
+              />
+            ))}
 
-          {imageFiles.map(({ name, path }) => (
-            <ImageFile
-              fileName={name}
-              filePath={path}
-              key={path}
-            />
-          ))}
-        </VirtualizedList>
+            {imageFiles.map(({ name, path }) => (
+              <ImageFile
+                fileName={name}
+                filePath={path}
+                key={path}
+              />
+            ))}
+          </VirtualizedList>
+        </div>
+
+        <DeleteFileModal
+          isVisible={isDeleteFileModalVisible}
+          onClose={closeDeleteFileModal}
+          onConfirm={deleteFileOrFolder}
+        />
       </div>
 
-      <DeleteFileModal
-        isVisible={isDeleteFileModalVisible}
-        onClose={closeDeleteFileModal}
-        onConfirm={deleteFileOrFolder}
-      />
-    </div>
+      {isMultiSelectMode && selectedCount > 0 && (
+        <div css={multiSelectActionBarStyles}>
+          <Button
+            onClick={openSelectedFolders}
+            type="positive"
+          >
+            <span css={actionButtonContentStyles}>
+              <PlayArrowIcon />
+              Open {selectedCount} folders
+            </span>
+          </Button>
+
+          <Button
+            onClick={clearMultiSelect}
+            type="negative"
+          >
+            Cancel
+          </Button>
+        </div>
+      )}
+    </MultiSelectContext.Provider>
   )
 }
 
