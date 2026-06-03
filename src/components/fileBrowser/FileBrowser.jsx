@@ -106,7 +106,9 @@ const FileBrowser = () => {
     ImageLoaderContext,
   )
 
-  const { addFoldersToQueue } = useContext(WorkspaceContext)
+  const { addFoldersToQueue, panes } = useContext(
+    WorkspaceContext,
+  )
 
   const closeDeleteFileModal = useCallback(() => {
     setIsDeleteFileModalVisible(false)
@@ -237,7 +239,13 @@ const FileBrowser = () => {
   ])
 
   useKeyboardControls((event) => {
-    if (isDeleteFileModalVisible || imageFilePath) {
+    // Bail while the immersive viewer is up (legacy image or columns) — it owns
+    // the keyboard then, and the gallery is only behind it.
+    if (
+      isDeleteFileModalVisible ||
+      imageFilePath ||
+      panes.length > 0
+    ) {
       return
     }
 

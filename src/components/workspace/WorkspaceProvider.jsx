@@ -13,17 +13,14 @@ const createPane = () => ({
   id: createId(),
 })
 
-// One empty pane exists from the start so a tapped tab always has somewhere to
-// land (the columns brief grows/shrinks this list).
-const createInitialWorkspace = () => {
-  const pane = createPane()
-
-  return {
-    activePaneId: pane.id,
-    panes: [pane],
-    queuedFolders: [],
-  }
-}
+// Panes are ephemeral: there are none until the user opens a folder into a
+// column, and closing the last one drops back to the gallery. The queue
+// (queuedFolders / tabs) is the persistent thing.
+const createInitialWorkspace = () => ({
+  activePaneId: null,
+  panes: [],
+  queuedFolders: [],
+})
 
 const propTypes = {
   children: PropTypes.node.isRequired,
@@ -169,6 +166,15 @@ const WorkspaceProvider = ({ children }) => {
     }))
   }, [])
 
+  // Drop all columns — leaves the immersive viewer back to the gallery.
+  const clearPanes = useCallback(() => {
+    setWorkspace((previousWorkspace) => ({
+      ...previousWorkspace,
+      activePaneId: null,
+      panes: [],
+    }))
+  }, [])
+
   const workspaceProviderValue = useMemo(
     () => ({
       activePaneId: workspace.activePaneId,
@@ -176,6 +182,7 @@ const WorkspaceProvider = ({ children }) => {
       addFoldersToQueue,
       addPane,
       assignFolderToPane,
+      clearPanes,
       panes: workspace.panes,
       queuedFolders: workspace.queuedFolders,
       removeFolder,
@@ -188,6 +195,7 @@ const WorkspaceProvider = ({ children }) => {
       addFoldersToQueue,
       addPane,
       assignFolderToPane,
+      clearPanes,
       removeFolder,
       removePane,
       setActivePaneId,

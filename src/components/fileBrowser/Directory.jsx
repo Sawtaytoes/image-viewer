@@ -4,11 +4,9 @@ import {
   memo,
   useCallback,
   useContext,
-  useEffect,
   useRef,
   useState,
 } from "react"
-import { from } from "rxjs"
 
 import useKeyboardControls from "../convenience/useKeyboardControls"
 import Image from "../imageViewer/Image"
@@ -16,7 +14,7 @@ import useLongPress from "../imageViewer/useLongPress"
 import FileSystemContext from "./FileSystemContext"
 import FillRing from "./FillRing"
 import MultiSelectContext from "./MultiSelectContext"
-import useImageFiles from "./useImageFiles"
+import useFolderListing from "./useFolderListing"
 
 // `pan-y` keeps the list scrollable on touch — `useLongPress` cancels itself on
 // movement, so `touch-action: none` isn't needed to detect the hold.
@@ -74,8 +72,6 @@ const checkBadgeStyles = css`
 	width: 26px;
 `
 
-const initialDirectoryContents = []
-
 const propTypes = {
   directoryName: PropTypes.string.isRequired,
   directoryPath: PropTypes.string.isRequired,
@@ -96,9 +92,6 @@ const Directory = ({ directoryName, directoryPath }) => {
     selectedFolderPaths,
     toggleFolder,
   } = useContext(MultiSelectContext)
-
-  const [directoryContents, setDirectoryContents] =
-    useState(initialDirectoryContents)
 
   const [longPressProgress, setLongPressProgress] =
     useState(0)
@@ -174,21 +167,7 @@ const Directory = ({ directoryName, directoryPath }) => {
     onProgress: onLongPressProgress,
   })
 
-  useEffect(() => {
-    if (!directoryPath) {
-      return
-    }
-
-    const subscription = from(
-      window.api.readDirectory(directoryPath),
-    ).subscribe(setDirectoryContents)
-
-    return () => {
-      subscription.unsubscribe()
-    }
-  }, [directoryPath])
-
-  const imageFiles = useImageFiles(directoryContents)
+  const { imageFiles } = useFolderListing(directoryPath)
 
   return (
     <div

@@ -6,23 +6,21 @@ import {
   useMemo,
   useState,
 } from "react"
-import { from } from "rxjs"
 
 import FileSystemContext from "./FileSystemContext"
-import useDirectories from "./useDirectories"
-import useImageFiles from "./useImageFiles"
+import useFolderListing from "./useFolderListing"
 
 // All Node/Electron access goes through the preload bridge. See
 // docs/research/0002-electron-security-model.md.
 const pathApi = window.api.path
 
-const windowsDrivePaths = window.api
+// The drive list shown at the root (empty filePath). Mirrors what
+// `useDirectories` would produce for drive entries, minus a folder to list.
+const driveDirectories = window.api
   .getWindowsDrives()
   .map((driveLetter) => ({
-    fileName: driveLetter,
-    filePath: driveLetter,
-    isDirectory: true,
-    isFile: false,
+    name: driveLetter,
+    path: driveLetter,
   }))
 
 // Resolved in the main process from the launch path or the configured default
@@ -41,17 +39,12 @@ const initialFilePath =
     )) ||
   ""
 
-const initialDirectoryContents = []
-
 const propTypes = {
   children: PropTypes.node.isRequired,
 }
 
 const FileSystemProvider = ({ children }) => {
   const [filePath, setFilePath] = useState(initialFilePath)
-
-  const [directoryContents, setDirectoryContents] =
-    useState(initialDirectoryContents)
 
   useEffect(() => {
     const urlSearchParams = new URLSearchParams(
@@ -65,30 +58,6 @@ const FileSystemProvider = ({ children }) => {
       "",
       `?${urlSearchParams}`,
     )
-  }, [filePath])
-
-  useEffect(() => {
-    if (!filePath) {
-      if (windowsDrivePaths) {
-        setDirectoryContents(windowsDrivePaths)
-      } else {
-        setFilePath(pathApi.sep)
-      }
-    }
-  }, [filePath])
-
-  useEffect(() => {
-    if (!filePath) {
-      return
-    }
-
-    const subscription = from(
-      window.api.readDirectory(filePath),
-    ).subscribe(setDirectoryContents)
-
-    return () => {
-      subscription.unsubscribe()
-    }
   }, [filePath])
 
   const isRootFilePath = useMemo(
@@ -112,9 +81,13 @@ const FileSystemProvider = ({ children }) => {
     }
   }, [filePath, isRootFilePath])
 
-  const directories = useDirectories(directoryContents)
+  const { directories: listedDirectories, imageFiles } =
+    useFolderListing(filePath)
 
-  const imageFiles = useImageFiles(directoryContents)
+  // At the root there is no folder to list, so surface the drives instead.
+  const directories = filePath
+    ? listedDirectories
+    : driveDirectories
 
   const filePathProviderValue = useMemo(
     () => ({

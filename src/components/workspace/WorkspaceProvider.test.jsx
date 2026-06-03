@@ -16,6 +16,13 @@ const renderWorkspace = () => {
 }
 
 describe("WorkspaceProvider", () => {
+  it("starts with no panes", () => {
+    const { result } = renderWorkspace()
+
+    expect(result.current.panes).toHaveLength(0)
+    expect(result.current.activePaneId).toBe(null)
+  })
+
   it("dedupes addFoldersToQueue by path", () => {
     const { result } = renderWorkspace()
 
@@ -50,13 +57,13 @@ describe("WorkspaceProvider", () => {
 
     const folderId = result.current.queuedFolders[0].id
 
-    let extraPaneId
+    let firstPaneId
+    let secondPaneId
 
     act(() => {
-      extraPaneId = result.current.addPane().id
+      firstPaneId = result.current.addPane().id
+      secondPaneId = result.current.addPane().id
     })
-
-    const firstPaneId = result.current.panes[0].id
 
     act(() => {
       result.current.assignFolderToPane(
@@ -65,10 +72,12 @@ describe("WorkspaceProvider", () => {
       )
 
       result.current.assignFolderToPane(
-        extraPaneId,
+        secondPaneId,
         folderId,
       )
     })
+
+    expect(result.current.panes).toHaveLength(2)
 
     expect(
       result.current.panes.every(
@@ -99,7 +108,11 @@ describe("WorkspaceProvider", () => {
       ])
     })
 
-    const paneId = result.current.panes[0].id
+    let paneId
+
+    act(() => {
+      paneId = result.current.addPane().id
+    })
 
     const [firstFolder, secondFolder] =
       result.current.queuedFolders
@@ -134,5 +147,23 @@ describe("WorkspaceProvider", () => {
 
     expect(pane.folderId).toBe(secondFolder.id)
     expect(pane.currentIndex).toBe(0)
+  })
+
+  it("clearPanes drops every pane back to the gallery", () => {
+    const { result } = renderWorkspace()
+
+    act(() => {
+      result.current.addPane()
+      result.current.addPane()
+    })
+
+    expect(result.current.panes).toHaveLength(2)
+
+    act(() => {
+      result.current.clearPanes()
+    })
+
+    expect(result.current.panes).toHaveLength(0)
+    expect(result.current.activePaneId).toBe(null)
   })
 })

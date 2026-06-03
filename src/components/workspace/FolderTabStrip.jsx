@@ -122,6 +122,7 @@ const MemoizedFolderTab = memo(FolderTab)
 const FolderTabStrip = () => {
   const {
     activePaneId,
+    addPane,
     assignFolderToPane,
     panes,
     queuedFolders,
@@ -136,24 +137,25 @@ const FolderTabStrip = () => {
     [activePaneId, panes],
   )
 
-  // Load into the active pane, else the first empty pane, else the first pane.
+  // Load into the active pane, else the first empty pane, else open a brand new
+  // column (this is how a tap from the gallery enters the side-by-side viewer).
   const handleSelect = useCallback(
     (folderId) => {
       const targetPane =
         panes.find((pane) => pane.id === activePaneId) ??
-        panes.find((pane) => !pane.folderId) ??
-        panes[0]
+        panes.find((pane) => !pane.folderId)
 
-      if (!targetPane) {
-        return
-      }
+      const targetPaneId = targetPane
+        ? targetPane.id
+        : addPane().id
 
-      assignFolderToPane(targetPane.id, folderId)
+      assignFolderToPane(targetPaneId, folderId)
 
-      setActivePaneId(targetPane.id)
+      setActivePaneId(targetPaneId)
     },
     [
       activePaneId,
+      addPane,
       assignFolderToPane,
       panes,
       setActivePaneId,

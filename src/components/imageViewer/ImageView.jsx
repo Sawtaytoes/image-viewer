@@ -2,15 +2,13 @@ import { css } from "@emotion/react"
 import PropTypes from "prop-types"
 import {
   memo,
-  useContext,
+  useCallback,
   useMemo,
   useRef,
   useState,
 } from "react"
 
 import Image from "./Image"
-import ImageViewerContext from "./ImageViewerContext"
-import useImageNavigation from "./useImageNavigation"
 import usePointerHover from "./usePointerHover"
 
 const imageViewStyles = css`
@@ -29,6 +27,16 @@ const imageStyles = css`
 	justify-content: center;
 	position: absolute;
 	width: 100%;
+`
+
+// Bounded close zone sitting between the two 30% nav zones, so edge taps
+// navigate and only a center tap closes.
+const centerCloseZoneStyles = css`
+	bottom: 0;
+	left: 30%;
+	position: absolute;
+	right: 30%;
+	top: 0;
 `
 
 const navigationControlsStyles = css`
@@ -57,11 +65,24 @@ const unavailableNavigationStyles = css`
 `
 
 const propTypes = {
+  goToNextImage: PropTypes.func.isRequired,
+  goToPreviousImage: PropTypes.func.isRequired,
   imageFileName: PropTypes.string.isRequired,
   imageFilePath: PropTypes.string.isRequired,
+  isAtBeginning: PropTypes.bool.isRequired,
+  isAtEnd: PropTypes.bool.isRequired,
+  onClose: PropTypes.func.isRequired,
 }
 
-const ImageView = ({ imageFileName, imageFilePath }) => {
+const ImageView = ({
+  goToNextImage,
+  goToPreviousImage,
+  imageFileName,
+  imageFilePath,
+  isAtBeginning,
+  isAtEnd,
+  onClose,
+}) => {
   const [isHoveringNextOverlay, setIsHoveringNextOverlay] =
     useState(false)
 
@@ -69,17 +90,6 @@ const ImageView = ({ imageFileName, imageFilePath }) => {
     isHoveringPreviousOverlay,
     setIsHoveringPreviousOverlay,
   ] = useState(false)
-
-  const { leaveImageViewer } = useContext(
-    ImageViewerContext,
-  )
-
-  const {
-    goToNextImage,
-    goToPreviousImage,
-    isAtBeginning,
-    isAtEnd,
-  } = useImageNavigation()
 
   const navigateNextOverlayRef = useRef()
   const navigatePreviousOverlayRef = useRef()
@@ -98,46 +108,52 @@ const ImageView = ({ imageFileName, imageFilePath }) => {
     domElementRef: navigatePreviousOverlayRef,
   })
 
+  const onCenterPointerDown = useCallback(
+    (event) => {
+      onClose({ x: event.clientX, y: event.clientY })
+    },
+    [onClose],
+  )
+
   const navigateNextOverlayStyles = useMemo(
     () => css`
-					${navigationControlsStyles}
-					${hideNavigationControlStyles}
-					right: 0;
+				${navigationControlsStyles}
+				${hideNavigationControlStyles}
+				right: 0;
 
-					${
-            isHoveringNextOverlay &&
-            showNavigationControlStyles
-          }
+				${isHoveringNextOverlay && showNavigationControlStyles}
 
-					${isAtEnd && unavailableNavigationStyles}
-				`,
+				${isAtEnd && unavailableNavigationStyles}
+			`,
     [isAtEnd, isHoveringNextOverlay],
   )
 
   const navigatePreviousOverlayStyles = useMemo(
     () => css`
-					${navigationControlsStyles}
-					${hideNavigationControlStyles}
-					left: 0;
+				${navigationControlsStyles}
+				${hideNavigationControlStyles}
+				left: 0;
 
-					${
-            isHoveringPreviousOverlay &&
-            showNavigationControlStyles
-          }
+				${isHoveringPreviousOverlay && showNavigationControlStyles}
 
-					${isAtBeginning && unavailableNavigationStyles}
-				`,
+				${isAtBeginning && unavailableNavigationStyles}
+			`,
     [isAtBeginning, isHoveringPreviousOverlay],
   )
 
   return (
     <div css={imageViewStyles}>
-      <div css={imageStyles} onClick={leaveImageViewer}>
+      <div css={imageStyles}>
         <Image
           fileName={imageFileName}
           filePath={imageFilePath}
         />
       </div>
+
+      <div
+        css={centerCloseZoneStyles}
+        onPointerDown={onCenterPointerDown}
+      />
 
       <div
         css={navigateNextOverlayStyles}
