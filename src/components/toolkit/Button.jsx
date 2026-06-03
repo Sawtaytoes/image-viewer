@@ -13,6 +13,22 @@ const buttonStyles = css`
 	padding-right: 0;
 	border-radius: 5px;
 	border: 0;
+	cursor: pointer;
+	transition: filter 0.1s ease, transform 0.1s ease;
+
+	&:hover {
+		filter: brightness(1.15);
+	}
+
+	&:focus-visible {
+		outline: 2px solid white;
+		outline-offset: 2px;
+	}
+
+	&:active {
+		filter: brightness(0.85);
+		transform: scale(0.96);
+	}
 `
 
 const buttonTypes = {

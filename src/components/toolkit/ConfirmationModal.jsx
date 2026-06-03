@@ -1,8 +1,36 @@
-import { css } from "@emotion/react"
+import { css, keyframes } from "@emotion/react"
 import PropTypes from "prop-types"
-import { memo } from "react"
+import { memo, useEffect, useState } from "react"
 import useKeyboardControls from "../convenience/useKeyboardControls"
 import Button from "./Button"
+
+const ANIMATION_DURATION_MS = 200
+
+const backdropFadeIn = keyframes`
+	from { opacity: 0; }
+	to { opacity: 1; }
+`
+
+const backdropFadeOut = keyframes`
+	from { opacity: 1; }
+	to { opacity: 0; }
+`
+
+const contentScaleIn = keyframes`
+	from { opacity: 0; transform: scale(0.9); }
+	to { opacity: 1; transform: scale(1); }
+`
+
+const contentScaleOut = keyframes`
+	from { opacity: 1; transform: scale(1); }
+	to { opacity: 0; transform: scale(0.9); }
+`
+
+const contentStyles = css`
+	align-items: center;
+	display: flex;
+	flex-direction: column;
+`
 
 const choicesStyles = css`
 	align-items: center;
@@ -59,6 +87,15 @@ const ConfirmationModal = ({
   onClose,
   onConfirm,
 }) => {
+  // Stay mounted while the close animation plays, then unmount once it finishes.
+  const [isRendered, setIsRendered] = useState(isVisible)
+
+  useEffect(() => {
+    if (isVisible) {
+      setIsRendered(true)
+    }
+  }, [isVisible])
+
   useKeyboardControls((event) => {
     if (!isVisible) {
       return
@@ -77,25 +114,56 @@ const ConfirmationModal = ({
     })
   })
 
-  return isVisible ? (
-    <div css={confirmationModalStyles}>
-      <div css={messageStyles}>{children}</div>
+  if (!isRendered) {
+    return null
+  }
 
-      <div css={choicesStyles}>
-        <div css={choiceButtonStyles}>
-          <Button onClick={onClose} type="negative">
-            {closeButtonText}
-          </Button>
-        </div>
+  return (
+    <div
+      css={css`
+        ${confirmationModalStyles}
+        animation: ${isVisible ? backdropFadeIn : backdropFadeOut} ${ANIMATION_DURATION_MS}ms ease forwards;
+      `}
+      onAnimationEnd={(event) => {
+        // Only the backdrop's own fade-out should unmount (ignore bubbling from the content animation).
+        if (
+          event.target === event.currentTarget &&
+          !isVisible
+        ) {
+          setIsRendered(false)
+        }
+      }}
+      onClick={(event) => {
+        // Clicking the backdrop (but not the message or buttons) dismisses the modal without confirming.
+        if (event.target === event.currentTarget) {
+          onClose()
+        }
+      }}
+    >
+      <div
+        css={css`
+          ${contentStyles}
+          animation: ${isVisible ? contentScaleIn : contentScaleOut} ${ANIMATION_DURATION_MS}ms ease forwards;
+        `}
+      >
+        <div css={messageStyles}>{children}</div>
 
-        <div css={choiceButtonStyles}>
-          <Button onClick={onConfirm} type="positive">
-            {confirmButtonText}
-          </Button>
+        <div css={choicesStyles}>
+          <div css={choiceButtonStyles}>
+            <Button onClick={onClose} type="negative">
+              {closeButtonText}
+            </Button>
+          </div>
+
+          <div css={choiceButtonStyles}>
+            <Button onClick={onConfirm} type="positive">
+              {confirmButtonText}
+            </Button>
+          </div>
         </div>
       </div>
     </div>
-  ) : null
+  )
 }
 
 ConfirmationModal.propTypes = propTypes
