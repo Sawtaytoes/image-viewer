@@ -48,9 +48,11 @@ const Image = ({
   const animationFrameIdRef = useRef()
   const canvasRef = useRef()
 
-  const { updateImageVisibility } = useContext(
-    ImageLoaderContext,
-  )
+  const {
+    releaseImage,
+    retainImage,
+    updateImageVisibility,
+  } = useContext(ImageLoaderContext)
 
   const { imageDomElement, percentDownloaded = 0 } =
     useStateSelector(
@@ -107,6 +109,28 @@ const Image = ({
     hasVisibilityDetection,
     isVisible,
     updateImageVisibility,
+  ])
+
+  // The full-screen viewer is a standalone holder: it retains its path so the
+  // blob survives even if no folder pane lists it (and, with side-by-side
+  // panes, so closing one viewer doesn't evict the image another still shows).
+  // Gallery thumbnails (`hasVisibilityDetection`) skip this — their folder pane
+  // owns the hold, and mounting/unmounting on scroll must not churn the cache.
+  useEffect(() => {
+    if (hasVisibilityDetection) {
+      return undefined
+    }
+
+    retainImage({ filePath })
+
+    return () => {
+      releaseImage({ filePath })
+    }
+  }, [
+    filePath,
+    hasVisibilityDetection,
+    releaseImage,
+    retainImage,
   ])
 
   useEffect(() => {
