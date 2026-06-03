@@ -1,0 +1,37 @@
+name: Release
+
+on:
+  push:
+    tags:
+      - "v*"
+
+# Allow the workflow to create/upload GitHub Releases.
+permissions:
+  contents: write
+
+jobs:
+  release:
+    runs-on: windows-latest
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+
+      - name: Enable Corepack (Yarn 4)
+        run: corepack enable
+
+      - name: Install dependencies
+        run: yarn install --immutable
+
+      # Belt-and-suspenders: make sure Electron's binary is fetched under
+      # Yarn 4 even if the postinstall script didn't run.
+      - name: Ensure Electron binary
+        run: node node_modules/electron/install.js
+
+      - name: Build and publish to GitHub Releases
+        run: yarn publish
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
