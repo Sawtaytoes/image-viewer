@@ -119,19 +119,26 @@ const Image = ({
         return
       }
 
+      // Use the immutable intrinsic dimensions. The rendered `width`/`height`
+      // are overwritten by `setAttribute` below, so reading them here would
+      // fit against the previous fit's size — compounding rounding every
+      // resize until the aspect ratio drifts and never recovers.
+      const { naturalHeight, naturalWidth } =
+        imageDomElement
+
       const isHeightRestricted =
-        (imageDomElement.height / imageDomElement.width) *
+        (naturalHeight / naturalWidth) *
           canvasRef.current.clientWidth >
         canvasRef.current.clientHeight
 
       const canvasImageWidth = isHeightRestricted
-        ? (imageDomElement.width / imageDomElement.height) *
+        ? (naturalWidth / naturalHeight) *
           canvasRef.current.clientHeight
         : canvasRef.current.clientWidth
 
       const canvasImageHeight = isHeightRestricted
         ? canvasRef.current.clientHeight
-        : (imageDomElement.height / imageDomElement.width) *
+        : (naturalHeight / naturalWidth) *
           canvasRef.current.clientWidth
 
       imageDomElement.setAttribute(

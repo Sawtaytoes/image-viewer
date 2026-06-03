@@ -24,6 +24,7 @@ const scrollContainerStyles = css`
 	height: 100%;
 	overflow-x: hidden;
 	overflow-y: auto;
+	scrollbar-gutter: stable;
 	width: 100%;
 `
 
