@@ -11,10 +11,14 @@ delegated work follows the same shape. One file per worker task.
 
 ## Open briefs (work to be picked up later)
 
-- [fix-image-loading.md](fix-image-loading.md) — **HIGH priority.** Images don't render after the
+- [fix-image-loading.md](fix-image-loading.md) — ✅ **Done.** Images don't render after the
   upgrade (the `safe-file-protocol` fetch path); full data-flow trace, hypotheses, and candidate fixes.
-- [release-pipeline.md](release-pipeline.md) — future: CI that publishes a downloadable EXE to Gitea +
+- [release-pipeline.md](release-pipeline.md) — ✅ **Done.** CI that publishes a downloadable EXE to Gitea +
   GitHub Releases on a version tag.
+- [convert-source-to-typescript.md](convert-source-to-typescript.md) — executes **Phase 2** of
+  [ADR 0004](../research/0004-typescript-strategy.md): rename `src/**/*.js` → `.ts`/`.tsx` and type it
+  *cleanly* — generics and correct DOM types over `any`/`as`/`unknown`, `PointerEventHandler` over
+  hand-annotated events. Lower priority than the folder-queue + columns work below.
 
 ### Folder queue + side-by-side columns (touch)
 
