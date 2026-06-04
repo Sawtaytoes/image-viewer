@@ -13,6 +13,10 @@ permissions:
 
 jobs:
   release:
+    # Gitea Actions also reads .github/workflows, but only has an Ubuntu runner.
+    # Restrict the Windows build/release to GitHub (on Gitea, server_url is the
+    # Gitea instance URL, so this job is skipped there).
+    if: ${{ github.server_url == 'https://github.com' }}
     runs-on: windows-latest
 
     steps:
