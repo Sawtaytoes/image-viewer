@@ -4,6 +4,7 @@ import filePathsQueueReducer from "./filePathsQueueReducer"
 import imageDomElementsReducer from "./imageDomElementsReducer"
 import priorityQueueReducer from "./priorityQueueReducer"
 import processingQueueReducer from "./processingQueueReducer"
+import referenceCountsReducer from "./referenceCountsReducer"
 import standbyQueueReducer from "./standbyQueueReducer"
 
 const reducers = [
@@ -30,6 +31,10 @@ const reducers = [
   {
     namespace: "processingQueue",
     reducer: processingQueueReducer,
+  },
+  {
+    namespace: "referenceCounts",
+    reducer: referenceCountsReducer,
   },
   {
     namespace: "standbyQueue",

@@ -2,7 +2,11 @@ import { useCallback, useContext, useMemo } from "react"
 
 import FileSystemContext from "../fileBrowser/FileSystemContext"
 import ImageViewerContext from "./ImageViewerContext"
+import usePaneNavigation from "./usePaneNavigation"
 
+// Thin adapter that maps the legacy single-image overlay onto the generic
+// pane navigation: the "current index" comes from `imageFilePath`'s position
+// in the global folder, and moving the index sets the viewer's image file.
 const useImageNavigation = () => {
   const { imageFiles } = useContext(FileSystemContext)
 
@@ -10,7 +14,7 @@ const useImageNavigation = () => {
     ImageViewerContext,
   )
 
-  const imageFileIndex = useMemo(
+  const currentIndex = useMemo(
     () =>
       imageFiles.findIndex(
         ({ path }) => imageFilePath === path,
@@ -18,26 +22,18 @@ const useImageNavigation = () => {
     [imageFilePath, imageFiles],
   )
 
-  const goToNextImage = useCallback(() => {
-    setImageFile(
-      imageFiles[
-        Math.min(imageFileIndex + 1, imageFiles.length - 1)
-      ],
-    )
-  }, [imageFileIndex, imageFiles, setImageFile])
+  const setCurrentIndex = useCallback(
+    (index) => {
+      setImageFile(imageFiles[index])
+    },
+    [imageFiles, setImageFile],
+  )
 
-  const goToPreviousImage = useCallback(() => {
-    setImageFile(
-      imageFiles[Math.max(imageFileIndex - 1, 0)],
-    )
-  }, [imageFileIndex, imageFiles, setImageFile])
-
-  return {
-    goToNextImage,
-    goToPreviousImage,
-    isAtBeginning: imageFileIndex === 0,
-    isAtEnd: imageFileIndex === imageFiles.length - 1,
-  }
+  return usePaneNavigation({
+    currentIndex,
+    imageFiles,
+    setCurrentIndex,
+  })
 }
 
 export default useImageNavigation

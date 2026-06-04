@@ -11,7 +11,26 @@ delegated work follows the same shape. One file per worker task.
 
 ## Open briefs (work to be picked up later)
 
-- [fix-image-loading.md](fix-image-loading.md) — **HIGH priority.** Images don't render after the
+- [fix-image-loading.md](fix-image-loading.md) — ✅ **Done.** Images don't render after the
   upgrade (the `safe-file-protocol` fetch path); full data-flow trace, hypotheses, and candidate fixes.
-- [release-pipeline.md](release-pipeline.md) — future: CI that publishes a downloadable EXE to Gitea +
+- [release-pipeline.md](release-pipeline.md) — ✅ **Done.** CI that publishes a downloadable EXE to Gitea +
   GitHub Releases on a version tag.
+- [convert-source-to-typescript.md](convert-source-to-typescript.md) — executes **Phase 2** of
+  [ADR 0004](../research/0004-typescript-strategy.md): rename `src/**/*.js` → `.ts`/`.tsx` and type it
+  *cleanly* — generics and correct DOM types over `any`/`as`/`unknown`, `PointerEventHandler` over
+  hand-annotated events. Lower priority than the folder-queue + columns work below.
+
+### Folder queue + side-by-side columns (touch)
+
+Two features the owner wants: queue up multiple folders and switch between them, and view images in
+N side-by-side columns. Immersive full-image mode **is** the columns container (a single image is the
+1-column case); chrome is summoned by swiping down from the top edge. Build in dependency order:
+
+- [refactor-image-cache-refcount.md](refactor-image-cache-refcount.md) — **prerequisite, do first.**
+  Reference-count the flat image cache so two panes can share a folder without one evicting the other's
+  blob. Invisible, zero behavior change in the current view.
+- [feature-folder-queue.md](feature-folder-queue.md) — the `WorkspaceContext` foundation (queue + panes
+  state), long-press multi-select in the file browser (fill-ring animation), and the folder tab strip.
+- [feature-side-by-side-columns.md](feature-side-by-side-columns.md) — the immersive N-column viewer,
+  per-pane navigation, tap-an-empty-pane folder picker, swipe-down chrome, and the center-tap /
+  top-reveal ripple feedback. Depends on the two above.

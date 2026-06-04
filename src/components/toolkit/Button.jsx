@@ -6,11 +6,9 @@ const buttonStyles = css`
 	font-family: 'Source Sans Pro', sans-serif;
 	font-size: 24px;
 	font-weight: 300;
-	width: 120px;
-	padding-top: 10px;
-	padding-bottom: 10px;
-	padding-left: 0;
-	padding-right: 0;
+	min-width: 120px;
+	padding: 10px 24px;
+	white-space: nowrap;
 	border-radius: 5px;
 	border: 0;
 	cursor: pointer;

@@ -57,3 +57,13 @@ if (!globalThis.ResizeObserver) {
     disconnect() {}
   }
 }
+
+// jsdom lacks IntersectionObserver, which Image uses for lazy loading. The stub
+// never reports visibility, so test-rendered images simply don't start loading.
+if (!globalThis.IntersectionObserver) {
+  globalThis.IntersectionObserver = class {
+    observe() {}
+    unobserve() {}
+    disconnect() {}
+  }
+}

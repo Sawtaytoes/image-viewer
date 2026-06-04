@@ -13,7 +13,8 @@ import {
 import ImageLoaderContext from "./ImageLoaderContext"
 import {
   addFilePath,
-  removeFilePath,
+  releaseFilePath,
+  retainFilePath,
 } from "./imageLoaderActions"
 
 const propTypes = {
@@ -29,9 +30,22 @@ const ImageLoaderProvider = ({ children }) => {
     }
   }, [])
 
-  const unloadImage = useCallback(({ filePath }) => {
+  // Refcount lifecycle: a holder (an open folder pane, the full-screen viewer)
+  // retains a path while it needs the cached blob alive and releases it when
+  // done. The blob is only evicted once the last holder releases — see
+  // `referenceCountEpic`. This is orthogonal to `updateImageVisibility`, which
+  // still drives lazy loading + priority-queue ordering.
+  const retainImage = useCallback(({ filePath }) => {
     dispatchReduxAction(
-      removeFilePath({
+      retainFilePath({
+        filePath,
+      }),
+    )
+  }, [])
+
+  const releaseImage = useCallback(({ filePath }) => {
+    dispatchReduxAction(
+      releaseFilePath({
         filePath,
       }),
     )
@@ -52,10 +66,11 @@ const ImageLoaderProvider = ({ children }) => {
   const imageLoaderProviderValue = useMemo(
     () => ({
       createStateObservable,
-      unloadImage,
+      releaseImage,
+      retainImage,
       updateImageVisibility,
     }),
-    [unloadImage, updateImageVisibility],
+    [releaseImage, retainImage, updateImageVisibility],
   )
 
   return (

@@ -85,11 +85,23 @@ export const removeImageDomElement =
     namespaceIdentifier: "filePath",
   })
 
+export const releaseFilePath = createNamespaceActionCreator(
+  {
+    actionType: "releaseFilePath",
+    namespaceIdentifier: "filePath",
+  },
+)
+
 export const resetDownloadedPercentage =
   createNamespaceActionCreator({
     actionType: "resetDownloadedPercentage",
     namespaceIdentifier: "filePath",
   })
+
+export const retainFilePath = createNamespaceActionCreator({
+  actionType: "retainFilePath",
+  namespaceIdentifier: "filePath",
+})
 
 export const startFilePathDownload =
   createNamespaceActionCreator({

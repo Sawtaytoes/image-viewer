@@ -163,10 +163,13 @@ const VirtualizedList = ({
   }, [numberOfColumns, selectedIndex, viewData])
 
   useEffect(() => {
+    // Capture the node now: on unmount React has already nulled the ref by the
+    // time this cleanup runs, so reading `scrollContainerRef.current` there
+    // would throw (it does when toggling sort swaps this list out).
+    const scrollContainer = scrollContainerRef.current
+
     const updateScrollPosition = () => {
-      setScrollYPosition(
-        scrollContainerRef.current.scrollTop,
-      )
+      setScrollYPosition(scrollContainer.scrollTop)
     }
 
     const throttleScrollPositionUpdate = () => {
@@ -182,17 +185,16 @@ const VirtualizedList = ({
         })
     }
 
-    scrollContainerRef.current.addEventListener(
+    scrollContainer.addEventListener(
       "scroll",
       throttleScrollPositionUpdate,
     )
 
     return () => {
-      scrollContainerRef.current // eslint-disable-line react-hooks/exhaustive-deps
-        .removeEventListener(
-          "scroll",
-          throttleScrollPositionUpdate,
-        )
+      scrollContainer.removeEventListener(
+        "scroll",
+        throttleScrollPositionUpdate,
+      )
     }
   }, [])
 

@@ -6,11 +6,24 @@ import {
   webFrame,
 } from "electron"
 
+import { createFakeFileSystem } from "./fakeFileSystem"
 import getImageMimeType from "./imageMimeTypes"
 
 // This preload runs with Node access (sandbox:false) while the renderer does
 // not. It exposes a single curated, serializable `window.api` so renderer code
 // never imports electron/fs/path/process directly. See docs/research/0002.
+
+// Opt-in sandbox: every filesystem method is served from an in-memory tree
+// (see fakeFileSystem.js) instead of the disk, so the app — including the
+// delete flow — can be exercised without touching real files. The flag arrives
+// as a `--fakeFs` launch argument from main (a Vite-bundled preload can't read
+// `process.env` reliably, but `process.argv` works — same channel as
+// `--filePath`). Off by default; the real-disk paths below are used.
+const isFakeFileSystem = process.argv.includes("--fakeFs")
+
+const fakeFileSystem = isFakeFileSystem
+  ? createFakeFileSystem({ path })
+  : null
 
 // Surface Pro / high-DPI tablets are scaled up; shrink the UI to fit more on
 // screen. Ported from the previous GitHub line (was in renderer.js, which can
@@ -20,11 +33,13 @@ webFrame.setZoomFactor(0.75)
 // File/folder path the window was launched with (passed via
 // `additionalArguments` from main). Replaces the old renderer process.argv +
 // remote.getGlobal('processArgs') reads.
-const cliFilePath = (
-  process.argv.find((arg) =>
-    arg.startsWith("--filePath="),
-  ) ?? ""
-).replace("--filePath=", "")
+const cliFilePath = fakeFileSystem
+  ? fakeFileSystem.cliFilePath
+  : (
+      process.argv.find((arg) =>
+        arg.startsWith("--filePath="),
+      ) ?? ""
+    ).replace("--filePath=", "")
 
 // Synchronous stat used at renderer module-load time to decide whether a launch
 // path is a file or a directory. Returns a plain object (no fs.Stats leaks).
@@ -48,16 +63,41 @@ const statPath = (targetPath) => {
 
 // Async directory listing, mapped to plain objects so it can cross the bridge.
 // Replaces the renderer's bindNodeCallback(fs.readdir) + inline mapping.
+// `modifiedTime` (epoch ms) rides along so the renderer can offer a
+// sort-by-date-modified view; it needs a `stat` per entry (the `Dirent` from
+// `readdir` doesn't carry mtime), run in parallel. An unreadable entry
+// (permission, broken symlink) keeps `modifiedTime: 0` so it sorts last rather
+// than failing the whole listing.
 const readDirectory = (directoryPath) =>
   fs.promises
     .readdir(directoryPath, { withFileTypes: true })
     .then((entries) =>
-      entries.map((entry) => ({
-        fileName: entry.name,
-        filePath: path.join(directoryPath, entry.name),
-        isDirectory: entry.isDirectory(),
-        isFile: entry.isFile(),
-      })),
+      Promise.all(
+        entries.map(async (entry) => {
+          const filePath = path.join(
+            directoryPath,
+            entry.name,
+          )
+
+          let modifiedTime = 0
+
+          try {
+            modifiedTime = (
+              await fs.promises.stat(filePath)
+            ).mtimeMs
+          } catch {
+            modifiedTime = 0
+          }
+
+          return {
+            fileName: entry.name,
+            filePath,
+            isDirectory: entry.isDirectory(),
+            isFile: entry.isFile(),
+            modifiedTime,
+          }
+        }),
+      ),
     )
 
 // Reads an image off disk and hands the renderer the raw bytes (as a
@@ -78,13 +118,24 @@ contextBridge.exposeInMainWorld("api", {
   cliFilePath,
   createNewWindow: (payload) =>
     ipcRenderer.send("createNewWindow", payload),
-  deleteFilePath: (payload) =>
-    ipcRenderer.invoke("deleteFilePath", payload),
-  getWindowsDrives: () =>
-    ipcRenderer.sendSync("get-windows-drives"),
-  readDirectory,
-  readImageData,
-  statPath,
+  // In fake mode the delete is virtual (mutates the in-memory tree, never the
+  // disk and never the trash); otherwise it goes to main's trash/rm handler.
+  deleteFilePath: fakeFileSystem
+    ? fakeFileSystem.deleteFilePath
+    : (payload) =>
+        ipcRenderer.invoke("deleteFilePath", payload),
+  getWindowsDrives: fakeFileSystem
+    ? fakeFileSystem.getWindowsDrives
+    : () => ipcRenderer.sendSync("get-windows-drives"),
+  readDirectory: fakeFileSystem
+    ? fakeFileSystem.readDirectory
+    : readDirectory,
+  readImageData: fakeFileSystem
+    ? fakeFileSystem.readImageData
+    : readImageData,
+  statPath: fakeFileSystem
+    ? fakeFileSystem.statPath
+    : statPath,
   path: {
     basename: (targetPath) => path.basename(targetPath),
     dirname: (targetPath) => path.dirname(targetPath),

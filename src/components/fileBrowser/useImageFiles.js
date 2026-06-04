@@ -1,8 +1,9 @@
-import { useEffect, useState } from "react"
+import { useContext, useEffect, useState } from "react"
 import { from } from "rxjs"
 import { filter, map, toArray } from "rxjs/operators"
 
-import compareNaturalStrings from "./compareNaturalStrings"
+import SettingsContext from "../settings/SettingsContext"
+import sortDirectoryEntries from "./sortDirectoryEntries"
 
 const validImageExtensions = [
   ".apng",
@@ -22,6 +23,8 @@ const validImageExtensions = [
 ]
 
 const useImageFiles = (directoryContents) => {
+  const { sortOrder } = useContext(SettingsContext)
+
   const [imageFiles, setImageFiles] = useState([])
 
   useEffect(() => {
@@ -33,20 +36,17 @@ const useImageFiles = (directoryContents) => {
             window.api.path.extname(fileName).toLowerCase(),
           ),
         ),
-        map(({ fileName, filePath }) => ({
+        map(({ fileName, filePath, modifiedTime }) => ({
+          modifiedTime,
           name: fileName,
           path: filePath,
         })),
         toArray(),
         map((unsortedImageFiles) =>
-          unsortedImageFiles
-            .slice()
-            .sort((firstImage, secondImage) =>
-              compareNaturalStrings(
-                firstImage.name,
-                secondImage.name,
-              ),
-            ),
+          sortDirectoryEntries(
+            unsortedImageFiles,
+            sortOrder,
+          ),
         ),
       )
       .subscribe(setImageFiles)
@@ -54,7 +54,7 @@ const useImageFiles = (directoryContents) => {
     return () => {
       subscription.unsubscribe()
     }
-  }, [directoryContents])
+  }, [directoryContents, sortOrder])
 
   return imageFiles
 }

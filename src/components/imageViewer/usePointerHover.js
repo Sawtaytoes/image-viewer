@@ -1,10 +1,23 @@
 import { useEffect, useRef } from "react"
 
-const hoverStates = {
-  pointerenter: true,
-  pointermove: true,
-  pointerout: false,
-  pointerup: true,
+// Hover engages only on a real boundary crossing (`pointerenter`). We
+// deliberately do NOT treat `pointermove` as hover: when an image opens under a
+// stationary cursor (e.g. tapping a gallery thumbnail), the nav edge sitting
+// under the pointer would otherwise light up on the first stray move. A mouse
+// `pointerup` keeps the hover (the cursor is still parked there); a touch/pen
+// `pointerup` — and `pointercancel` — clears it, since touch fires no reliable
+// `pointerout` once the contact is gone (the old "stuck edge" mode).
+const getIsHovering = (event) => {
+  switch (event.type) {
+    case "pointerenter":
+      return true
+
+    case "pointerup":
+      return event.pointerType === "mouse"
+
+    default:
+      return false
+  }
 }
 
 const usePointerHover = ({ callback, domElementRef }) => {
@@ -16,17 +29,8 @@ const usePointerHover = ({ callback, domElementRef }) => {
     const hoverStateNotification = (event) => {
       callbackRef.current({
         event,
-        isHovering: hoverStates[event.type],
+        isHovering: getIsHovering(event),
       })
-    }
-
-    const onPointerInitialMovement = (event) => {
-      hoverStateNotification(event)
-
-      domElement.removeEventListener(
-        "pointermove",
-        onPointerInitialMovement,
-      )
     }
 
     const domElement = domElementRef.current
@@ -42,12 +46,12 @@ const usePointerHover = ({ callback, domElementRef }) => {
     )
 
     domElement.addEventListener(
-      "pointermove",
-      onPointerInitialMovement,
+      "pointerout",
+      hoverStateNotification,
     )
 
     domElement.addEventListener(
-      "pointerout",
+      "pointercancel",
       hoverStateNotification,
     )
 
@@ -63,12 +67,12 @@ const usePointerHover = ({ callback, domElementRef }) => {
       )
 
       domElement.removeEventListener(
-        "pointermove",
-        onPointerInitialMovement,
+        "pointerout",
+        hoverStateNotification,
       )
 
       domElement.removeEventListener(
-        "pointerout",
+        "pointercancel",
         hoverStateNotification,
       )
     }

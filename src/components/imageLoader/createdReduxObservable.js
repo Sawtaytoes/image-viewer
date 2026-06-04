@@ -9,6 +9,7 @@ import processQueueEpic from "./processQueueEpic"
 import processQueueFilePathRemovalEpic from "./processQueueFilePathRemovalEpic"
 import { initialState } from "./reducers"
 import { createReduxObservable } from "./reduxObservable"
+import referenceCountEpic from "./referenceCountEpic"
 import removeFilePathEpic from "./removeFilePathEpic"
 import stateReducerEpic from "./stateReducerEpic"
 
@@ -21,6 +22,7 @@ export const {
   epics: [
     stateReducerEpic, // This has to be first to initialize `state$`.
     addFilePathEpic,
+    referenceCountEpic,
     downloadFileCancelationEpic,
     downloadFileCompletionEpic,
     downloadFileEpic,
