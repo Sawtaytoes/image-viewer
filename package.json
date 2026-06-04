@@ -3,7 +3,7 @@
   "productName": "Image Viewer",
   "description": "A simple tool for browsing and viewing images.",
   "author": "Kevin Ghadyani",
-  "version": "2.0.0",
+  "version": "2.0.1",
   "private": true,
   "license": "MIT",
   "main": ".vite/build/main.js",

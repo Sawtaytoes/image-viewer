@@ -1,3 +1,10 @@
+## [2.0.1](https://github.com/Sawtaytoes/image-viewer/compare/v2.0.0...v2.0.1) (2026-06-04)
+
+
+### Bug Fixes
+
+* **imageViewer:** suppress chrome reveal after a pane overlay closes ([d40e0f0](https://github.com/Sawtaytoes/image-viewer/commit/d40e0f07ae08dbdc4dcc039ab34d99413722aa89))
+
 # [2.0.0](https://github.com/Sawtaytoes/image-viewer/compare/v1.1.0...v2.0.0) (2026-06-04)
 
 
