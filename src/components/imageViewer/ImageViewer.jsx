@@ -31,6 +31,9 @@ const imageViewerStyles = css`
 	overflow: hidden;
 	position: fixed;
 	top: 0;
+	/* A fast double-tap in the viewer would otherwise select the image/empty
+	   text; nothing in here is meant to be selectable, so suppress it. */
+	user-select: none;
 	width: 100%;
 `
 
