@@ -96,9 +96,8 @@ const propTypes = {
 }
 
 const RevealableChrome = ({ spawn }) => {
-  const { addPane, clearPanes } = useContext(
-    WorkspaceContext,
-  )
+  const { addPane, clearPanes, isChromeRevealSuppressed } =
+    useContext(WorkspaceContext)
 
   const { leaveImageViewer } = useContext(
     ImageViewerContext,
@@ -150,13 +149,20 @@ const RevealableChrome = ({ spawn }) => {
         return
       }
 
+      // A pane's gallery/menu just closed: the browser fires a pointer event on
+      // this strip (now exposed under the stationary cursor) that we must not
+      // treat as a hover. See `suppressChromeReveal` in WorkspaceProvider.
+      if (isChromeRevealSuppressed) {
+        return
+      }
+
       if (event.movementX === 0 && event.movementY === 0) {
         return
       }
 
       reveal()
     },
-    [reveal],
+    [isChromeRevealSuppressed, reveal],
   )
 
   // Keep the bar up while the pointer is over it; reschedule the hide on leave.

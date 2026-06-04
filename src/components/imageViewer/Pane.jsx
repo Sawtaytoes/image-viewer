@@ -4,6 +4,8 @@ import {
   memo,
   useCallback,
   useContext,
+  useEffect,
+  useRef,
   useState,
 } from "react"
 
@@ -71,6 +73,7 @@ const Pane = ({ isActive, pane, spawn }) => {
     queuedFolders,
     setActivePaneId,
     setPaneIndex,
+    suppressChromeReveal,
   } = useContext(WorkspaceContext)
 
   const [isMenuOpen, setIsMenuOpen] = useState(false)
@@ -170,6 +173,21 @@ const Pane = ({ isActive, pane, spawn }) => {
   const isGalleryOpen = galleryBrowsePath !== null
 
   const isElevated = isGalleryOpen || isMenuOpen
+
+  // When this pane stops showing an overlay (gallery/menu closed by any path),
+  // tell the chrome to ignore hover-reveal for a beat. Closing unmounts the
+  // overlay from above the chrome's top hit-strip, so the browser fires a
+  // pointer event on the strip under the stationary cursor — which would
+  // otherwise pop the top bar open right where the close button was.
+  const wasElevatedRef = useRef(isElevated)
+
+  useEffect(() => {
+    if (wasElevatedRef.current && !isElevated) {
+      suppressChromeReveal()
+    }
+
+    wasElevatedRef.current = isElevated
+  }, [isElevated, suppressChromeReveal])
 
   // Only the active column owns the keyboard, and it's silenced while the menu
   // or the in-pane gallery is open (each handles its own Esc) — so the first

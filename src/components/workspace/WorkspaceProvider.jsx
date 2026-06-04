@@ -1,7 +1,20 @@
 import PropTypes from "prop-types"
-import { memo, useCallback, useMemo, useState } from "react"
+import {
+  memo,
+  useCallback,
+  useEffect,
+  useMemo,
+  useRef,
+  useState,
+} from "react"
 
 import WorkspaceContext from "./WorkspaceContext"
+
+// How long the chrome ignores hover-reveal after a pane's gallery/menu closes.
+// Long enough to swallow the synthetic pointer event Chromium fires when the
+// overlay unmounts from under a stationary cursor, short enough to stay out of
+// the way of a deliberate hover.
+const CHROME_REVEAL_SUPPRESSION_MS = 400
 
 // Renderer-safe id source. Avoids `Date.now()`/`Math.random()` so ids stay
 // collision-free and the queue/panes remain serializable.
@@ -29,6 +42,40 @@ const propTypes = {
 const WorkspaceProvider = ({ children }) => {
   const [workspace, setWorkspace] = useState(
     createInitialWorkspace,
+  )
+
+  // Briefly tells the revealable chrome to ignore hover-reveal right after a
+  // pane's gallery/menu closes. Closing unmounts an overlay from above the
+  // chrome's top hit-strip, and the browser then fires a pointer event on the
+  // strip under the (stationary) cursor — which otherwise popped the bar open on
+  // every close and covered the close button before the next click landed.
+  const [
+    isChromeRevealSuppressed,
+    setIsChromeRevealSuppressed,
+  ] = useState(false)
+
+  const chromeRevealSuppressionTimerRef = useRef()
+
+  const suppressChromeReveal = useCallback(() => {
+    window.clearTimeout(
+      chromeRevealSuppressionTimerRef.current,
+    )
+
+    setIsChromeRevealSuppressed(true)
+
+    chromeRevealSuppressionTimerRef.current =
+      window.setTimeout(() => {
+        setIsChromeRevealSuppressed(false)
+      }, CHROME_REVEAL_SUPPRESSION_MS)
+  }, [])
+
+  useEffect(
+    () => () => {
+      window.clearTimeout(
+        chromeRevealSuppressionTimerRef.current,
+      )
+    },
+    [],
   )
 
   // Identity only — no derived `imageFiles`. Dedupe by path so the same folder
@@ -237,12 +284,14 @@ const WorkspaceProvider = ({ children }) => {
       assignFolderToPane,
       clearPanes,
       clearQueue,
+      isChromeRevealSuppressed,
       panes: workspace.panes,
       queuedFolders: workspace.queuedFolders,
       removeFolder,
       removePane,
       setActivePaneId,
       setPaneIndex,
+      suppressChromeReveal,
     }),
     [
       addFolderToQueue,
@@ -252,10 +301,12 @@ const WorkspaceProvider = ({ children }) => {
       assignFolderToPane,
       clearPanes,
       clearQueue,
+      isChromeRevealSuppressed,
       removeFolder,
       removePane,
       setActivePaneId,
       setPaneIndex,
+      suppressChromeReveal,
       workspace,
     ],
   )
