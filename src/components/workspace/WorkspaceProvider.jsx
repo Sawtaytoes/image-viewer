@@ -105,6 +105,19 @@ const WorkspaceProvider = ({ children }) => {
     }))
   }, [])
 
+  // Empty the whole queue at once and sever every pane that referenced a queued
+  // folder (panes revert to the empty `+` state rather than vanishing), mirroring
+  // `removeFolder` applied to all of them.
+  const clearQueue = useCallback(() => {
+    setWorkspace((previousWorkspace) => ({
+      ...previousWorkspace,
+      panes: previousWorkspace.panes.map((pane) =>
+        pane.folderId ? { ...pane, folderId: null } : pane,
+      ),
+      queuedFolders: [],
+    }))
+  }, [])
+
   const addPane = useCallback(() => {
     const pane = createPane()
 
@@ -223,6 +236,7 @@ const WorkspaceProvider = ({ children }) => {
       assignFolderPathToPane,
       assignFolderToPane,
       clearPanes,
+      clearQueue,
       panes: workspace.panes,
       queuedFolders: workspace.queuedFolders,
       removeFolder,
@@ -237,6 +251,7 @@ const WorkspaceProvider = ({ children }) => {
       assignFolderPathToPane,
       assignFolderToPane,
       clearPanes,
+      clearQueue,
       removeFolder,
       removePane,
       setActivePaneId,

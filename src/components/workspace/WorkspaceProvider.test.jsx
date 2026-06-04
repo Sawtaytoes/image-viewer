@@ -98,6 +98,42 @@ describe("WorkspaceProvider", () => {
     ).toBe(true)
   })
 
+  it("clearQueue empties the queue and severs every referencing pane", () => {
+    const { result } = renderWorkspace()
+
+    act(() => {
+      result.current.addFoldersToQueue([
+        { name: "a", path: "/a" },
+        { name: "b", path: "/b" },
+      ])
+    })
+
+    const [firstFolder] = result.current.queuedFolders
+
+    let paneId
+
+    act(() => {
+      paneId = result.current.addPane().id
+    })
+
+    act(() => {
+      result.current.assignFolderToPane(
+        paneId,
+        firstFolder.id,
+      )
+    })
+
+    act(() => {
+      result.current.clearQueue()
+    })
+
+    expect(result.current.queuedFolders).toHaveLength(0)
+
+    // The pane stays (reverts to empty) rather than vanishing.
+    expect(result.current.panes).toHaveLength(1)
+    expect(result.current.panes[0].folderId).toBe(null)
+  })
+
   it("resets currentIndex to 0 when assigning a folder to a pane", () => {
     const { result } = renderWorkspace()
 

@@ -11,13 +11,40 @@ import CloseIcon from "../icons/CloseIcon"
 import WorkspaceContext from "./WorkspaceContext"
 
 const tabStripStyles = css`
+	align-items: center;
 	background-color: #333;
 	display: flex;
 	gap: 4px;
-	overflow-x: auto;
 	padding: 4px;
+`
+
+// The tabs scroll horizontally; the Clear-queue action sits outside this so it
+// stays pinned and visible no matter how many tabs are queued.
+const tabListStyles = css`
+	display: flex;
+	flex: 1 1 auto;
+	gap: 4px;
+	overflow-x: auto;
 	touch-action: pan-x;
 	white-space: nowrap;
+`
+
+const clearQueueButtonStyles = css`
+	background: transparent;
+	border: 0;
+	border-radius: 5px;
+	color: #d6d6d6;
+	cursor: pointer;
+	flex: 0 0 auto;
+	font-family: 'Source Sans Pro', sans-serif;
+	font-weight: 400;
+	padding: 6px 10px;
+	white-space: nowrap;
+
+	&:hover {
+		background-color: rgba(255, 255, 255, 0.12);
+		color: #fafafa;
+	}
 `
 
 const tabStyles = css`
@@ -124,6 +151,7 @@ const FolderTabStrip = () => {
     activePaneId,
     addPane,
     assignFolderToPane,
+    clearQueue,
     panes,
     queuedFolders,
     removeFolder,
@@ -168,16 +196,27 @@ const FolderTabStrip = () => {
 
   return (
     <div css={tabStripStyles}>
-      {queuedFolders.map(({ id, name }) => (
-        <MemoizedFolderTab
-          folderId={id}
-          isActive={id === activeFolderId}
-          key={id}
-          name={name}
-          onClose={removeFolder}
-          onSelect={handleSelect}
-        />
-      ))}
+      <div css={tabListStyles}>
+        {queuedFolders.map(({ id, name }) => (
+          <MemoizedFolderTab
+            folderId={id}
+            isActive={id === activeFolderId}
+            key={id}
+            name={name}
+            onClose={removeFolder}
+            onSelect={handleSelect}
+          />
+        ))}
+      </div>
+
+      <button
+        css={clearQueueButtonStyles}
+        onClick={clearQueue}
+        title="Remove every folder from the queue"
+        type="button"
+      >
+        Clear queue
+      </button>
     </div>
   )
 }
