@@ -111,9 +111,12 @@ const FileBrowser = () => {
     ImageLoaderContext,
   )
 
-  const { addFoldersToQueue, panes } = useContext(
-    WorkspaceContext,
-  )
+  const {
+    addFoldersToQueue,
+    addPane,
+    assignFolderPathToPane,
+    panes,
+  } = useContext(WorkspaceContext)
 
   const { sortOrder } = useContext(SettingsContext)
 
@@ -196,15 +199,31 @@ const FileBrowser = () => {
   }, [])
 
   const openSelectedFolders = useCallback(() => {
-    addFoldersToQueue(
-      directories.filter(({ path }) =>
-        selectedFolderPaths.has(path),
-      ),
+    const foldersToOpen = directories.filter(({ path }) =>
+      selectedFolderPaths.has(path),
     )
+
+    addFoldersToQueue(foldersToOpen)
+
+    // "Open N folders" should both queue the tabs *and* drop into the
+    // side-by-side viewer showing the first one, rather than leaving the user
+    // in the file browser. Open the first selected folder into a fresh column.
+    const [firstFolder] = foldersToOpen
+
+    if (firstFolder) {
+      const pane = addPane()
+
+      assignFolderPathToPane(pane.id, {
+        name: firstFolder.name,
+        path: firstFolder.path,
+      })
+    }
 
     clearMultiSelect()
   }, [
     addFoldersToQueue,
+    addPane,
+    assignFolderPathToPane,
     clearMultiSelect,
     directories,
     selectedFolderPaths,

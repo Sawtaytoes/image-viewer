@@ -374,3 +374,19 @@ a new directory without leaving the side-by-side layout. Reinstated as a cleaner
 fill ring, the elevated-pane z-index, and the grouped grid's windowing/scroll) are best confirmed with a
 `yarn start:fake` (or real `yarn start`) hands-on pass — automated coverage exercises the logic, not the
 live pointer/scroll behavior.
+
+### Post-implementation fixes (8th live-testing round) — follow-ups on the 7th
+
+- **Stray edge-hover when opening an image from a gallery.** `usePointerHover` treated the first
+  `pointermove` as hover, so an image opening under a stationary cursor lit up whichever nav edge sat
+  beneath it. It now engages only on a real `pointerenter` crossing (mouse `pointerup` still keeps the
+  hover; touch/`pointercancel` clears it). Regression test added.
+- **Column context menu text was selectable** — `FolderPickerPopover` popover is now `user-select: none`.
+- **"Open N folders" now enters the viewer.** The multi-select action bar (`FileBrowser`) used to only
+  queue tabs, leaving the user in the file browser. It now also opens the first selected folder into a
+  fresh column and drops into the side-by-side viewer (queue + open in one action; the dedupe in
+  `assignFolderPathToPane` keeps the first folder from double-queuing).
+- **Active-column blue outline removed.** Per the user it read as a glitch; the 2px indicator is gone
+  from `Pane`/`ImageViewer`. The active pane is still tracked (tabs/keyboard target it), just not outlined.
+- **Crash toggling sort.** `VirtualizedList`'s scroll-listener cleanup read `scrollContainerRef.current`
+  on unmount (now null once the grouped grid swaps in). It captures the node at effect setup instead.

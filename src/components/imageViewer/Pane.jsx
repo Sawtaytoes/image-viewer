@@ -35,15 +35,6 @@ const paneIn = keyframes`
 	}
 `
 
-const fadeIn = keyframes`
-	from {
-		opacity: 0;
-	}
-	to {
-		opacity: 1;
-	}
-`
-
 // `touch-action: none`: a pane isn't scrollable, so taps and the chrome
 // summon-swipe must not be read as a browser pan/zoom.
 const paneStyles = css`
@@ -63,17 +54,6 @@ const elevatedPaneStyles = css`
 	z-index: 2;
 `
 
-// Subtle inset accent outline marking the column the chrome tabs target. Only
-// shown with more than one column (a lone column needs no indicator).
-const activeColumnIndicatorStyles = css`
-	animation: ${fadeIn} 150ms ease;
-	border: 2px solid #2a6f97;
-	inset: 0;
-	pointer-events: none;
-	position: absolute;
-	z-index: 4;
-`
-
 const propTypes = {
   isActive: PropTypes.bool.isRequired,
   pane: PropTypes.shape({
@@ -81,16 +61,10 @@ const propTypes = {
     folderId: PropTypes.string,
     id: PropTypes.string.isRequired,
   }).isRequired,
-  showActiveIndicator: PropTypes.bool.isRequired,
   spawn: PropTypes.func.isRequired,
 }
 
-const Pane = ({
-  isActive,
-  pane,
-  showActiveIndicator,
-  spawn,
-}) => {
+const Pane = ({ isActive, pane, spawn }) => {
   const {
     assignFolderPathToPane,
     clearPanes,
@@ -249,10 +223,6 @@ const Pane = ({
           onOpenGallery={openGallery}
           paneId={pane.id}
         />
-      )}
-
-      {isActive && showActiveIndicator && (
-        <div css={activeColumnIndicatorStyles} />
       )}
     </div>
   )

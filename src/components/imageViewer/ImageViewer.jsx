@@ -52,17 +52,6 @@ const legacyColumnStyles = css`
 	touch-action: none;
 `
 
-// Subtle inset accent outline marking which column the chrome tabs target.
-// Only shown with more than one column (a lone column needs no indicator).
-const activeColumnIndicatorStyles = css`
-	animation: ${fadeIn} 150ms ease;
-	border: 2px solid #2a6f97;
-	inset: 0;
-	pointer-events: none;
-	position: absolute;
-	z-index: 4;
-`
-
 const tapFeedbackLayerStyles = css`
 	inset: 0;
 	overflow: hidden;
@@ -73,7 +62,6 @@ const tapFeedbackLayerStyles = css`
 
 const legacyColumnPropTypes = {
   isActive: PropTypes.bool.isRequired,
-  showActiveIndicator: PropTypes.bool.isRequired,
   spawn: PropTypes.func.isRequired,
 }
 
@@ -81,11 +69,7 @@ const legacyColumnPropTypes = {
 // one column alongside any panes. Its center-tap still closes (`leaveImageViewer`)
 // — unlike a pane, there's no folder to swap, so the "control this column" menu
 // would only offer close anyway.
-const LegacyImageColumn = ({
-  isActive,
-  showActiveIndicator,
-  spawn,
-}) => {
+const LegacyImageColumn = ({ isActive, spawn }) => {
   const { imageFileName, imageFilePath, leaveImageViewer } =
     useContext(ImageViewerContext)
 
@@ -131,10 +115,6 @@ const LegacyImageColumn = ({
         isAtEnd={isAtEnd}
         onCenterTap={close}
       />
-
-      {isActive && showActiveIndicator && (
-        <div css={activeColumnIndicatorStyles} />
-      )}
     </div>
   )
 }
@@ -162,18 +142,11 @@ const ImageViewer = () => {
   const hasLegacyColumn =
     panes.length === 0 && Boolean(imageFilePath)
 
-  // The indicator distinguishes columns; pointless with a lone column.
-  const showActiveIndicator = panes.length > 1
-
   return (
     <div css={imageViewerStyles}>
       <div css={columnsRowStyles}>
         {hasLegacyColumn && (
-          <LegacyImageColumn
-            isActive
-            showActiveIndicator={false}
-            spawn={spawn}
-          />
+          <LegacyImageColumn isActive spawn={spawn} />
         )}
 
         {panes.map((pane) => (
@@ -181,7 +154,6 @@ const ImageViewer = () => {
             isActive={pane.id === activePaneId}
             key={pane.id}
             pane={pane}
-            showActiveIndicator={showActiveIndicator}
             spawn={spawn}
           />
         ))}
