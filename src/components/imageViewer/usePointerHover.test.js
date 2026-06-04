@@ -92,6 +92,20 @@ describe("usePointerHover", () => {
     expect(lastIsHovering(callback)).toBe(false)
   })
 
+  it("does not engage hover from pointer movement alone", () => {
+    const callback = renderPointerHover()
+
+    // An image opening under a stationary cursor must not light up the nav edge
+    // sitting under it on the first stray move.
+    domElement.dispatchEvent(
+      createPointerEvent("pointermove", {
+        pointerType: "mouse",
+      }),
+    )
+
+    expect(callback).not.toHaveBeenCalled()
+  })
+
   it("clears hovering on pointer cancel", () => {
     const callback = renderPointerHover()
 

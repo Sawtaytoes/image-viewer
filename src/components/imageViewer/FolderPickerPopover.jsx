@@ -58,6 +58,7 @@ const popoverStyles = css`
 	max-width: 90%;
 	overflow-y: auto;
 	padding: 8px;
+	user-select: none;
 `
 
 const rowStyles = css`

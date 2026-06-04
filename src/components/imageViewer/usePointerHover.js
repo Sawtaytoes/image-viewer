@@ -1,14 +1,15 @@
 import { useEffect, useRef } from "react"
 
-// A mouse stays parked over the element after a click, so a `pointerup` keeps
-// it "hovering". A touch/pen lifts off — and reliably fires neither
-// `pointerout` nor `pointerleave` once the contact is gone — so its
-// `pointerup`/`pointercancel` must clear the hover, otherwise the nav overlay
-// stays stuck at its hovered opacity (the "weird stuck mode" on the edges).
+// Hover engages only on a real boundary crossing (`pointerenter`). We
+// deliberately do NOT treat `pointermove` as hover: when an image opens under a
+// stationary cursor (e.g. tapping a gallery thumbnail), the nav edge sitting
+// under the pointer would otherwise light up on the first stray move. A mouse
+// `pointerup` keeps the hover (the cursor is still parked there); a touch/pen
+// `pointerup` — and `pointercancel` — clears it, since touch fires no reliable
+// `pointerout` once the contact is gone (the old "stuck edge" mode).
 const getIsHovering = (event) => {
   switch (event.type) {
     case "pointerenter":
-    case "pointermove":
       return true
 
     case "pointerup":
@@ -32,15 +33,6 @@ const usePointerHover = ({ callback, domElementRef }) => {
       })
     }
 
-    const onPointerInitialMovement = (event) => {
-      hoverStateNotification(event)
-
-      domElement.removeEventListener(
-        "pointermove",
-        onPointerInitialMovement,
-      )
-    }
-
     const domElement = domElementRef.current
 
     domElement.addEventListener(
@@ -51,11 +43,6 @@ const usePointerHover = ({ callback, domElementRef }) => {
     domElement.addEventListener(
       "pointerenter",
       hoverStateNotification,
-    )
-
-    domElement.addEventListener(
-      "pointermove",
-      onPointerInitialMovement,
     )
 
     domElement.addEventListener(
@@ -77,11 +64,6 @@ const usePointerHover = ({ callback, domElementRef }) => {
       domElement.removeEventListener(
         "pointerenter",
         hoverStateNotification,
-      )
-
-      domElement.removeEventListener(
-        "pointermove",
-        onPointerInitialMovement,
       )
 
       domElement.removeEventListener(
