@@ -136,11 +136,28 @@ const RevealableChrome = ({ spawn }) => {
     setIsVisible(false)
   }, [])
 
-  // Mouse summon: hovering the top edge reveals the bar (no feedback ripple —
-  // it would spam on every pointer enter).
-  const onHitStripPointerEnter = useCallback(() => {
-    reveal()
-  }, [reveal])
+  // Mouse summon: actually moving the pointer over the top edge reveals the bar.
+  // Closing a pane's gallery/menu unmounts it from above this strip, and Chromium
+  // then fires boundary + `pointermove` events on the strip (now under a
+  // stationary cursor) to refresh `:hover` — with no real motion, so movementX/Y
+  // are 0. Those used to pop the chrome open on every gallery close and cover the
+  // close button before a second click landed. Requiring genuine movement ignores
+  // the synthetic refresh while a real hover (always moving) still summons. Touch
+  // reveals via the edge swipe below, never here.
+  const onHitStripPointerMove = useCallback(
+    (event) => {
+      if (event.pointerType !== "mouse") {
+        return
+      }
+
+      if (event.movementX === 0 && event.movementY === 0) {
+        return
+      }
+
+      reveal()
+    },
+    [reveal],
+  )
 
   // Keep the bar up while the pointer is over it; reschedule the hide on leave.
   const cancelAutoHide = useCallback(() => {
@@ -195,7 +212,7 @@ const RevealableChrome = ({ spawn }) => {
     <Fragment>
       <div
         css={hitStripStyles}
-        onPointerEnter={onHitStripPointerEnter}
+        onPointerMove={onHitStripPointerMove}
         ref={hitStripRef}
       >
         {!isVisible && <div css={grabHandleStyles} />}
