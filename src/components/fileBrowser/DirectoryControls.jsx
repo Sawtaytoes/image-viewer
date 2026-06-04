@@ -12,7 +12,10 @@ import ArrowUpwardIcon from "../icons/ArrowUpwardIcon"
 import DeleteForeverIcon from "../icons/DeleteForeverIcon"
 import SortIcon from "../icons/SortIcon"
 import SettingsContext from "../settings/SettingsContext"
-import { sortOrders } from "../settings/sortOrders"
+import {
+  getFolderSortOrder,
+  sortOrders,
+} from "../settings/sortOrders"
 import DeleteFileModal from "../toolkit/DeleteFileModal"
 import FileSystemContext from "./FileSystemContext"
 
@@ -130,8 +133,17 @@ const DirectoryControls = () => {
     setFilePath,
   } = useContext(FileSystemContext)
 
-  const { sortOrder, toggleSortOrder } =
+  const { sortOrdersByFolder, toggleSortOrder } =
     useContext(SettingsContext)
+
+  const sortOrder = getFolderSortOrder(
+    sortOrdersByFolder,
+    filePath,
+  )
+
+  const toggleFolderSortOrder = useCallback(() => {
+    toggleSortOrder(filePath)
+  }, [filePath, toggleSortOrder])
 
   const breadcrumbSegments = useMemo(
     () =>
@@ -208,7 +220,7 @@ const DirectoryControls = () => {
 
       <button
         css={sortToggleStyles}
-        onClick={toggleSortOrder}
+        onClick={toggleFolderSortOrder}
         title={
           sortOrder === sortOrders.modifiedDesc
             ? "Sorting by date modified (newest first) — grouped like Explorer. Click to sort by name."

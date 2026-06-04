@@ -3,6 +3,7 @@ import { from } from "rxjs"
 import { filter, map, toArray } from "rxjs/operators"
 
 import SettingsContext from "../settings/SettingsContext"
+import { getFolderSortOrder } from "../settings/sortOrders"
 import sortDirectoryEntries from "./sortDirectoryEntries"
 
 const validImageExtensions = [
@@ -22,8 +23,13 @@ const validImageExtensions = [
   ".webp",
 ]
 
-const useImageFiles = (directoryContents) => {
-  const { sortOrder } = useContext(SettingsContext)
+const useImageFiles = (directoryContents, folderPath) => {
+  const { sortOrdersByFolder } = useContext(SettingsContext)
+
+  const sortOrder = getFolderSortOrder(
+    sortOrdersByFolder,
+    folderPath,
+  )
 
   const [imageFiles, setImageFiles] = useState([])
 

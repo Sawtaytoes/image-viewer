@@ -3,6 +3,7 @@ import { from } from "rxjs"
 import { filter, map, toArray } from "rxjs/operators"
 
 import SettingsContext from "../settings/SettingsContext"
+import { getFolderSortOrder } from "../settings/sortOrders"
 import sortDirectoryEntries from "./sortDirectoryEntries"
 
 const systemDirectories = [
@@ -15,8 +16,13 @@ const systemDirectories = [
   "windows",
 ]
 
-const useDirectories = (directoryContents) => {
-  const { sortOrder } = useContext(SettingsContext)
+const useDirectories = (directoryContents, folderPath) => {
+  const { sortOrdersByFolder } = useContext(SettingsContext)
+
+  const sortOrder = getFolderSortOrder(
+    sortOrdersByFolder,
+    folderPath,
+  )
 
   const [directories, setDirectories] = useState([])
 

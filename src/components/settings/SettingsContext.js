@@ -1,13 +1,12 @@
 import { createContext } from "react"
 
-import { sortOrders } from "./sortOrders"
-
-// App-wide view settings. Defaults keep the long-standing behavior (natural
-// name sort) until the user toggles it; SettingsProvider hydrates the real
-// value from localStorage.
+// App-wide view settings. The sort order is stored per folder path (defaulting
+// to the natural-name sort); SettingsProvider hydrates the map from
+// localStorage. Consumers read their folder's order with `getFolderSortOrder`
+// from ./sortOrders.
 const SettingsContext = createContext({
   setSortOrder: () => {},
-  sortOrder: sortOrders.name,
+  sortOrdersByFolder: {},
   toggleSortOrder: () => {},
 })
 

@@ -30,9 +30,15 @@ const useFolderListing = (folderPath) => {
     }
   }, [folderPath])
 
-  const directories = useDirectories(directoryContents)
+  const directories = useDirectories(
+    directoryContents,
+    folderPath,
+  )
 
-  const imageFiles = useImageFiles(directoryContents)
+  const imageFiles = useImageFiles(
+    directoryContents,
+    folderPath,
+  )
 
   return {
     directories,

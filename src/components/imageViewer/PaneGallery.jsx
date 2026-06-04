@@ -17,8 +17,12 @@ import useFolderListing from "../fileBrowser/useFolderListing"
 import ArrowUpwardIcon from "../icons/ArrowUpwardIcon"
 import CloseIcon from "../icons/CloseIcon"
 import PlayArrowIcon from "../icons/PlayArrowIcon"
+import SortIcon from "../icons/SortIcon"
 import SettingsContext from "../settings/SettingsContext"
-import { sortOrders } from "../settings/sortOrders"
+import {
+  getFolderSortOrder,
+  sortOrders,
+} from "../settings/sortOrders"
 import Button from "../toolkit/Button"
 import WorkspaceContext from "../workspace/WorkspaceContext"
 import PaneGalleryFolderTile from "./PaneGalleryFolderTile"
@@ -80,6 +84,32 @@ const titleStyles = css`
 	text-overflow: ellipsis;
 	white-space: nowrap;
 `
+
+// Sort-order toggle: icon + the current order's label, mirroring the file
+// browser's DirectoryControls so the gallery sorts the same folder the same way.
+const sortToggleStyles = css`
+	align-items: center;
+	background: transparent;
+	border: 0;
+	border-radius: 5px;
+	color: #fafafa;
+	cursor: pointer;
+	display: inline-flex;
+	flex: 0 0 auto;
+	font: inherit;
+	gap: 4px;
+	padding: 4px 8px;
+	white-space: nowrap;
+
+	&:hover {
+		background-color: #3d3d3d;
+	}
+`
+
+const sortToggleLabels = {
+  [sortOrders.modifiedDesc]: "Newest",
+  [sortOrders.name]: "Name",
+}
 
 const gridStyles = css`
 	align-content: start;
@@ -186,7 +216,17 @@ const PaneGallery = ({
 
   const { addFoldersToQueue } = useContext(WorkspaceContext)
 
-  const { sortOrder } = useContext(SettingsContext)
+  const { sortOrdersByFolder, toggleSortOrder } =
+    useContext(SettingsContext)
+
+  const sortOrder = getFolderSortOrder(
+    sortOrdersByFolder,
+    browsePath,
+  )
+
+  const toggleFolderSortOrder = useCallback(() => {
+    toggleSortOrder(browsePath)
+  }, [browsePath, toggleSortOrder])
 
   const { directories, imageFiles } =
     useFolderListing(browsePath)
@@ -354,6 +394,20 @@ const PaneGallery = ({
           </button>
 
           <span css={titleStyles}>{title}</span>
+
+          <button
+            css={sortToggleStyles}
+            onClick={toggleFolderSortOrder}
+            title={
+              sortOrder === sortOrders.modifiedDesc
+                ? "Sorting by date modified (newest first) — grouped like Explorer. Click to sort by name."
+                : "Sorting by name. Click to sort by date modified (newest first)."
+            }
+            type="button"
+          >
+            <SortIcon />
+            {sortToggleLabels[sortOrder]}
+          </button>
 
           <button
             css={iconButtonStyles}

@@ -15,7 +15,10 @@ import PlayArrowIcon from "../icons/PlayArrowIcon"
 import ImageLoaderContext from "../imageLoader/ImageLoaderContext"
 import ImageViewerContext from "../imageViewer/ImageViewerContext"
 import SettingsContext from "../settings/SettingsContext"
-import { sortOrders } from "../settings/sortOrders"
+import {
+  getFolderSortOrder,
+  sortOrders,
+} from "../settings/sortOrders"
 import Button from "../toolkit/Button"
 import DeleteFileModal from "../toolkit/DeleteFileModal"
 import FolderTabStrip from "../workspace/FolderTabStrip"
@@ -118,7 +121,12 @@ const FileBrowser = () => {
     panes,
   } = useContext(WorkspaceContext)
 
-  const { sortOrder } = useContext(SettingsContext)
+  const { sortOrdersByFolder } = useContext(SettingsContext)
+
+  const sortOrder = getFolderSortOrder(
+    sortOrdersByFolder,
+    filePath,
+  )
 
   // Group into Explorer-style date buckets only when sorting by date and
   // actually inside a folder — the drive list at the root has no useful dates.

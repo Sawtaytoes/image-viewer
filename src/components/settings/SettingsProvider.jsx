@@ -9,23 +9,41 @@ import {
 
 import SettingsContext from "./SettingsContext"
 import {
+  defaultSortOrder,
   isSortOrder,
-  sortOrderStorageKey,
   sortOrders,
+  sortOrdersByFolderStorageKey,
 } from "./sortOrders"
 
-// Read the persisted sort order once at mount. Guarded so a private-mode /
-// blocked localStorage (or a stale, unrecognized value) falls back to the
-// default rather than throwing.
-const readStoredSortOrder = () => {
+// Read the persisted per-folder sort orders once at mount. Guarded so a
+// private-mode / blocked localStorage (or stale, malformed JSON) falls back to
+// an empty map rather than throwing. Unrecognized or default-valued entries are
+// dropped so the map only ever holds meaningful overrides.
+const readStoredSortOrders = () => {
   try {
     const stored = window.localStorage.getItem(
-      sortOrderStorageKey,
+      sortOrdersByFolderStorageKey,
     )
 
-    return isSortOrder(stored) ? stored : sortOrders.name
+    if (!stored) {
+      return {}
+    }
+
+    const parsed = JSON.parse(stored)
+
+    if (!parsed || typeof parsed !== "object") {
+      return {}
+    }
+
+    return Object.fromEntries(
+      Object.entries(parsed).filter(
+        ([, sortOrder]) =>
+          isSortOrder(sortOrder) &&
+          sortOrder !== defaultSortOrder,
+      ),
+    )
   } catch {
-    return sortOrders.name
+    return {}
   }
 }
 
@@ -34,37 +52,67 @@ const propTypes = {
 }
 
 const SettingsProvider = ({ children }) => {
-  const [sortOrder, setSortOrder] = useState(
-    readStoredSortOrder,
-  )
+  const [sortOrdersByFolder, setSortOrdersByFolder] =
+    useState(readStoredSortOrders)
 
-  // Persist on change so reopening the app remembers the choice.
+  // Persist on change so reopening the app remembers each folder's choice.
   useEffect(() => {
     try {
       window.localStorage.setItem(
-        sortOrderStorageKey,
-        sortOrder,
+        sortOrdersByFolderStorageKey,
+        JSON.stringify(sortOrdersByFolder),
       )
     } catch {
-      // No persistence available — keep working with the in-memory value.
+      // No persistence available — keep working with the in-memory map.
     }
-  }, [sortOrder])
+  }, [sortOrdersByFolder])
 
-  const toggleSortOrder = useCallback(() => {
-    setSortOrder((previousSortOrder) =>
-      previousSortOrder === sortOrders.modifiedDesc
-        ? sortOrders.name
-        : sortOrders.modifiedDesc,
-    )
-  }, [])
+  // Set a folder's order, dropping the entry when it returns to the default so
+  // the map stays lean and "default to Name" stays implicit.
+  const setSortOrder = useCallback(
+    (folderPath, nextSortOrder) => {
+      setSortOrdersByFolder((previousSortOrders) => {
+        const currentSortOrder =
+          previousSortOrders[folderPath] ?? defaultSortOrder
+
+        if (currentSortOrder === nextSortOrder) {
+          return previousSortOrders
+        }
+
+        const nextSortOrders = { ...previousSortOrders }
+
+        if (nextSortOrder === defaultSortOrder) {
+          delete nextSortOrders[folderPath]
+        } else {
+          nextSortOrders[folderPath] = nextSortOrder
+        }
+
+        return nextSortOrders
+      })
+    },
+    [],
+  )
+
+  const toggleSortOrder = useCallback(
+    (folderPath) => {
+      setSortOrder(
+        folderPath,
+        (sortOrdersByFolder[folderPath] ??
+          defaultSortOrder) === sortOrders.modifiedDesc
+          ? sortOrders.name
+          : sortOrders.modifiedDesc,
+      )
+    },
+    [setSortOrder, sortOrdersByFolder],
+  )
 
   const settingsProviderValue = useMemo(
     () => ({
       setSortOrder,
-      sortOrder,
+      sortOrdersByFolder,
       toggleSortOrder,
     }),
-    [sortOrder, toggleSortOrder],
+    [setSortOrder, sortOrdersByFolder, toggleSortOrder],
   )
 
   return (

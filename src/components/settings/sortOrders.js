@@ -8,11 +8,30 @@ const sortOrders = {
   name: "name",
 }
 
-// Persisted so reopening the app remembers the choice (see SettingsProvider).
-const sortOrderStorageKey = "imageViewer.sortOrder"
+// What a folder uses until the user changes it.
+const defaultSortOrder = sortOrders.name
+
+// Persisted as a JSON map of `folderPath → sortOrder` so each directory
+// remembers its own choice (see SettingsProvider). Only non-default entries are
+// stored, so the default (Name) is implicit and the map stays small.
+const sortOrdersByFolderStorageKey =
+  "imageViewer.sortOrdersByFolder"
 
 const isSortOrder = (value) =>
   value === sortOrders.name ||
   value === sortOrders.modifiedDesc
 
-export { isSortOrder, sortOrderStorageKey, sortOrders }
+// The order for a folder, falling back to the default when it has none stored
+// (or when the path is unknown, e.g. the drive list at the root).
+const getFolderSortOrder = (
+  sortOrdersByFolder,
+  folderPath,
+) => sortOrdersByFolder?.[folderPath] ?? defaultSortOrder
+
+export {
+  defaultSortOrder,
+  getFolderSortOrder,
+  isSortOrder,
+  sortOrders,
+  sortOrdersByFolderStorageKey,
+}
