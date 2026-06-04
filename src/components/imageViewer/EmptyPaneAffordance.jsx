@@ -1,9 +1,8 @@
 import { css } from "@emotion/react"
 import PropTypes from "prop-types"
-import { memo, useCallback, useState } from "react"
+import { memo, useCallback } from "react"
 
 import AddIcon from "../icons/AddIcon"
-import FolderPickerPopover from "./FolderPickerPopover"
 
 const emptyPaneStyles = css`
 	align-items: center;
@@ -24,32 +23,28 @@ const labelStyles = css`
 `
 
 const propTypes = {
-  paneId: PropTypes.string.isRequired,
+  onActivate: PropTypes.func.isRequired,
 }
 
-const EmptyPaneAffordance = ({ paneId }) => {
-  const [isPickerOpen, setIsPickerOpen] = useState(false)
+// Presentational: just the `+`/label. The owning Pane opens the per-column menu
+// (FolderPickerPopover) from the activation point.
+const EmptyPaneAffordance = ({ onActivate }) => {
+  // `click`, not `pointerdown`: opening the menu over this affordance must not
+  // let the same tap's trailing events reach what's underneath.
+  const onActivateClick = useCallback(
+    (event) => {
+      event.stopPropagation()
 
-  const openPicker = useCallback(() => {
-    setIsPickerOpen(true)
-  }, [])
-
-  const closePicker = useCallback(() => {
-    setIsPickerOpen(false)
-  }, [])
+      onActivate({ x: event.clientX, y: event.clientY })
+    },
+    [onActivate],
+  )
 
   return (
-    <div css={emptyPaneStyles} onPointerDown={openPicker}>
+    <div css={emptyPaneStyles} onClick={onActivateClick}>
       <AddIcon />
 
       <div css={labelStyles}>Tap to pick folder</div>
-
-      {isPickerOpen && (
-        <FolderPickerPopover
-          onClose={closePicker}
-          paneId={paneId}
-        />
-      )}
     </div>
   )
 }

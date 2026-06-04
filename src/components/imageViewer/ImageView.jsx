@@ -71,7 +71,7 @@ const propTypes = {
   imageFilePath: PropTypes.string.isRequired,
   isAtBeginning: PropTypes.bool.isRequired,
   isAtEnd: PropTypes.bool.isRequired,
-  onClose: PropTypes.func.isRequired,
+  onCenterTap: PropTypes.func.isRequired,
 }
 
 const ImageView = ({
@@ -81,7 +81,7 @@ const ImageView = ({
   imageFilePath,
   isAtBeginning,
   isAtEnd,
-  onClose,
+  onCenterTap,
 }) => {
   const [isHoveringNextOverlay, setIsHoveringNextOverlay] =
     useState(false)
@@ -108,11 +108,19 @@ const ImageView = ({
     domElementRef: navigatePreviousOverlayRef,
   })
 
-  const onCenterPointerDown = useCallback(
+  // Fire on `click`, not `pointerdown`: this tap usually changes what's
+  // rendered (closes the viewer, or opens the per-column menu). On
+  // `pointerdown` the viewer would unmount mid-tap and the trailing
+  // `pointerup`/`click` would fall through to the gallery thumbnail behind it
+  // (the "double-tap to gallery then opens an image" bug). A `click` is
+  // delivered to this zone as one unit, and React only re-renders afterward.
+  const onCenterClick = useCallback(
     (event) => {
-      onClose({ x: event.clientX, y: event.clientY })
+      event.stopPropagation()
+
+      onCenterTap({ x: event.clientX, y: event.clientY })
     },
-    [onClose],
+    [onCenterTap],
   )
 
   const navigateNextOverlayStyles = useMemo(
@@ -152,7 +160,7 @@ const ImageView = ({
 
       <div
         css={centerCloseZoneStyles}
-        onPointerDown={onCenterPointerDown}
+        onClick={onCenterClick}
       />
 
       <div

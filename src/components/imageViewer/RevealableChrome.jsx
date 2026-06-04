@@ -21,7 +21,8 @@ import useEdgeSwipe from "./useEdgeSwipe"
 const AUTO_HIDE_MS = 3000
 
 // Thin top hit-strip that listens for the summon swipe even while the bar is
-// hidden.
+// hidden. Hovering it reveals the bar (the mouse has no implicit pointer
+// capture, so the touch swipe alone leaves `+` unreachable with a mouse).
 const hitStripStyles = css`
 	height: 32px;
 	left: 0;
@@ -30,6 +31,19 @@ const hitStripStyles = css`
 	touch-action: none;
 	width: 100%;
 	z-index: 2;
+`
+
+// Faint pill hinting the bar can be pulled/hovered down; only shown while the
+// bar is hidden so it doesn't sit on top of the revealed chrome.
+const grabHandleStyles = css`
+	background-color: rgba(255, 255, 255, 0.25);
+	border-radius: 2px;
+	height: 4px;
+	left: 50%;
+	position: absolute;
+	top: 6px;
+	transform: translateX(-50%);
+	width: 36px;
 `
 
 const chromeBarStyles = css`
@@ -117,6 +131,19 @@ const RevealableChrome = ({ spawn }) => {
     setIsVisible(false)
   }, [])
 
+  // Mouse summon: hovering the top edge reveals the bar (no feedback ripple —
+  // it would spam on every pointer enter).
+  const onHitStripPointerEnter = useCallback(() => {
+    reveal()
+  }, [reveal])
+
+  // Keep the bar up while the pointer is over it; reschedule the hide on leave.
+  const cancelAutoHide = useCallback(() => {
+    window.clearTimeout(autoHideTimerRef.current)
+
+    setIsVisible(true)
+  }, [])
+
   const onReveal = useCallback(
     ({ x }) => {
       reveal({ x })
@@ -161,9 +188,20 @@ const RevealableChrome = ({ spawn }) => {
 
   return (
     <Fragment>
-      <div css={hitStripStyles} ref={hitStripRef} />
+      <div
+        css={hitStripStyles}
+        onPointerEnter={onHitStripPointerEnter}
+        ref={hitStripRef}
+      >
+        {!isVisible && <div css={grabHandleStyles} />}
+      </div>
 
-      <div css={barStyles} onPointerDown={scheduleAutoHide}>
+      <div
+        css={barStyles}
+        onPointerDown={scheduleAutoHide}
+        onPointerEnter={cancelAutoHide}
+        onPointerLeave={scheduleAutoHide}
+      >
         <button
           css={chromeButtonStyles}
           onClick={goToFolders}

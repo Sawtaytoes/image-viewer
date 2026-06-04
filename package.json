@@ -9,6 +9,7 @@
   "main": ".vite/build/main.js",
   "scripts": {
     "start": "electron-forge start",
+    "start:fake": "IMAGE_VIEWER_FAKE_FS=1 electron-forge start",
     "package": "electron-forge package",
     "make": "electron-forge make",
     "publish": "electron-forge publish",

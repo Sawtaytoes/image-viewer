@@ -1,22 +1,69 @@
-import { css } from "@emotion/react"
+import { css, keyframes } from "@emotion/react"
 import PropTypes from "prop-types"
-import { memo, useCallback, useContext } from "react"
+import {
+  memo,
+  useCallback,
+  useContext,
+  useState,
+} from "react"
 
 import useFolderListing from "../fileBrowser/useFolderListing"
 import WorkspaceContext from "../workspace/WorkspaceContext"
 import EmptyPaneAffordance from "./EmptyPaneAffordance"
+import FolderPickerPopover from "./FolderPickerPopover"
 import ImageView from "./ImageView"
+import PaneGallery from "./PaneGallery"
 import usePaneNavigation from "./usePaneNavigation"
 import useViewerKeyboard from "./useViewerKeyboard"
+
+// Where the in-pane gallery starts when the column has no folder yet: the first
+// drive (Windows) or the filesystem root (POSIX).
+const getRootBrowsePath = () =>
+  window.api.getWindowsDrives()?.[0] ??
+  (window.api.path.sep === "\\" ? "C:\\" : "/")
+
+// A new column slides/fades in so adding one (`+` or a queued tab) reads as a
+// deliberate change rather than a pop.
+const paneIn = keyframes`
+	from {
+		opacity: 0;
+		transform: translateY(10px) scale(0.985);
+	}
+	to {
+		opacity: 1;
+		transform: none;
+	}
+`
+
+const fadeIn = keyframes`
+	from {
+		opacity: 0;
+	}
+	to {
+		opacity: 1;
+	}
+`
 
 // `touch-action: none`: a pane isn't scrollable, so taps and the chrome
 // summon-swipe must not be read as a browser pan/zoom.
 const paneStyles = css`
+	animation: ${paneIn} 220ms ease;
 	flex: 1 1 0;
 	height: 100%;
 	min-width: 0;
 	position: relative;
 	touch-action: none;
+`
+
+// Subtle inset accent outline marking the column the chrome tabs target. Only
+// shown with more than one column (a lone column needs no indicator).
+const activeColumnIndicatorStyles = css`
+	animation: ${fadeIn} 150ms ease;
+	border: 2px solid #2a6f97;
+	inset: 0;
+	pointer-events: none;
+	position: absolute;
+	z-index: 4;
 `
 
 const propTypes = {
@@ -26,16 +73,31 @@ const propTypes = {
     folderId: PropTypes.string,
     id: PropTypes.string.isRequired,
   }).isRequired,
+  showActiveIndicator: PropTypes.bool.isRequired,
   spawn: PropTypes.func.isRequired,
 }
 
-const Pane = ({ isActive, pane, spawn }) => {
+const Pane = ({
+  isActive,
+  pane,
+  showActiveIndicator,
+  spawn,
+}) => {
   const {
+    assignFolderPathToPane,
     clearPanes,
     queuedFolders,
-    removePane,
+    setActivePaneId,
     setPaneIndex,
   } = useContext(WorkspaceContext)
+
+  const [isMenuOpen, setIsMenuOpen] = useState(false)
+
+  // Non-null while this column is showing the in-pane gallery; holds the path
+  // currently being browsed there. Local to the pane so each column browses
+  // independently and the side-by-side layout never disappears.
+  const [galleryBrowsePath, setGalleryBrowsePath] =
+    useState(null)
 
   const folder = queuedFolders.find(
     ({ id }) => id === pane.folderId,
@@ -67,53 +129,113 @@ const Pane = ({ isActive, pane, spawn }) => {
     setCurrentIndex,
   })
 
-  // Center-tap closes this column (the feedback layer lives on ImageViewer, so
-  // it finishes animating even as the pane unmounts).
-  const closePane = useCallback(
+  // Center-tap means "control this column": select it and open its menu (the
+  // Kavita-style per-column control). Closing the column is a menu action now.
+  const openMenu = useCallback(
     (point) => {
       if (point) {
         spawn({
-          variant: "close",
+          variant: "reveal",
           x: point.x,
           y: point.y,
         })
       }
 
-      removePane(pane.id)
+      setActivePaneId(pane.id)
+
+      setIsMenuOpen(true)
     },
-    [pane.id, removePane, spawn],
+    [pane.id, setActivePaneId, spawn],
   )
 
-  // Only the active column owns the keyboard; Escape leaves the viewer.
+  const closeMenu = useCallback(() => {
+    setIsMenuOpen(false)
+  }, [])
+
+  // "Gallery view" from the menu → turn this column into a browsable gallery,
+  // starting at its current folder (or a drive root when empty). Stays in-pane,
+  // so the side-by-side layout is preserved.
+  const openGallery = useCallback(() => {
+    setIsMenuOpen(false)
+
+    setGalleryBrowsePath(
+      folder?.path ?? getRootBrowsePath(),
+    )
+  }, [folder?.path])
+
+  const closeGallery = useCallback(() => {
+    setGalleryBrowsePath(null)
+  }, [])
+
+  // Tapping an image in the gallery loads its folder into this column (queued
+  // if new) and jumps to that image, then drops back to the single-image view.
+  const openImageFromGallery = useCallback(
+    (browsePath, imageIndex) => {
+      assignFolderPathToPane(
+        pane.id,
+        {
+          name: window.api.path.basename(browsePath),
+          path: browsePath,
+        },
+        imageIndex,
+      )
+
+      setGalleryBrowsePath(null)
+    },
+    [assignFolderPathToPane, pane.id],
+  )
+
+  const isGalleryOpen = galleryBrowsePath !== null
+
+  // Only the active column owns the keyboard, and it's silenced while the menu
+  // or the in-pane gallery is open (each handles its own Esc) — so the first
+  // Esc closes that, and the next one leaves the viewer.
   useViewerKeyboard({
     goToNextImage,
     goToPreviousImage,
-    isEnabled: isActive,
+    isEnabled: isActive && !isMenuOpen && !isGalleryOpen,
     onClose: clearPanes,
   })
 
-  if (!folder) {
-    return (
-      <div css={paneStyles}>
-        <EmptyPaneAffordance paneId={pane.id} />
-      </div>
-    )
-  }
-
-  const currentImage = imageFiles[currentIndex]
+  const currentImage = folder
+    ? imageFiles[currentIndex]
+    : undefined
 
   return (
     <div css={paneStyles}>
-      {currentImage && (
-        <ImageView
-          goToNextImage={goToNextImage}
-          goToPreviousImage={goToPreviousImage}
-          imageFileName={currentImage.name}
-          imageFilePath={currentImage.path}
-          isAtBeginning={isAtBeginning}
-          isAtEnd={isAtEnd}
-          onClose={closePane}
+      {isGalleryOpen ? (
+        <PaneGallery
+          folderPath={galleryBrowsePath}
+          onClose={closeGallery}
+          onOpenImage={openImageFromGallery}
         />
+      ) : folder ? (
+        currentImage && (
+          <ImageView
+            goToNextImage={goToNextImage}
+            goToPreviousImage={goToPreviousImage}
+            imageFileName={currentImage.name}
+            imageFilePath={currentImage.path}
+            isAtBeginning={isAtBeginning}
+            isAtEnd={isAtEnd}
+            onCenterTap={openMenu}
+          />
+        )
+      ) : (
+        <EmptyPaneAffordance onActivate={openMenu} />
+      )}
+
+      {isMenuOpen && (
+        <FolderPickerPopover
+          currentFolderId={pane.folderId}
+          onClose={closeMenu}
+          onOpenGallery={openGallery}
+          paneId={pane.id}
+        />
+      )}
+
+      {isActive && showActiveIndicator && (
+        <div css={activeColumnIndicatorStyles} />
       )}
     </div>
   )

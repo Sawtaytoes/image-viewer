@@ -30,6 +30,31 @@ const App = () => {
 						background-color: white;
 						margin: 0;
 					}
+
+					/* Dark scrollbars to match the theme (Electron is Chromium, so
+					   -webkit- applies app-wide: gallery, popovers, etc.). */
+					::-webkit-scrollbar {
+						height: 12px;
+						width: 12px;
+					}
+
+					::-webkit-scrollbar-track {
+						background-color: #2b2b2b;
+					}
+
+					::-webkit-scrollbar-thumb {
+						background-color: #555;
+						border: 2px solid #2b2b2b;
+						border-radius: 6px;
+					}
+
+					::-webkit-scrollbar-thumb:hover {
+						background-color: #666;
+					}
+
+					::-webkit-scrollbar-corner {
+						background-color: #2b2b2b;
+					}
 				`}
       />
 

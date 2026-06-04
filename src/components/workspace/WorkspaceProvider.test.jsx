@@ -166,4 +166,102 @@ describe("WorkspaceProvider", () => {
     expect(result.current.panes).toHaveLength(0)
     expect(result.current.activePaneId).toBe(null)
   })
+
+  it("assignFolderPathToPane queues a new folder and fills the named pane", () => {
+    const { result } = renderWorkspace()
+
+    let firstPaneId
+    let secondPaneId
+
+    act(() => {
+      firstPaneId = result.current.addPane().id
+      secondPaneId = result.current.addPane().id
+    })
+
+    act(() => {
+      result.current.assignFolderPathToPane(secondPaneId, {
+        name: "Cats",
+        path: "/cats",
+      })
+    })
+
+    const folder = result.current.queuedFolders.find(
+      (queuedFolder) => queuedFolder.path === "/cats",
+    )
+
+    const secondPane = result.current.panes.find(
+      (pane) => pane.id === secondPaneId,
+    )
+
+    const firstPane = result.current.panes.find(
+      (pane) => pane.id === firstPaneId,
+    )
+
+    // It fills the pane it was given, not a new one, and makes it active.
+    expect(result.current.panes).toHaveLength(2)
+    expect(result.current.queuedFolders).toHaveLength(1)
+    expect(secondPane.folderId).toBe(folder.id)
+    expect(secondPane.currentIndex).toBe(0)
+    expect(result.current.activePaneId).toBe(secondPaneId)
+    // The other pane is untouched.
+    expect(firstPane.folderId).toBe(null)
+  })
+
+  it("assignFolderPathToPane reuses an already-queued folder instead of duplicating it", () => {
+    const { result } = renderWorkspace()
+
+    act(() => {
+      result.current.addFoldersToQueue([
+        { name: "Cats", path: "/cats" },
+      ])
+    })
+
+    const existingFolderId =
+      result.current.queuedFolders[0].id
+
+    let paneId
+
+    act(() => {
+      paneId = result.current.addPane().id
+    })
+
+    act(() => {
+      result.current.assignFolderPathToPane(paneId, {
+        name: "Cats",
+        path: "/cats",
+      })
+    })
+
+    expect(result.current.queuedFolders).toHaveLength(1)
+
+    expect(
+      result.current.panes.find(
+        (pane) => pane.id === paneId,
+      ).folderId,
+    ).toBe(existingFolderId)
+  })
+
+  it("assignFolderPathToPane opens at a given image index when provided", () => {
+    const { result } = renderWorkspace()
+
+    let paneId
+
+    act(() => {
+      paneId = result.current.addPane().id
+    })
+
+    act(() => {
+      result.current.assignFolderPathToPane(
+        paneId,
+        { name: "Cats", path: "/cats" },
+        4,
+      )
+    })
+
+    const pane = result.current.panes.find(
+      (currentPane) => currentPane.id === paneId,
+    )
+
+    expect(pane.currentIndex).toBe(4)
+  })
 })

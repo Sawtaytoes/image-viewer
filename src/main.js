@@ -16,6 +16,15 @@ if (started) {
 
 const isDevelopment = !app.isPackaged
 
+// Opt-in in-memory sandbox (see fakeFileSystem.js / preload.js). Detected here
+// in the main process — where `process.env` reliably reflects the real OS
+// environment (same as IMAGE_VIEWER_DEFAULT_DIRECTORY) — and forwarded to the
+// preload via `additionalArguments`, because a Vite-bundled preload can't read
+// `process.env` at runtime. Launch it with `yarn start:fake`.
+const isFakeFileSystem = Boolean(
+  process.env.IMAGE_VIEWER_FAKE_FS,
+)
+
 // In development, load key=value pairs from the project-root `.env` into
 // process.env (without overriding anything already set). Production reads real
 // OS environment variables instead, so this dev-only loader keeps the two paths
@@ -124,9 +133,10 @@ const createWindow = ({ filePath } = {}) => {
     x: Math.floor(width / 2) - 8,
     y: 0,
     webPreferences: {
-      additionalArguments: filePath
-        ? [`--filePath=${filePath}`]
-        : [],
+      additionalArguments: [
+        ...(filePath ? [`--filePath=${filePath}`] : []),
+        ...(isFakeFileSystem ? ["--fakeFs"] : []),
+      ],
       contextIsolation: true,
       nodeIntegration: false,
       preload: path.join(__dirname, "preload.js"),
@@ -196,7 +206,13 @@ ipcMain.handle(
 app.whenReady().then(() => {
   // Images are read off disk through the preload bridge
   // (window.api.readImageData), so no custom protocol registration is needed.
-  createWindow({ filePath: getLaunchFilePath() })
+  // In fake mode the preload owns the launch path (the in-memory root), so don't
+  // hand it a real one.
+  createWindow({
+    filePath: isFakeFileSystem
+      ? undefined
+      : getLaunchFilePath(),
+  })
 })
 
 // Quit when all windows are closed, except on macOS.

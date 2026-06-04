@@ -44,7 +44,7 @@ didn't select folders, I can't continue." / "I would like to have _another_ fold
 
 **Files:** `ImageViewer.jsx`, plus the P1 menu work.
 
-**Status:** ☐ needs work.
+**Status:** ☑ done (commit pending) — see Verification below.
 
 ---
 
@@ -76,7 +76,7 @@ clean; re-implement from here):**
 **Files:** `WorkspaceProvider.jsx`, `WorkspaceContext` consumers, `ImageViewer.jsx`,
 `FileBrowser.jsx` (banner + keyboard guard), `FolderPickerPopover.jsx`.
 
-**Status:** ☐ needs work.
+**Status:** ☑ done (commit pending) — see Verification below.
 
 ---
 
@@ -110,7 +110,7 @@ indication of which column is "selected".
 **Files:** `ImageView.jsx`, `Pane.jsx`, `FolderPickerPopover.jsx`, `EmptyPaneAffordance.jsx`,
 `ImageViewer.jsx`.
 
-**Status:** ☐ needs work.
+**Status:** ☑ done (commit pending) — see Verification below.
 
 ---
 
@@ -135,7 +135,7 @@ the initial auto-show.
 
 **Files:** `RevealableChrome.jsx` (and optionally `useEdgeSwipe.js`).
 
-**Status:** ☐ needs work.
+**Status:** ☑ done (commit pending) — see Verification below.
 
 ---
 
@@ -151,7 +151,7 @@ bright images, bump to a 1–2px semi-opaque line via per-pane `border-left` on
 
 **Files:** `ImageViewer.jsx`.
 
-**Status:** ☐ needs work.
+**Status:** ☑ done (commit pending) — see Verification below.
 
 ---
 
@@ -168,7 +168,7 @@ dark theme.
 
 **Files:** `App.jsx`.
 
-**Status:** ☐ needs work.
+**Status:** ☑ done (commit pending) — see Verification below.
 
 ---
 
@@ -191,7 +191,7 @@ segment uses the same `setFilePath` values `navigateUpFolderTree` already produc
 
 **Files:** `DirectoryControls.jsx`.
 
-**Status:** ☐ needs work.
+**Status:** ☑ done (commit pending) — see Verification below.
 
 ---
 
@@ -201,10 +201,135 @@ segment uses the same `setFilePath` values `navigateUpFolderTree` already produc
   with a 120px min-width (Yes/No in the modal unchanged).
 - Queued **tabs open into columns** (the original "tabs don't do anything" gap).
 
-## Open design questions to settle while implementing
+## Open design questions — settled
 
-- After all the above, **center-tap = open per-column menu** and **close = a menu action**. Confirm
-  this is the final model before wiring (it replaces the current center-tap-to-close).
-- Should a multi-column layout **persist** when you leave to the gallery and come back, or is
-  clearing on exit fine? (Currently `◂ Folders`/`Esc` clears panes.)
+- **Center-tap = open per-column menu**, close is a menu action. **Confirmed** — wired as the final
+  model (replaces center-tap-to-close). The legacy single-image column is the one exception: its
+  center-tap still closes, since there's no folder to swap and the menu would only offer "close".
+- **Clear panes on exit** (current behavior) is fine — you only leave the columns view once you're
+  done comparing. Future idea the user floated (out of scope here): let a pane itself show a folder
+  _gallery_ view, so leaving becomes rarer.
 - HEIC — see [feature-heic-support.md](feature-heic-support.md).
+
+## Verification
+
+All items implemented and covered by the automated suite (`yarn test:run` — 56 tests, biome + eslint
+clean). New tests: `fakeFileSystem.test.js`, `DirectoryControls.test.jsx` (breadcrumb),
+`FolderPickerPopover.test.jsx` (per-column menu), and pane-pick lifecycle cases in
+`WorkspaceProvider.test.jsx`.
+
+**Fake-filesystem mode (for safe hands-on testing).** `yarn start:fake` (sets `IMAGE_VIEWER_FAKE_FS=1`)
+launches the real app against an in-memory tree of generated images instead of the disk. See
+[fakeFileSystem.js](../../src/fakeFileSystem.js): the tree lives in the preload, so **deletes are
+virtual** (they mutate the in-memory tree and never call `shell.trashItem`/`fs.rm`) and **nothing ever
+touches real files**. The flag is off by default, so the normal `yarn start` is unchanged. Use this to
+exercise the columns/menu/delete flows without risk.
+
+**Not yet done — real-disk hands-on pass.** Per the standing instruction, no destructive action was run
+against the real filesystem. The interaction-heavy bits (touch center-tap menu, mouse hover-summon,
+the active-column outline) are best confirmed visually; that walkthrough is left for a `yarn start`
+(real FS) or `yarn start:fake` (sandbox) session.
+
+### Post-implementation fixes (2nd live-testing round)
+
+- **Touch double-tap / click-through (P0).** The viewer's center-tap fired on `onPointerDown`, so the
+  tap closed the viewer mid-gesture and the trailing `pointerup`/`click` fell through to the gallery
+  thumbnail behind it (closed to gallery _and_ immediately opened an image). The gallery tiles fire on
+  `onClick`, so the viewer's tap-to-act handlers — center-close, empty-pane affordance, and every
+  per-column menu row/backdrop — now also fire on `onClick`. A click is delivered as one unit to the
+  tapped element and React only re-renders afterward, so nothing falls through. This also fixed the
+  "can't get to the gallery to repick a column's folder" jank (same root cause in the menu).
+- **`start:fake` was hitting real files.** A Vite-bundled preload can't read `process.env` reliably at
+  runtime, so the flag is now read in **main** (`process.env.IMAGE_VIEWER_FAKE_FS`, the proven channel)
+  and forwarded to the preload as a `--fakeFs` launch argument (same `additionalArguments`/`process.argv`
+  path as `--filePath`). In fake mode main also stops handing the window a real launch path.
+- **Animations.** Added entrance transitions so changes are legible: viewer fade-in, per-column
+  slide/fade-in, menu backdrop-fade + popover scale-in, active-column outline fade, and the pick banner
+  slides down. Exit (close-to-gallery) animation is still a possible follow-up.
+
+### Post-implementation fixes (3rd live-testing round)
+
+- **Folder-picking moved into the pane.** "Open file manager" no longer takes over the whole screen
+  with the gallery; instead the column shows its own in-pane file browser
+  ([PaneFolderPicker.jsx](../../src/components/imageViewer/PaneFolderPicker.jsx) +
+  [usePaneFolderNavigation.js](../../src/components/imageViewer/usePaneFolderNavigation.js)) so the
+  side-by-side view never disappears. Each pane keeps its own browse path. The global pane-pick flow
+  (`pendingPanePick`/`startPanePick`/`completePanePick`/`cancelPanePick`, the `FileBrowser` banner, and
+  the viewer-hide gating) is gone, replaced by `assignFolderPathToPane(paneId, { name, path })`.
+- **Fixes the "center-tap kills the wrong column / phantom 3rd panel" bug.** Root cause: the
+  full-screen pick exposed the gallery, where tapping an image thumbnail set the legacy `imageFilePath`.
+  That added a phantom **legacy column** as column 0 — and the legacy column's center-tap closes
+  (vs. a pane's, which opens the menu), so the left-most column "died" on center-tap. With picking now
+  in-pane, the gallery is never exposed mid-pick, no stray legacy image is set, and the chosen folder
+  lands in the exact pane you opened the picker from.
+
+### Post-implementation fixes (4th live-testing round)
+
+- **Scrambled layout when the picker showed images → fixed.** The first in-pane picker rendered each
+  image with the canvas-based `Image`, which fits by mutating a per-path DOM node's `width`/`height`.
+  A folder's image shown as a thumbnail there while the same image showed full-size in a column fought
+  over that shared node, scattering both. New
+  [ThumbnailImage.jsx](../../src/components/imageViewer/ThumbnailImage.jsx) renders a plain `<img>` off
+  the loader's cached blob URL with `object-fit: contain` (lazy-loaded via IntersectionObserver), so any
+  number of copies at any size coexist safely. All in-pane thumbnails use it.
+- **Folder picker now shows folder tiles with previews** (gallery-style folder browsing), rebuilt on
+  `ThumbnailImage`. Pick by seeing each folder's first image; tap to drill in, "Use this folder" to
+  confirm.
+- **New per-column "View as gallery".** A column-menu action (shown when the column has a folder) opens
+  [PaneImageGallery.jsx](../../src/components/imageViewer/PaneImageGallery.jsx) — the folder's images as
+  a tappable grid, in-pane; tapping one jumps the column straight to that image. "File manager" picks a
+  folder; "gallery" picks an image within it. (Note: thumbnails lazy-load on scroll but aren't
+  virtualized — fine for normal folders; very large folders could be made virtual later.)
+
+### Post-implementation fixes (5th live-testing round) — in-pane overlays removed
+
+The in-pane file-manager + image-grid overlays were still fiddly (dead up-arrow, awkward layout). Per
+the user, they're **gone**, replaced by one simpler model:
+
+- **Column menu is now: queued folders + a single "Gallery view" + "Close column".** "View as gallery"
+  and "Open file manager" are removed. Deleted: `PaneFolderPicker`, `PaneImageGallery`,
+  `usePaneFolderNavigation`, `ThumbnailImage` (and their tests).
+- **"Gallery view" drops you into the real, full gallery** (`FileBrowser`) with panes preserved. Browse
+  and queue folders exactly like the app's home. A floating bottom bar shows **"Use this folder"**
+  (loads the folder you're in into the column you came from and returns to side-by-side) and **"Cancel"**.
+  The bar is at the bottom so the breadcrumb/up controls stay usable; it hides during multi-select. Wired
+  via `WorkspaceProvider.galleryPaneId` + `openGalleryForPane`/`closeGallery`, reusing
+  `assignFolderPathToPane`.
+- **Columns-only once panes exist.** The legacy single-image column now renders only when there are no
+  panes, so it can never reappear as a stray left-most column beside them (the recurring "phantom column
+  that dies on center-tap"). The single-image viewer still works on its own when no columns are open.
+- Picking via "Use this folder" loads immediately and returns; tapping folders still navigates normally
+  so you can drill into subfolders (the dead up-arrow problem is gone with the old in-pane browser).
+
+### Post-implementation fixes (6th live-testing round) — back to an in-pane gallery (done right)
+
+The full-screen "Gallery view" was the wrong call: it left the column to take over the whole screen
+(and the floating pick banner overlapped the header / jumped between top and bottom). Per the user,
+"Gallery view" should be the **regular gallery, inside that pane** — browse images, open one, or open
+a new directory without leaving the side-by-side layout. Reinstated as a cleaner in-pane gallery:
+
+- **New [PaneGallery.jsx](../../src/components/imageViewer/PaneGallery.jsx)** renders inside the column
+  (not a portal/overlay): a header (up-button + breadcrumb-ish folder name + close ×), a scrollable grid
+  of subfolder tiles and image thumbnails, starting at the column's current folder (or a drive root when
+  empty) and free to navigate up/into any directory. State is **local to the pane**, so each column
+  browses independently and the layout never disappears.
+- **Tapping an image** loads its folder into the column (queued if new) and jumps straight to that image
+  via `assignFolderPathToPane(paneId, { name, path }, imageIndex)` — the action now takes an optional
+  image index (defaults to 0) — then drops back to the single-image view.
+- **Long-press a folder to multi-select** and queue several at once, exactly like the home gallery —
+  reuses `useLongPress`, `FillRing`, and `MultiSelectContext` with pane-local state and an "Open N
+  folders" bar (`addFoldersToQueue`).
+- **Thumbnails use a new [PaneThumbnail.jsx](../../src/components/imageViewer/PaneThumbnail.jsx)** — a
+  plain `<img>` off the loader's cached blob URL (`object-fit: contain`, lazy via IntersectionObserver),
+  not the canvas `Image`. This is the same fix the 4th round found: the canvas moves a single per-path
+  DOM node, so showing one image as a thumbnail while it's full-size in another column scrambled both.
+  Tiles: [PaneGalleryFolderTile.jsx](../../src/components/imageViewer/PaneGalleryFolderTile.jsx),
+  [PaneGalleryImageTile.jsx](../../src/components/imageViewer/PaneGalleryImageTile.jsx).
+- **Removed the old full-screen flow:** `galleryPaneId` / `openGalleryForPane` / `closeGallery` (and the
+  `FileBrowser` pick banner + its viewer-hide gating) are gone. The home/no-panes gallery is unchanged.
+- **Fake-fs colors are now per-folder** so you can tell which folder a column is showing at a glance
+  (Cats=red, Dogs=blue, Landscapes=green, Mountains=teal, Abstract=purple; root loose images are
+  near-gray), each folder's images fanning across a lightness band. See
+  [fakeFileSystem.js](../../src/fakeFileSystem.js).
+- Tests: `PaneGallery.test.jsx` (open-image-at-index, drill into a subfolder, close); the obsolete
+  `galleryPaneId` cases in `WorkspaceProvider.test.jsx` were replaced with an image-index case.

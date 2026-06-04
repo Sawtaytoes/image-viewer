@@ -1,14 +1,43 @@
-import { css } from "@emotion/react"
+import { css, keyframes } from "@emotion/react"
 import PropTypes from "prop-types"
-import { memo, useCallback, useContext } from "react"
+import {
+  memo,
+  useCallback,
+  useContext,
+  useEffect,
+} from "react"
 
+import CloseIcon from "../icons/CloseIcon"
 import FolderIcon from "../icons/FolderIcon"
+import GridIcon from "../icons/GridIcon"
 import WorkspaceContext from "../workspace/WorkspaceContext"
 
 // Rendered inside the pane (no portal): a translucent backdrop over the column
-// with a list of queued folders to assign to this pane.
+// with the per-column menu — queued folders to assign, plus "open file manager"
+// and "close column" escape hatches. This is the Kavita-style center-tap menu.
+const backdropFadeIn = keyframes`
+	from {
+		opacity: 0;
+	}
+	to {
+		opacity: 1;
+	}
+`
+
+const popoverPopIn = keyframes`
+	from {
+		opacity: 0;
+		transform: scale(0.92);
+	}
+	to {
+		opacity: 1;
+		transform: scale(1);
+	}
+`
+
 const backdropStyles = css`
 	align-items: center;
+	animation: ${backdropFadeIn} 140ms ease;
 	background-color: rgba(0, 0, 0, 0.6);
 	display: flex;
 	inset: 0;
@@ -18,6 +47,7 @@ const backdropStyles = css`
 `
 
 const popoverStyles = css`
+	animation: ${popoverPopIn} 160ms ease;
 	background-color: #2b2b2b;
 	border-radius: 8px;
 	box-shadow: 0 8px 24px rgba(0, 0, 0, 0.5);
@@ -51,6 +81,15 @@ const rowStyles = css`
 	}
 `
 
+// The pane's current folder, called out so the user can see which one is loaded.
+const activeRowStyles = css`
+	background-color: #2a6f97;
+
+	&:hover {
+		background-color: #2a6f97;
+	}
+`
+
 const emptyMessageStyles = css`
 	color: #aaa;
 	font-family: 'Source Sans Pro', sans-serif;
@@ -58,21 +97,56 @@ const emptyMessageStyles = css`
 	padding: 16px;
 `
 
+// Visually separates the folder list from the column actions below it.
+const dividerStyles = css`
+	background-color: #444;
+	flex: 0 0 auto;
+	height: 1px;
+	margin: 4px 0;
+`
+
 const propTypes = {
+  currentFolderId: PropTypes.string,
   onClose: PropTypes.func.isRequired,
+  onOpenGallery: PropTypes.func.isRequired,
   paneId: PropTypes.string.isRequired,
 }
 
-const FolderPickerPopover = ({ onClose, paneId }) => {
+const FolderPickerPopover = ({
+  currentFolderId,
+  onClose,
+  onOpenGallery,
+  paneId,
+}) => {
   const {
     assignFolderToPane,
     queuedFolders,
+    removePane,
     setActivePaneId,
   } = useContext(WorkspaceContext)
 
-  const onBackdropPointerDown = useCallback(
+  // Esc closes the menu first (the owning pane's nav keyboard is silenced while
+  // we're open, so a later Esc then leaves the viewer).
+  useEffect(() => {
+    const onKeyDown = (event) => {
+      if (event.code === "Escape") {
+        onClose()
+      }
+    }
+
+    window.addEventListener("keydown", onKeyDown)
+
+    return () => {
+      window.removeEventListener("keydown", onKeyDown)
+    }
+  }, [onClose])
+
+  // `click` throughout (not `pointerdown`): selecting a row closes the menu, so
+  // firing on press would let the trailing tap events reach whatever ends up
+  // under the finger after the menu unmounts.
+  const onBackdropClick = useCallback(
     (event) => {
-      // Don't let the tap fall through to the empty-pane affordance behind it.
+      // Don't let the tap fall through to the column behind the backdrop.
       event.stopPropagation()
 
       if (event.target === event.currentTarget) {
@@ -89,15 +163,32 @@ const FolderPickerPopover = ({ onClose, paneId }) => {
       assignFolderToPane(paneId, folderId)
 
       setActivePaneId(paneId)
+
+      onClose()
     },
-    [assignFolderToPane, paneId, setActivePaneId],
+    [assignFolderToPane, onClose, paneId, setActivePaneId],
+  )
+
+  const openGallery = useCallback(
+    (event) => {
+      event.stopPropagation()
+
+      onOpenGallery()
+    },
+    [onOpenGallery],
+  )
+
+  const closeColumn = useCallback(
+    (event) => {
+      event.stopPropagation()
+
+      removePane(paneId)
+    },
+    [paneId, removePane],
   )
 
   return (
-    <div
-      css={backdropStyles}
-      onPointerDown={onBackdropPointerDown}
-    >
+    <div css={backdropStyles} onClick={onBackdropClick}>
       <div css={popoverStyles}>
         {queuedFolders.length === 0 ? (
           <div css={emptyMessageStyles}>
@@ -106,9 +197,12 @@ const FolderPickerPopover = ({ onClose, paneId }) => {
         ) : (
           queuedFolders.map(({ id, name }) => (
             <button
-              css={rowStyles}
+              css={css`
+								${rowStyles}
+								${id === currentFolderId && activeRowStyles}
+							`}
               key={id}
-              onPointerDown={(event) => {
+              onClick={(event) => {
                 pickFolder(event, id)
               }}
               type="button"
@@ -118,6 +212,26 @@ const FolderPickerPopover = ({ onClose, paneId }) => {
             </button>
           ))
         )}
+
+        <div css={dividerStyles} />
+
+        <button
+          css={rowStyles}
+          onClick={openGallery}
+          type="button"
+        >
+          <GridIcon />
+          Gallery view
+        </button>
+
+        <button
+          css={rowStyles}
+          onClick={closeColumn}
+          type="button"
+        >
+          <CloseIcon />
+          Close column
+        </button>
       </div>
     </div>
   )

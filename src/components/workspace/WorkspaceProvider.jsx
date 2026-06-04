@@ -148,6 +148,45 @@ const WorkspaceProvider = ({ children }) => {
     [],
   )
 
+  // Assign a folder by path (from a pane's in-pane gallery): queue it, reusing
+  // the entry if already queued, then assign it to the pane, set its index
+  // (defaults to the first image; the gallery passes the tapped image's index),
+  // and make it active — all in one update so the pane and queue never disagree.
+  const assignFolderPathToPane = useCallback(
+    (paneId, { name, path }, imageIndex = 0) => {
+      setWorkspace((previousWorkspace) => {
+        const existingFolder =
+          previousWorkspace.queuedFolders.find(
+            (folder) => folder.path === path,
+          )
+
+        const folder = existingFolder ?? {
+          id: createId(),
+          name,
+          path,
+        }
+
+        return {
+          ...previousWorkspace,
+          activePaneId: paneId,
+          panes: previousWorkspace.panes.map((pane) =>
+            pane.id === paneId
+              ? {
+                  ...pane,
+                  currentIndex: imageIndex,
+                  folderId: folder.id,
+                }
+              : pane,
+          ),
+          queuedFolders: existingFolder
+            ? previousWorkspace.queuedFolders
+            : [...previousWorkspace.queuedFolders, folder],
+        }
+      })
+    },
+    [],
+  )
+
   const setPaneIndex = useCallback((paneId, index) => {
     setWorkspace((previousWorkspace) => ({
       ...previousWorkspace,
@@ -181,6 +220,7 @@ const WorkspaceProvider = ({ children }) => {
       addFolderToQueue,
       addFoldersToQueue,
       addPane,
+      assignFolderPathToPane,
       assignFolderToPane,
       clearPanes,
       panes: workspace.panes,
@@ -194,6 +234,7 @@ const WorkspaceProvider = ({ children }) => {
       addFolderToQueue,
       addFoldersToQueue,
       addPane,
+      assignFolderPathToPane,
       assignFolderToPane,
       clearPanes,
       removeFolder,
