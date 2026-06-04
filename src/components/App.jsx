@@ -8,6 +8,7 @@ import FileSystemProvider from "./fileBrowser/FileSystemProvider"
 import ImageLoaderProvider from "./imageLoader/ImageLoaderProvider"
 import ImageViewer from "./imageViewer/ImageViewer"
 import ImageViewerProvider from "./imageViewer/ImageViewerProvider"
+import SettingsProvider from "./settings/SettingsProvider"
 import WorkspaceProvider from "./workspace/WorkspaceProvider"
 
 const App = () => {
@@ -58,17 +59,19 @@ const App = () => {
 				`}
       />
 
-      <WorkspaceProvider>
-        <ImageViewerProvider>
-          <FileSystemProvider>
-            <ImageLoaderProvider>
-              <TitleBar />
-              <FileBrowser />
-              <ImageViewer />
-            </ImageLoaderProvider>
-          </FileSystemProvider>
-        </ImageViewerProvider>
-      </WorkspaceProvider>
+      <SettingsProvider>
+        <WorkspaceProvider>
+          <ImageViewerProvider>
+            <FileSystemProvider>
+              <ImageLoaderProvider>
+                <TitleBar />
+                <FileBrowser />
+                <ImageViewer />
+              </ImageLoaderProvider>
+            </FileSystemProvider>
+          </ImageViewerProvider>
+        </WorkspaceProvider>
+      </SettingsProvider>
     </Fragment>
   )
 }

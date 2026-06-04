@@ -123,6 +123,16 @@ const createBmp = (width, height, [red, green, blue]) => {
 // Two decimal digits so names sort naturally (image-01 … image-12).
 const padNumber = (value) => String(value).padStart(2, "0")
 
+const millisecondsPerDay = 24 * 60 * 60 * 1000
+
+// Day-offsets (back from "now") cycled across generated entries so the
+// sort-by-date-modified view lands items in every Windows-style bucket — today,
+// yesterday, earlier this week, last week, this month, last month, this year,
+// and a long time ago — when browsing the fake tree via `yarn start:fake`.
+const modifiedDayOffsetPresets = [
+  0, 1, 4, 9, 18, 45, 150, 900,
+]
+
 // Declarative description of the tree. Each folder lists how many images it
 // holds, its `hue` (the color family its images are painted in), and any
 // subfolders; the root also carries a few loose images.
@@ -170,11 +180,29 @@ const createFakeFileSystem = ({ path }) => {
   // fit-to-pane math gets a mix of portrait/landscape regardless of color.
   let dimensionSeed = 0
 
+  // Captured once so every node's mtime is relative to the same "now"; the
+  // cycling offsets then fan entries across the date-modified buckets.
+  const creationTime = Date.now()
+
+  let modifiedTimeSeed = 0
+
+  const nextModifiedTime = () => {
+    const dayOffset =
+      modifiedDayOffsetPresets[
+        modifiedTimeSeed % modifiedDayOffsetPresets.length
+      ]
+
+    modifiedTimeSeed += 1
+
+    return creationTime - dayOffset * millisecondsPerDay
+  }
+
   const addDirectory = (directoryPath, name, parent) => {
     nodesByPath.set(directoryPath, {
       children: new Set(),
       isDirectory: true,
       isFile: false,
+      modifiedTime: nextModifiedTime(),
       name,
       parent,
     })
@@ -197,6 +225,7 @@ const createFakeFileSystem = ({ path }) => {
       height,
       isDirectory: false,
       isFile: true,
+      modifiedTime: nextModifiedTime(),
       name: fileName,
       parent: parentPath,
       width,
@@ -314,6 +343,7 @@ const createFakeFileSystem = ({ path }) => {
           filePath: childPath,
           isDirectory: child.isDirectory,
           isFile: child.isFile,
+          modifiedTime: child.modifiedTime,
         }
       }),
     )

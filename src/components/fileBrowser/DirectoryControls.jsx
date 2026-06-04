@@ -10,6 +10,9 @@ import {
 
 import ArrowUpwardIcon from "../icons/ArrowUpwardIcon"
 import DeleteForeverIcon from "../icons/DeleteForeverIcon"
+import SortIcon from "../icons/SortIcon"
+import SettingsContext from "../settings/SettingsContext"
+import { sortOrders } from "../settings/sortOrders"
 import DeleteFileModal from "../toolkit/DeleteFileModal"
 import FileSystemContext from "./FileSystemContext"
 
@@ -61,6 +64,32 @@ const navigationStyles = css`
 	padding: 4px;
 `
 
+// Sort-order toggle: icon + the current order's label so the state is legible
+// at a glance. Sits between the breadcrumb and the delete action.
+const sortToggleStyles = css`
+	align-items: center;
+	background: transparent;
+	border: 0;
+	border-radius: 5px;
+	color: inherit;
+	cursor: pointer;
+	display: inline-flex;
+	flex: 0 0 auto;
+	font: inherit;
+	gap: 4px;
+	padding: 4px 8px;
+	white-space: nowrap;
+
+	&:hover {
+		background-color: rgba(255, 255, 255, 0.12);
+	}
+`
+
+const sortToggleLabels = {
+  [sortOrders.modifiedDesc]: "Newest",
+  [sortOrders.name]: "Name",
+}
+
 // Build the ancestor trail with the real path API (never hand-split — Windows
 // drive roots like `G:\` are fiddly). Walk up via `dirname` until it stops
 // shortening (the root is its own parent). Returns root → current order.
@@ -100,6 +129,9 @@ const DirectoryControls = () => {
     navigateUpFolderTree,
     setFilePath,
   } = useContext(FileSystemContext)
+
+  const { sortOrder, toggleSortOrder } =
+    useContext(SettingsContext)
 
   const breadcrumbSegments = useMemo(
     () =>
@@ -173,6 +205,20 @@ const DirectoryControls = () => {
           },
         )}
       </div>
+
+      <button
+        css={sortToggleStyles}
+        onClick={toggleSortOrder}
+        title={
+          sortOrder === sortOrders.modifiedDesc
+            ? "Sorting by date modified (newest first) — grouped like Explorer. Click to sort by name."
+            : "Sorting by name. Click to sort by date modified (newest first)."
+        }
+        type="button"
+      >
+        <SortIcon />
+        {sortToggleLabels[sortOrder]}
+      </button>
 
       <div onClick={openDeleteFileModal}>
         <DeleteForeverIcon />

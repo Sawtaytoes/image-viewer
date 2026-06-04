@@ -55,6 +55,14 @@ const paneStyles = css`
 	touch-action: none;
 `
 
+// While this column owns a gallery or menu, lift it above the chrome's top
+// hit-strip (`z-index: 1`) so the gallery's up/close controls stay tappable —
+// but keep it below the chrome bar itself (`z-index: 3`) so the revealed bar
+// still sits on top.
+const elevatedPaneStyles = css`
+	z-index: 2;
+`
+
 // Subtle inset accent outline marking the column the chrome tabs target. Only
 // shown with more than one column (a lone column needs no indicator).
 const activeColumnIndicatorStyles = css`
@@ -187,6 +195,8 @@ const Pane = ({
 
   const isGalleryOpen = galleryBrowsePath !== null
 
+  const isElevated = isGalleryOpen || isMenuOpen
+
   // Only the active column owns the keyboard, and it's silenced while the menu
   // or the in-pane gallery is open (each handles its own Esc) — so the first
   // Esc closes that, and the next one leaves the viewer.
@@ -202,7 +212,13 @@ const Pane = ({
     : undefined
 
   return (
-    <div css={paneStyles}>
+    <div
+      css={
+        isElevated
+          ? [paneStyles, elevatedPaneStyles]
+          : paneStyles
+      }
+    >
       {isGalleryOpen ? (
         <PaneGallery
           folderPath={galleryBrowsePath}
@@ -218,7 +234,8 @@ const Pane = ({
             imageFilePath={currentImage.path}
             isAtBeginning={isAtBeginning}
             isAtEnd={isAtEnd}
-            onCenterTap={openMenu}
+            onCenterHold={openMenu}
+            onCenterTap={openGallery}
           />
         )
       ) : (

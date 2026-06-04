@@ -14,15 +14,20 @@ import useKeyboardControls from "../convenience/useKeyboardControls"
 import PlayArrowIcon from "../icons/PlayArrowIcon"
 import ImageLoaderContext from "../imageLoader/ImageLoaderContext"
 import ImageViewerContext from "../imageViewer/ImageViewerContext"
+import SettingsContext from "../settings/SettingsContext"
+import { sortOrders } from "../settings/sortOrders"
 import Button from "../toolkit/Button"
 import DeleteFileModal from "../toolkit/DeleteFileModal"
 import FolderTabStrip from "../workspace/FolderTabStrip"
 import WorkspaceContext from "../workspace/WorkspaceContext"
+import DateGroupedGrid from "./DateGroupedGrid"
 import Directory from "./Directory"
 import DirectoryControls from "./DirectoryControls"
+import groupEntriesByDate from "./dateGroups"
 import FileSystemContext from "./FileSystemContext"
 import ImageFile from "./ImageFile"
 import MultiSelectContext from "./MultiSelectContext"
+import sortDirectoryEntries from "./sortDirectoryEntries"
 import VirtualizedList from "./VirtualizedList"
 
 const fileBrowserStyles = css`
@@ -108,6 +113,54 @@ const FileBrowser = () => {
 
   const { addFoldersToQueue, panes } = useContext(
     WorkspaceContext,
+  )
+
+  const { sortOrder } = useContext(SettingsContext)
+
+  // Group into Explorer-style date buckets only when sorting by date and
+  // actually inside a folder — the drive list at the root has no useful dates.
+  const isGroupedView =
+    sortOrder === sortOrders.modifiedDesc &&
+    Boolean(filePath)
+
+  // Folders and images interleaved into one newest-first sequence, then split
+  // into the non-empty date buckets (each `{ key, label, items }`).
+  const dateGroups = useMemo(() => {
+    if (!isGroupedView) {
+      return []
+    }
+
+    const combinedEntries = sortDirectoryEntries(
+      [
+        ...directories.map((directory) => ({
+          ...directory,
+          kind: "directory",
+        })),
+        ...imageFiles.map((imageFile) => ({
+          ...imageFile,
+          kind: "image",
+        })),
+      ],
+      sortOrders.modifiedDesc,
+    )
+
+    return groupEntriesByDate(combinedEntries)
+  }, [directories, imageFiles, isGroupedView])
+
+  const renderGroupedEntry = useCallback(
+    (entry) =>
+      entry.kind === "directory" ? (
+        <Directory
+          directoryName={entry.name}
+          directoryPath={entry.path}
+        />
+      ) : (
+        <ImageFile
+          fileName={entry.name}
+          filePath={entry.path}
+        />
+      ),
+    [],
   )
 
   const closeDeleteFileModal = useCallback(() => {
@@ -260,6 +313,19 @@ const FileBrowser = () => {
       return
     }
 
+    // The grouped date view is pointer-driven: the flat `selectedIndex` grid
+    // nav doesn't map onto the bucketed layout, so only keep "up a folder".
+    if (isGroupedView) {
+      if (
+        event.code === "Backspace" ||
+        event.code === "Escape"
+      ) {
+        navigateUpFolderTree()
+      }
+
+      return
+    }
+
     const {
       code,
       ctrlKey: isCtrlKeyHeld,
@@ -404,27 +470,36 @@ const FileBrowser = () => {
           css={virtualizedListContainerStyles}
           ref={virtualizedListContainerRef}
         >
-          <VirtualizedList
-            itemPadding="2px"
-            numberOfColumns={numberOfColumns}
-            selectedIndex={selectedIndex}
-          >
-            {directories.map(({ name, path }) => (
-              <Directory
-                directoryName={name}
-                directoryPath={path}
-                key={path}
-              />
-            ))}
+          {isGroupedView ? (
+            <DateGroupedGrid
+              groups={dateGroups}
+              itemPadding="2px"
+              numberOfColumns={numberOfColumns}
+              renderItem={renderGroupedEntry}
+            />
+          ) : (
+            <VirtualizedList
+              itemPadding="2px"
+              numberOfColumns={numberOfColumns}
+              selectedIndex={selectedIndex}
+            >
+              {directories.map(({ name, path }) => (
+                <Directory
+                  directoryName={name}
+                  directoryPath={path}
+                  key={path}
+                />
+              ))}
 
-            {imageFiles.map(({ name, path }) => (
-              <ImageFile
-                fileName={name}
-                filePath={path}
-                key={path}
-              />
-            ))}
-          </VirtualizedList>
+              {imageFiles.map(({ name, path }) => (
+                <ImageFile
+                  fileName={name}
+                  filePath={path}
+                  key={path}
+                />
+              ))}
+            </VirtualizedList>
+          )}
         </div>
 
         <DeleteFileModal

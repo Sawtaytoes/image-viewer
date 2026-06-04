@@ -23,6 +23,11 @@ const AUTO_HIDE_MS = 3000
 // Thin top hit-strip that listens for the summon swipe even while the bar is
 // hidden. Hovering it reveals the bar (the mouse has no implicit pointer
 // capture, so the touch swipe alone leaves `+` unreachable with a mouse).
+//
+// `z-index: 1` sits above plain column content but *below* a pane that's
+// showing its gallery/menu (those elevate to `z-index: 2`, see `Pane`), so the
+// gallery's own top controls — the up-a-folder button especially — stay
+// tappable instead of being swallowed by this strip's hover-to-reveal.
 const hitStripStyles = css`
 	height: 32px;
 	left: 0;
@@ -30,7 +35,7 @@ const hitStripStyles = css`
 	top: 0;
 	touch-action: none;
 	width: 100%;
-	z-index: 2;
+	z-index: 1;
 `
 
 // Faint pill hinting the bar can be pulled/hovered down; only shown while the

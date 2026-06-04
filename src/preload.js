@@ -63,16 +63,41 @@ const statPath = (targetPath) => {
 
 // Async directory listing, mapped to plain objects so it can cross the bridge.
 // Replaces the renderer's bindNodeCallback(fs.readdir) + inline mapping.
+// `modifiedTime` (epoch ms) rides along so the renderer can offer a
+// sort-by-date-modified view; it needs a `stat` per entry (the `Dirent` from
+// `readdir` doesn't carry mtime), run in parallel. An unreadable entry
+// (permission, broken symlink) keeps `modifiedTime: 0` so it sorts last rather
+// than failing the whole listing.
 const readDirectory = (directoryPath) =>
   fs.promises
     .readdir(directoryPath, { withFileTypes: true })
     .then((entries) =>
-      entries.map((entry) => ({
-        fileName: entry.name,
-        filePath: path.join(directoryPath, entry.name),
-        isDirectory: entry.isDirectory(),
-        isFile: entry.isFile(),
-      })),
+      Promise.all(
+        entries.map(async (entry) => {
+          const filePath = path.join(
+            directoryPath,
+            entry.name,
+          )
+
+          let modifiedTime = 0
+
+          try {
+            modifiedTime = (
+              await fs.promises.stat(filePath)
+            ).mtimeMs
+          } catch {
+            modifiedTime = 0
+          }
+
+          return {
+            fileName: entry.name,
+            filePath,
+            isDirectory: entry.isDirectory(),
+            isFile: entry.isFile(),
+            modifiedTime,
+          }
+        }),
+      ),
     )
 
 // Reads an image off disk and hands the renderer the raw bytes (as a

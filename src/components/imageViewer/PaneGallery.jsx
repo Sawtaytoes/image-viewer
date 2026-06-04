@@ -1,6 +1,7 @@
 import { css, keyframes } from "@emotion/react"
 import PropTypes from "prop-types"
 import {
+  Fragment,
   memo,
   useCallback,
   useContext,
@@ -9,11 +10,15 @@ import {
   useState,
 } from "react"
 
+import groupEntriesByDate from "../fileBrowser/dateGroups"
 import MultiSelectContext from "../fileBrowser/MultiSelectContext"
+import sortDirectoryEntries from "../fileBrowser/sortDirectoryEntries"
 import useFolderListing from "../fileBrowser/useFolderListing"
 import ArrowUpwardIcon from "../icons/ArrowUpwardIcon"
 import CloseIcon from "../icons/CloseIcon"
 import PlayArrowIcon from "../icons/PlayArrowIcon"
+import SettingsContext from "../settings/SettingsContext"
+import { sortOrders } from "../settings/sortOrders"
 import Button from "../toolkit/Button"
 import WorkspaceContext from "../workspace/WorkspaceContext"
 import PaneGalleryFolderTile from "./PaneGalleryFolderTile"
@@ -87,6 +92,24 @@ const gridStyles = css`
 	);
 	overflow-y: auto;
 	padding: 2px;
+`
+
+// Full-width date-bucket heading spanning every grid column.
+const groupHeaderStyles = css`
+	align-items: end;
+	color: #d6d6d6;
+	display: flex;
+	font-family: 'Source Sans Pro', sans-serif;
+	font-size: 15px;
+	font-weight: 600;
+	grid-column: 1 / -1;
+	padding: 10px 6px 4px;
+
+	&:not(:first-of-type) {
+		border-top: 1px solid #555;
+		margin-top: 4px;
+		padding-top: 10px;
+	}
 `
 
 const emptyMessageStyles = css`
@@ -163,8 +186,37 @@ const PaneGallery = ({
 
   const { addFoldersToQueue } = useContext(WorkspaceContext)
 
+  const { sortOrder } = useContext(SettingsContext)
+
   const { directories, imageFiles } =
     useFolderListing(browsePath)
+
+  const isGroupedView =
+    sortOrder === sortOrders.modifiedDesc
+
+  // Folders + images interleaved newest-first and split into date buckets,
+  // mirroring the home gallery's grouped view (built only when grouping).
+  const dateGroups = useMemo(() => {
+    if (!isGroupedView) {
+      return []
+    }
+
+    const combinedEntries = sortDirectoryEntries(
+      [
+        ...directories.map((directory) => ({
+          ...directory,
+          kind: "directory",
+        })),
+        ...imageFiles.map((imageFile) => ({
+          ...imageFile,
+          kind: "image",
+        })),
+      ],
+      sortOrders.modifiedDesc,
+    )
+
+    return groupEntriesByDate(combinedEntries)
+  }, [directories, imageFiles, isGroupedView])
 
   const parentPath = pathApi.dirname(browsePath)
   const canGoUp =
@@ -319,23 +371,53 @@ const PaneGallery = ({
           </div>
         ) : (
           <div css={gridStyles}>
-            {directories.map(({ name, path }) => (
-              <PaneGalleryFolderTile
-                directoryName={name}
-                directoryPath={path}
-                key={path}
-                onOpen={openFolder}
-              />
-            ))}
+            {isGroupedView ? (
+              dateGroups.map((group) => (
+                <Fragment key={group.key}>
+                  <div css={groupHeaderStyles}>
+                    {group.label}
+                  </div>
 
-            {imageFiles.map(({ name, path }) => (
-              <PaneGalleryImageTile
-                fileName={name}
-                filePath={path}
-                key={path}
-                onOpen={openImage}
-              />
-            ))}
+                  {group.items.map((entry) =>
+                    entry.kind === "directory" ? (
+                      <PaneGalleryFolderTile
+                        directoryName={entry.name}
+                        directoryPath={entry.path}
+                        key={entry.path}
+                        onOpen={openFolder}
+                      />
+                    ) : (
+                      <PaneGalleryImageTile
+                        fileName={entry.name}
+                        filePath={entry.path}
+                        key={entry.path}
+                        onOpen={openImage}
+                      />
+                    ),
+                  )}
+                </Fragment>
+              ))
+            ) : (
+              <Fragment>
+                {directories.map(({ name, path }) => (
+                  <PaneGalleryFolderTile
+                    directoryName={name}
+                    directoryPath={path}
+                    key={path}
+                    onOpen={openFolder}
+                  />
+                ))}
+
+                {imageFiles.map(({ name, path }) => (
+                  <PaneGalleryImageTile
+                    fileName={name}
+                    filePath={path}
+                    key={path}
+                    onOpen={openImage}
+                  />
+                ))}
+              </Fragment>
+            )}
           </div>
         )}
 

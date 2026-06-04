@@ -333,3 +333,44 @@ a new directory without leaving the side-by-side layout. Reinstated as a cleaner
   [fakeFileSystem.js](../../src/fakeFileSystem.js).
 - Tests: `PaneGallery.test.jsx` (open-image-at-index, drill into a subfolder, close); the obsolete
   `galleryPaneId` cases in `WorkspaceProvider.test.jsx` were replaced with an image-index case.
+
+### Post-implementation fixes (7th live-testing round) — stuck edges, dead up-arrow, hold-for-menu, date sort
+
+- **Stuck edge "hover" mode (touch + mouse).** `usePointerHover` mapped `pointerup → hovering` and only
+  cleared on `pointerout`. A touch lift fires neither `pointerout` nor `pointerleave` reliably, so a tap
+  on a nav edge left the white overlay stuck at its hovered opacity (the "weird stuck mode"). Now a
+  mouse `pointerup` keeps the hover (the cursor is still parked there) but a touch/pen `pointerup` — and
+  `pointercancel` — clears it. See [usePointerHover.js](../../src/components/imageViewer/usePointerHover.js).
+- **Gallery up-arrow opened the chrome instead of going up.** The chrome's full-width top hit-strip
+  (`position: fixed; z-index: 2`) sat over the top ~32px of every column, so tapping the in-pane
+  gallery's up-a-folder button hit the strip's hover-to-reveal instead of the button. The strip dropped
+  to `z-index: 1`, and a pane lifts to `z-index: 2` while it owns a gallery/menu — above the strip, still
+  below the chrome bar (`z-index: 3`). See [RevealableChrome.jsx](../../src/components/imageViewer/RevealableChrome.jsx)
+  and [Pane.jsx](../../src/components/imageViewer/Pane.jsx).
+- **Center tap → gallery; press-and-hold → menu.** A quick center tap now opens the column's gallery
+  (`onCenterTap`); the Kavita-style per-column menu moved to a press-and-hold (`onCenterHold`) with a
+  `FillRing` fill indicator, reusing `useLongPress`. The completed hold opens the menu mid-gesture and
+  swallows the trailing click. The legacy single-image column passes no hold handler, so its center tap
+  still just closes. See [ImageView.jsx](../../src/components/imageViewer/ImageView.jsx) /
+  [Pane.jsx](../../src/components/imageViewer/Pane.jsx).
+- **Optional sort by date modified (newest first), persisted + grouped like Explorer.** A header toggle
+  ([DirectoryControls.jsx](../../src/components/fileBrowser/DirectoryControls.jsx)) flips between "Name"
+  and "Newest"; the choice persists in `localStorage` via a new
+  [SettingsProvider](../../src/components/settings/SettingsProvider.jsx) so it survives reopen. The
+  ordering is shared by every listing (gallery + panes) through `useImageFiles`/`useDirectories` reading
+  `sortDirectoryEntries`. `readDirectory` now carries each entry's `modifiedTime` (a `stat` per entry in
+  the preload; mirrored in `fakeFileSystem` with offsets fanned across every bucket for `start:fake`).
+  In date mode the gallery groups folders+images into Windows' buckets — Today, Yesterday, Earlier this
+  week, Last week, Earlier this month, Last month, Earlier this year, A long time ago
+  ([dateGroups.js](../../src/components/fileBrowser/dateGroups.js)) — rendered with full-width headers via
+  a windowed [DateGroupedGrid.jsx](../../src/components/fileBrowser/DateGroupedGrid.jsx) in the home
+  gallery and a CSS-grid header in the in-pane `PaneGallery`. Grouped mode is pointer-driven; the flat
+  `selectedIndex` keyboard grid-nav is suppressed there (only up-a-folder via Backspace/Escape remains).
+- Tests: `dateGroups.test.js` (bucket assignment + grouping/order), `sortDirectoryEntries.test.js`
+  (name vs newest, tie-break, no-mutation), `usePointerHover.test.js` (mouse keeps hover, touch clears).
+  Full suite green (70 tests), biome + eslint + tsc clean.
+
+**Not yet verified on real hardware.** The interaction changes (touch hover release, the hold-for-menu
+fill ring, the elevated-pane z-index, and the grouped grid's windowing/scroll) are best confirmed with a
+`yarn start:fake` (or real `yarn start`) hands-on pass — automated coverage exercises the logic, not the
+live pointer/scroll behavior.

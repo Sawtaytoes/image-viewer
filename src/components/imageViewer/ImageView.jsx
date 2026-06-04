@@ -8,7 +8,9 @@ import {
   useState,
 } from "react"
 
+import FillRing from "../fileBrowser/FillRing"
 import Image from "./Image"
+import useLongPress from "./useLongPress"
 import usePointerHover from "./usePointerHover"
 
 const imageViewStyles = css`
@@ -71,6 +73,10 @@ const propTypes = {
   imageFilePath: PropTypes.string.isRequired,
   isAtBeginning: PropTypes.bool.isRequired,
   isAtEnd: PropTypes.bool.isRequired,
+  // Optional: a press-and-hold on the center zone (vs. a quick tap, which fires
+  // `onCenterTap`). When omitted, a hold does nothing special and still ends as
+  // a tap on release (the legacy single-image column has no hold action).
+  onCenterHold: PropTypes.func,
   onCenterTap: PropTypes.func.isRequired,
 }
 
@@ -81,6 +87,7 @@ const ImageView = ({
   imageFilePath,
   isAtBeginning,
   isAtEnd,
+  onCenterHold,
   onCenterTap,
 }) => {
   const [isHoveringNextOverlay, setIsHoveringNextOverlay] =
@@ -93,6 +100,14 @@ const ImageView = ({
 
   const navigateNextOverlayRef = useRef()
   const navigatePreviousOverlayRef = useRef()
+  const centerZoneRef = useRef()
+
+  // A completed hold opens the menu mid-gesture; swallow the trailing `click`
+  // (fired on release) so it doesn't also fire the tap action.
+  const suppressNextCenterClickRef = useRef(false)
+
+  const [centerHoldProgress, setCenterHoldProgress] =
+    useState(0)
 
   usePointerHover({
     callback: ({ isHovering }) => {
@@ -118,10 +133,47 @@ const ImageView = ({
     (event) => {
       event.stopPropagation()
 
+      if (suppressNextCenterClickRef.current) {
+        suppressNextCenterClickRef.current = false
+
+        return
+      }
+
       onCenterTap({ x: event.clientX, y: event.clientY })
     },
     [onCenterTap],
   )
+
+  const onCenterHoldProgress = useCallback((fraction) => {
+    setCenterHoldProgress(fraction)
+  }, [])
+
+  const onCenterHoldComplete = useCallback(
+    ({ event }) => {
+      setCenterHoldProgress(0)
+
+      // No hold action (legacy column): let the release fall through as a tap.
+      if (!onCenterHold) {
+        return
+      }
+
+      suppressNextCenterClickRef.current = true
+
+      onCenterHold({ x: event.clientX, y: event.clientY })
+    },
+    [onCenterHold],
+  )
+
+  const onCenterHoldCancel = useCallback(() => {
+    setCenterHoldProgress(0)
+  }, [])
+
+  useLongPress({
+    domElementRef: centerZoneRef,
+    onCancel: onCenterHoldCancel,
+    onComplete: onCenterHoldComplete,
+    onProgress: onCenterHoldProgress,
+  })
 
   const navigateNextOverlayStyles = useMemo(
     () => css`
@@ -161,7 +213,12 @@ const ImageView = ({
       <div
         css={centerCloseZoneStyles}
         onClick={onCenterClick}
-      />
+        ref={centerZoneRef}
+      >
+        {centerHoldProgress > 0 && (
+          <FillRing progress={centerHoldProgress} />
+        )}
+      </div>
 
       <div
         css={navigateNextOverlayStyles}

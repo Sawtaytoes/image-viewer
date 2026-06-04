@@ -1,8 +1,9 @@
-import { useEffect, useState } from "react"
+import { useContext, useEffect, useState } from "react"
 import { from } from "rxjs"
 import { filter, map, toArray } from "rxjs/operators"
 
-import compareNaturalStrings from "./compareNaturalStrings"
+import SettingsContext from "../settings/SettingsContext"
+import sortDirectoryEntries from "./sortDirectoryEntries"
 
 const systemDirectories = [
   "$recycle.bin",
@@ -15,6 +16,8 @@ const systemDirectories = [
 ]
 
 const useDirectories = (directoryContents) => {
+  const { sortOrder } = useContext(SettingsContext)
+
   const [directories, setDirectories] = useState([])
 
   useEffect(() => {
@@ -27,17 +30,17 @@ const useDirectories = (directoryContents) => {
               fileName.toLowerCase(),
             ),
         ),
-        map(({ fileName, filePath }) => ({
+        map(({ fileName, filePath, modifiedTime }) => ({
+          modifiedTime,
           name: fileName,
           path: filePath,
         })),
         toArray(),
-        map((directories) =>
-          directories
-            .slice()
-            .sort((a, b) =>
-              compareNaturalStrings(a.name, b.name),
-            ),
+        map((unsortedDirectories) =>
+          sortDirectoryEntries(
+            unsortedDirectories,
+            sortOrder,
+          ),
         ),
       )
       .subscribe(setDirectories)
@@ -45,7 +48,7 @@ const useDirectories = (directoryContents) => {
     return () => {
       subscriber.unsubscribe()
     }
-  }, [directoryContents])
+  }, [directoryContents, sortOrder])
 
   return directories
 }
