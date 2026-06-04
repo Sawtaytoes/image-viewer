@@ -111,6 +111,11 @@ const sortToggleLabels = {
   [sortOrders.name]: "Name",
 }
 
+// Thumbnails are sized by a fixed minimum track, not a fraction of the pane, so
+// each tile stays the same physical size whether the gallery fills the window or
+// shares it with several panes — a narrower pane shows fewer columns rather than
+// shrinking every tile. Keeping tiles large also bounds how many decode at once,
+// which is what made many-pane layouts crawl.
 const gridStyles = css`
 	align-content: start;
 	display: grid;
@@ -118,7 +123,7 @@ const gridStyles = css`
 	gap: 2px;
 	grid-template-columns: repeat(
 		auto-fill,
-		minmax(110px, 1fr)
+		minmax(220px, 1fr)
 	);
 	overflow-y: auto;
 	padding: 2px;
