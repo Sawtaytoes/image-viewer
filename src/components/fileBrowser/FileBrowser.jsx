@@ -262,17 +262,37 @@ const FileBrowser = () => {
   // the folder is open and only becomes eligible for eviction once released.
   // With overlapping panes (side-by-side columns showing the same folder),
   // closing one pane decrements rather than nuking blobs the other still shows.
+  //
+  // Keyed on the *set* of paths (a sorted, newline-joined digest), not the
+  // array identity: re-sorting via the Newest/Name toggle yields a new array of
+  // the same paths, and releasing then re-retaining them mid-toggle would evict
+  // the cached blobs (they wouldn't reload until you left and re-entered the
+  // folder). Deriving the paths back from the digest keeps the effect from
+  // re-running on a reorder, so only an actual folder change churns the cache.
+  const retainedPathsKey = useMemo(
+    () =>
+      imageFiles
+        .map(({ path }) => path)
+        .sort()
+        .join("\n"),
+    [imageFiles],
+  )
+
   useEffect(() => {
-    imageFiles.forEach(({ path }) => {
-      retainImage({ filePath: path })
+    const paths = retainedPathsKey
+      ? retainedPathsKey.split("\n")
+      : []
+
+    paths.forEach((filePath) => {
+      retainImage({ filePath })
     })
 
     return () => {
-      imageFiles.forEach(({ path }) => {
-        releaseImage({ filePath: path })
+      paths.forEach((filePath) => {
+        releaseImage({ filePath })
       })
     }
-  }, [imageFiles, releaseImage, retainImage])
+  }, [retainedPathsKey, releaseImage, retainImage])
 
   useEffect(
     () => () => {
