@@ -1,3 +1,35 @@
+# [2.0.0](https://github.com/Sawtaytoes/image-viewer/compare/v1.1.0...v2.0.0) (2026-06-04)
+
+
+* feat(settings)!: remember sort order per folder ([2ff84e3](https://github.com/Sawtaytoes/image-viewer/commit/2ff84e3abc8d3b06c3af85b312f3d8bd5ae0ab7c))
+
+
+### Bug Fixes
+
+* **imageLoader:** don't cancel in-flight downloads when a tile hides ([db704ab](https://github.com/Sawtaytoes/image-viewer/commit/db704ab77019116487b63ff12c83f908738f8705))
+* **imageViewer:** don't reveal chrome when closing a pane's gallery ([2e9c9f0](https://github.com/Sawtaytoes/image-viewer/commit/2e9c9f0f0528e34c96ec0581c1b3df4676e3937a))
+* **imageViewer:** stop fast double-tap from selecting the fullscreen image ([8e14f7a](https://github.com/Sawtaytoes/image-viewer/commit/8e14f7abcedce2adbbf8131a44f014d2f6042753))
+
+
+### Features
+
+* **workspace:** add a Clear queue button to the folder tab strip ([fcc6609](https://github.com/Sawtaytoes/image-viewer/commit/fcc6609691122c2c3dcbe81c1505a5fab25bb628))
+
+
+### Performance Improvements
+
+* **imageViewer:** keep gallery thumbnails a fixed size across panes ([8d2cc6b](https://github.com/Sawtaytoes/image-viewer/commit/8d2cc6b5d4d52d526b29620617c6bcbee79d52d9))
+
+
+### BREAKING CHANGES
+
+* the global `imageViewer.sortOrder` localStorage key is
+replaced by a per-folder `imageViewer.sortOrdersByFolder` map. A previously
+saved global sort preference is not migrated; folders start from the Name
+default until re-toggled.
+
+Co-Authored-By: Claude Opus 4.8 (1M context) <noreply@anthropic.com>
+
 # [1.1.0](https://github.com/Sawtaytoes/image-viewer/compare/v1.0.0...v1.1.0) (2026-06-04)
 
 
