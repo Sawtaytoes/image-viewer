@@ -10,7 +10,6 @@ import {
   addFilePathToPriorityQueue,
   addFilePathToStandbyQueue,
   removeFilePathFromPriorityQueue,
-  removeFilePathFromProcessingQueue,
   removeFilePathFromStandbyQueue,
 } from "./imageLoaderActions"
 import ofType from "./ofType"
@@ -38,14 +37,16 @@ const addFilePathEpic = (action$, state$, { dispatch }) =>
         isStandingBy,
         isVisible,
       }) => [
+        // A hidden tile drops back to standby (deprioritized) but its in-flight
+        // download is deliberately NOT cancelled: the same image is often shown
+        // in several panes at once, and cancelling here would abort a download
+        // the others still need. With only a couple of download slots, the old
+        // cancel-on-hide thrashed — tiles were repeatedly aborted mid-download
+        // and never finished. Letting a started download complete (it frees its
+        // slot on finish via downloadFileCompletionEpic) keeps the cache shared.
         !isVisible &&
           isPrioritized &&
           removeFilePathFromPriorityQueue({
-            filePath,
-          }),
-        !isVisible &&
-          isProcessing &&
-          removeFilePathFromProcessingQueue({
             filePath,
           }),
         isVisible &&
