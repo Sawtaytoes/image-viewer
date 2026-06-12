@@ -315,6 +315,9 @@ green on its own and the remainder stays untouched. Done so far (**wave 1 — fo
   (Named `ImageBytes`, not the brief's `ImageData`, to avoid the lib.dom `ImageData` global.)
 - ☑ **`src/preload.d.ts`** — `Window.api` augmentation typing every `window.api.*` call site.
 - ☑ **`src/imageMimeTypes.ts`** (+ `.test.ts`) — typed `Record<string, string>` map.
+- ☑ **`src/components/fileBrowser/compareNaturalStrings.ts`** (+ `.test.ts`) — typed `(string, string)
+  => number`. `string-natural-compare` ships no types, so added an ambient
+  `src/string-natural-compare.d.ts` declaring the slice we use (no `any`).
 - ☑ **`src/components/imageLoader/createActionCreator.ts`** (+ `.test.ts`) — generic over `Payload`,
   with `Action<Payload>` / `ActionCreator<Payload>` interfaces; `Object.assign` augments the function
   with its static `.type` so no cast is needed.
@@ -328,7 +331,7 @@ green on its own and the remainder stays untouched. Done so far (**wave 1 — fo
 **Verified:** `yarn typecheck` / `yarn lint` / `yarn test:run` (72) green; `yarn package` builds (the
 preload's `./imageMimeTypes` import resolves now that it's `.ts`).
 
-**Remaining waves** (still `.js`/`.jsx`, in suggested order): leaf `compareNaturalStrings`;
+**Remaining waves** (still `.js`/`.jsx`, in suggested order):
 hooks (`useStateSelector` + the convenience/file-browser hooks); contexts → value `interface` + safe
 `use*` hook; components `.jsx` → `.tsx` (props interfaces, handler types, drop PropTypes); the
 redux-observable actions/reducers/epics; `main.js` / `preload.js` last. Then tighten
