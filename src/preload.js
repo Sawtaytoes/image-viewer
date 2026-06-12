@@ -105,14 +105,36 @@ const readDirectory = (directoryPath) =>
 // fetch. `fs.promises.readFile` returns a Buffer that may be a view into a
 // shared pool, so slice out exactly this file's bytes before crossing the
 // bridge.
-const readImageData = (filePath) =>
-  fs.promises.readFile(filePath).then((buffer) => ({
+// Extensions Chromium can't decode itself — transcoded to JPEG in main (via
+// libheif WASM) rather than read straight off disk. Keep in sync with the HEIC
+// handling in main.js / the extension list in useImageFiles.js.
+const transcodedImageExtensions = new Set([
+  ".heic",
+  ".heif",
+])
+
+const readImageData = (filePath) => {
+  // HEIC/HEIF can't be rendered by Chromium, so hand them to main for a JPEG
+  // transcode (cached there by path+mtime). Everything else is read straight
+  // off disk here — the fast path, no IPC round-trip.
+  if (
+    transcodedImageExtensions.has(
+      path.extname(filePath).toLowerCase(),
+    )
+  ) {
+    return ipcRenderer.invoke("readHeicAsJpeg", {
+      filePath,
+    })
+  }
+
+  return fs.promises.readFile(filePath).then((buffer) => ({
     data: buffer.buffer.slice(
       buffer.byteOffset,
       buffer.byteOffset + buffer.byteLength,
     ),
     mimeType: getImageMimeType(path.extname(filePath)),
   }))
+}
 
 contextBridge.exposeInMainWorld("api", {
   cliFilePath,

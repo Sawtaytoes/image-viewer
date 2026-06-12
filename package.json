@@ -28,6 +28,7 @@
   "dependencies": {
     "@emotion/react": "^11.14.0",
     "electron-squirrel-startup": "^1.0.1",
+    "heic-convert": "^2.1.0",
     "prop-types": "^15.8.1",
     "react": "^19.2.0",
     "react-dom": "^19.2.0",
@@ -52,6 +53,7 @@
     "@testing-library/jest-dom": "^6.9.1",
     "@testing-library/react": "^16.3.2",
     "@types/electron-squirrel-startup": "^1.0.2",
+    "@types/heic-convert": "^2",
     "@types/node": "^25.9.1",
     "@types/react": "^19.2.0",
     "@types/react-dom": "^19.2.0",

@@ -22,13 +22,18 @@ describe("getImageMimeType", () => {
     expect(getImageMimeType(".cur")).toBe("image/x-icon")
   })
 
+  it("maps HEIC/HEIF to their source MIME type (transcoded to JPEG in main)", () => {
+    expect(getImageMimeType(".heic")).toBe("image/heic")
+    expect(getImageMimeType(".heif")).toBe("image/heif")
+  })
+
   it("is case-insensitive", () => {
     expect(getImageMimeType(".PNG")).toBe("image/png")
     expect(getImageMimeType(".JPeG")).toBe("image/jpeg")
   })
 
   it("falls back to application/octet-stream for unknown extensions", () => {
-    expect(getImageMimeType(".heic")).toBe(
+    expect(getImageMimeType(".xyz")).toBe(
       "application/octet-stream",
     )
     expect(getImageMimeType("")).toBe(

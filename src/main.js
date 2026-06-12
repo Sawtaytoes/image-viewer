@@ -203,6 +203,82 @@ ipcMain.handle(
   },
 )
 
+// HEIC/HEIF decode. Chromium can't render HEIC, so iPhone photos never fire an
+// <img> load event and silently stay blank. The renderer's `readImageData`
+// routes only `.heic`/`.heif` here and gets JPEG bytes back; every other format
+// stays on the fast preload `fs` path untouched. `heic-convert` (libheif WASM)
+// is loaded lazily — so it never slows startup — and kept external from the Vite
+// bundle (see vite.main.config.ts). Decoded JPEGs are cached by path+mtime, with
+// a small LRU bound, so re-browsing a folder of HEICs doesn't re-run the slow
+// WASM decode. See docs/workers/feature-heic-support.md.
+const heicJpegCacheByKey = new Map()
+const heicJpegCacheMaxEntries = 64
+
+let heicConvertModulePromise
+
+const loadHeicConvert = () => {
+  if (!heicConvertModulePromise) {
+    heicConvertModulePromise = import("heic-convert")
+  }
+
+  return heicConvertModulePromise.then(
+    (module) => module.default ?? module,
+  )
+}
+
+ipcMain.handle(
+  "readHeicAsJpeg",
+  async (_event, { filePath }) => {
+    const { mtimeMs } = await fs.promises.stat(filePath)
+    const cacheKey = `${filePath}:${mtimeMs}`
+
+    const cachedArrayBuffer =
+      heicJpegCacheByKey.get(cacheKey)
+
+    if (cachedArrayBuffer) {
+      // Refresh LRU recency (delete + re-set moves it to the newest slot).
+      heicJpegCacheByKey.delete(cacheKey)
+      heicJpegCacheByKey.set(cacheKey, cachedArrayBuffer)
+
+      return {
+        data: cachedArrayBuffer,
+        mimeType: "image/jpeg",
+      }
+    }
+
+    const inputBuffer = await fs.promises.readFile(filePath)
+    const convert = await loadHeicConvert()
+    const jpegBuffer = await convert({
+      buffer: inputBuffer,
+      format: "JPEG",
+      quality: 0.92,
+    })
+
+    // `convert` hands back a Node Buffer that may be a view into a larger pool;
+    // slice out exactly this image's bytes as a standalone ArrayBuffer so the
+    // structured clone across IPC carries only the JPEG.
+    const arrayBuffer = jpegBuffer.buffer.slice(
+      jpegBuffer.byteOffset,
+      jpegBuffer.byteOffset + jpegBuffer.byteLength,
+    )
+
+    heicJpegCacheByKey.set(cacheKey, arrayBuffer)
+
+    if (heicJpegCacheByKey.size > heicJpegCacheMaxEntries) {
+      // Evict the least-recently-used entry (Map preserves insertion order).
+      const oldestKey = heicJpegCacheByKey
+        .keys()
+        .next().value
+      heicJpegCacheByKey.delete(oldestKey)
+    }
+
+    return {
+      data: arrayBuffer,
+      mimeType: "image/jpeg",
+    }
+  },
+)
+
 app.whenReady().then(() => {
   // Images are read off disk through the preload bridge
   // (window.api.readImageData), so no custom protocol registration is needed.

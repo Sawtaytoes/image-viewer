@@ -33,6 +33,18 @@ mapping lives in [`src/imageMimeTypes.js`](../src/imageMimeTypes.js) (unit-teste
 **Still needs a human pass in the packaged build** (`yarn package`): confirm thumbnails render in
 `G:\Pictures` / `G:\Pictures\Maui 2025`, open a single image, then the manual parity items below.
 
+## ✅ FIXED: HEIC/HEIF photos don't show up
+
+**Was:** iPhone `.heic`/`.heif` photos were filtered out at listing time and, even if listed, Chromium
+can't decode HEIC so they'd never render.
+
+**Fix:** added the extensions to the listing filter and transcode HEIC→JPEG in the main process
+(`heic-convert`/libheif) inside a new `readHeicAsJpeg` IPC handler that `readImageData` routes to; the
+renderer pipeline is unchanged. Decoded JPEGs are cached by `path+mtime`. Branch `feat/heic-support`;
+details in [workers/feature-heic-support.md](workers/feature-heic-support.md). **Still owed:** a GUI pass
+(tiles render + open in single/columns, EXIF orientation correct) and a thumbnail-perf follow-up for
+large HEIC folders.
+
 ## Other deferred items
 
 - **Manual parity pass still owed** now that image loading is fixed: opening a single image,

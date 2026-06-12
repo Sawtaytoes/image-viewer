@@ -100,3 +100,26 @@ package and smoke-testing the installed app.
   `webFrame.setZoomFactor(0.75)` (now in `src/preload.js`). Details: [research/0009](research/0009-github-master-reconciliation.md).
 - Fixed a CRLF/LF thrash (Git autocrlf vs Biome LF) via `.gitattributes` `eol=lf`.
 - Pushed `master` to **both** GitHub (`origin`) and Gitea.
+
+## 2026-06-12 — HEIC/HEIF support (branch `feat/heic-support`)
+
+Closes the last open feature brief: iPhone HEIC photos now list and render. Chromium can't decode
+HEIC, so `.heic`/`.heif` are transcoded to JPEG in the **main** process and the renderer pipeline is
+otherwise untouched. Full brief + rationale: [workers/feature-heic-support.md](workers/feature-heic-support.md).
+
+- `readImageData` ([preload.js](../src/preload.js)) routes only `.heic`/`.heif` to a new
+  `ipcMain.handle("readHeicAsJpeg")` ([main.js](../src/main.js)); all other formats keep the fast
+  direct-`fs` path. The handler decodes via `heic-convert` (libheif WASM, inlined) and returns
+  `{ data: ArrayBuffer, mimeType: "image/jpeg" }`. Decoded JPEGs are cached by `path+mtime` (64-entry LRU).
+- Extensions added to `validImageExtensions` ([useImageFiles.js](../src/components/fileBrowser/useImageFiles.js))
+  and the MIME table ([imageMimeTypes.js](../src/imageMimeTypes.js)).
+- `heic-convert` is **bundled** (not externalized): Forge's Vite plugin ships only `.vite/build` in the
+  asar, so the lazy `import()` code-splits into a `heic-convert-*.js` chunk that lands inside `app.asar`
+  (verified). Lazy load keeps it off the startup path.
+- **Verified:** `yarn typecheck` / `yarn lint` / `yarn test:run` (74 pass) / `yarn package` all green;
+  asar confirmed to contain the libheif chunk + handler. A real 2.9 MB HEIC decoded to a valid JPEG
+  under Node (~2.6 s) and under Electron's runtime (~1.3 s).
+- **Owed (human/GUI):** confirm tiles render + open in single/columns, check EXIF orientation on a real
+  portrait shot. **Follow-up:** thumbnail decode is ~1.3 s/image on the main thread — fine per-image,
+  slow for a big HEIC folder on first browse (cached after); future work = embedded-preview extraction
+  and/or moving the decode to a `utilityProcess`/worker.
