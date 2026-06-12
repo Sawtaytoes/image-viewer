@@ -22,9 +22,12 @@ from the original `TASKS.md` or the kickoff conversation is lost.
    first down-payment — see [research/0006](research/0006-drive-enumeration-wmic.md).)
 2. **Built-in file manager / file viewer** — so the app no longer depends on Windows Explorer.
 3. **Multiple galleries at once / side-by-side views** — open more than one folder; compare.
-4. **Delete UX** — the delete *path* is fixed in Phase 1 (trash via `shell.trashItem`). Still to do:
-   a real "Are you sure?" confirmation wired to keyboard (`[Enter]`=yes/`[Esc]`=no) and **guarding the
-   stray `[Delete]` key** the owner hits by accident.
+4. **Delete UX** — ✅ **Done.** Trash via `shell.trashItem` (Phase 1) + a real "Are you sure?"
+   `ConfirmationModal` wired to the keyboard (`[Enter]`=yes / `[Esc]`/`[Backspace]`=no). The modal is
+   itself the guard against a stray `[Delete]` key — `[Delete]` opens the prompt rather than deleting.
+   Live in the **file browser** and (branch `feat/viewer-delete`) the **image viewer**: `[Delete]` on the
+   active column trashes the current image, advances to the next (or reverts the column to empty when it
+   was the folder's last image); the legacy single-image view deletes and drops back to the gallery.
 5. **Full TypeScript conversion** of `src/**` (Phase 1 only sets up TS tooling — see
    [research/0004](research/0004-typescript-strategy.md)).
 

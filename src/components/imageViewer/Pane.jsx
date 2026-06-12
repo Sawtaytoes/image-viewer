@@ -10,6 +10,7 @@ import {
 } from "react"
 
 import useFolderListing from "../fileBrowser/useFolderListing"
+import DeleteFileModal from "../toolkit/DeleteFileModal"
 import WorkspaceContext from "../workspace/WorkspaceContext"
 import EmptyPaneAffordance from "./EmptyPaneAffordance"
 import FolderPickerPopover from "./FolderPickerPopover"
@@ -69,6 +70,7 @@ const propTypes = {
 const Pane = ({ isActive, pane, spawn }) => {
   const {
     assignFolderPathToPane,
+    assignFolderToPane,
     clearPanes,
     queuedFolders,
     setActivePaneId,
@@ -77,6 +79,9 @@ const Pane = ({ isActive, pane, spawn }) => {
   } = useContext(WorkspaceContext)
 
   const [isMenuOpen, setIsMenuOpen] = useState(false)
+
+  const [isDeleteModalOpen, setIsDeleteModalOpen] =
+    useState(false)
 
   // Non-null while this column is showing the in-pane gallery; holds the path
   // currently being browsed there. Local to the pane so each column browses
@@ -88,7 +93,9 @@ const Pane = ({ isActive, pane, spawn }) => {
     ({ id }) => id === pane.folderId,
   )
 
-  const { imageFiles } = useFolderListing(folder?.path)
+  const { imageFiles, refresh } = useFolderListing(
+    folder?.path,
+  )
 
   const setCurrentIndex = useCallback(
     (index) => {
@@ -113,6 +120,63 @@ const Pane = ({ isActive, pane, spawn }) => {
     imageFiles,
     setCurrentIndex,
   })
+
+  // `[Delete]` on the active column asks before trashing the current image
+  // (the confirmation modal is what guards the stray Delete key). Only arm it
+  // when there's actually an image showing.
+  const requestDelete = useCallback(() => {
+    if (!imageFiles[currentIndex]) {
+      return
+    }
+
+    setIsDeleteModalOpen(true)
+  }, [currentIndex, imageFiles])
+
+  const closeDeleteModal = useCallback(() => {
+    setIsDeleteModalOpen(false)
+  }, [])
+
+  const confirmDelete = useCallback(() => {
+    const imageToDelete = imageFiles[currentIndex]
+
+    if (!imageToDelete) {
+      setIsDeleteModalOpen(false)
+
+      return
+    }
+
+    window.api
+      .deleteFilePath({
+        filePath: imageToDelete.path,
+        isDirectory: false,
+      })
+      .then(() => {
+        const remainingCount = imageFiles.length - 1
+
+        if (remainingCount <= 0) {
+          // That was the column's last image — revert it to the empty `+`
+          // state rather than leaving a blank column staring back.
+          assignFolderToPane(pane.id, null)
+        } else {
+          // Hold the same slot, which now shows the next image (clamped to the
+          // new end if we deleted the last one), then re-read the folder.
+          setCurrentIndex(
+            Math.min(currentIndex, remainingCount - 1),
+          )
+
+          refresh()
+        }
+
+        setIsDeleteModalOpen(false)
+      })
+  }, [
+    assignFolderToPane,
+    currentIndex,
+    imageFiles,
+    pane.id,
+    refresh,
+    setCurrentIndex,
+  ])
 
   // Center-tap means "control this column": select it and open its menu (the
   // Kavita-style per-column control). Closing the column is a menu action now.
@@ -189,14 +253,20 @@ const Pane = ({ isActive, pane, spawn }) => {
     wasElevatedRef.current = isElevated
   }, [isElevated, suppressChromeReveal])
 
-  // Only the active column owns the keyboard, and it's silenced while the menu
-  // or the in-pane gallery is open (each handles its own Esc) — so the first
-  // Esc closes that, and the next one leaves the viewer.
+  // Only the active column owns the keyboard, and it's silenced while the menu,
+  // the in-pane gallery, or the delete confirmation is open (each handles its
+  // own Esc/Enter) — so the first Esc closes that, and the next one leaves the
+  // viewer.
   useViewerKeyboard({
     goToNextImage,
     goToPreviousImage,
-    isEnabled: isActive && !isMenuOpen && !isGalleryOpen,
+    isEnabled:
+      isActive &&
+      !isMenuOpen &&
+      !isGalleryOpen &&
+      !isDeleteModalOpen,
     onClose: clearPanes,
+    onDelete: requestDelete,
   })
 
   const currentImage = folder
@@ -242,6 +312,12 @@ const Pane = ({ isActive, pane, spawn }) => {
           paneId={pane.id}
         />
       )}
+
+      <DeleteFileModal
+        isVisible={isDeleteModalOpen}
+        onClose={closeDeleteModal}
+        onConfirm={confirmDelete}
+      />
     </div>
   )
 }
