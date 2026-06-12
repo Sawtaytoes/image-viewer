@@ -73,7 +73,11 @@ export default defineConfig(
       "react-hooks": reactHooks,
     },
     settings: {
-      react: { version: "detect" },
+      // Pin the version rather than "detect": eslint-plugin-react's
+      // auto-detection calls the `context.getFilename()` API removed in
+      // ESLint 9+, which crashes the moment a react rule (no-multi-comp below)
+      // runs on a `.ts`/`.tsx` file. An explicit version skips detection.
+      react: { version: "19.2" },
     },
     rules: {
       // Spell names out — no single letters (Biome has no equivalent).

@@ -2,7 +2,7 @@
 // `readImageData` tags the bytes with one of these so the renderer can build a
 // correctly-typed Blob. Mirrors the extension list in
 // src/components/fileBrowser/useImageFiles.js — keep the two in sync.
-const imageMimeTypesByExtension = {
+const imageMimeTypesByExtension: Record<string, string> = {
   ".apng": "image/apng",
   ".avif": "image/avif",
   ".bmp": "image/bmp",
@@ -21,7 +21,7 @@ const imageMimeTypesByExtension = {
 
 // Browsers sniff image bytes regardless of the Blob type, so the fallback is
 // only a sensible default for an unrecognized extension.
-const getImageMimeType = (extension) =>
+const getImageMimeType = (extension: string): string =>
   imageMimeTypesByExtension[extension.toLowerCase()] ??
   "application/octet-stream"
 
