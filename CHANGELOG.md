@@ -1,3 +1,10 @@
+## [2.0.2](https://github.com/Sawtaytoes/image-viewer/compare/v2.0.1...v2.0.2) (2026-06-19)
+
+
+### Bug Fixes
+
+* **fileBrowser:** restore instant folder listing by deferring mtime stats ([7e0f64a](https://github.com/Sawtaytoes/image-viewer/commit/7e0f64aeca2e71669e6ad5782b6b8f28a70cd3bb))
+
 ## [2.0.1](https://github.com/Sawtaytoes/image-viewer/compare/v2.0.0...v2.0.1) (2026-06-04)
 
 
