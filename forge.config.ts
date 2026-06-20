@@ -10,6 +10,10 @@ import type { ForgeConfig } from "@electron-forge/shared-types"
 const config: ForgeConfig = {
   packagerConfig: {
     asar: true,
+    // Build artifacts use the one-word name (folder `ImageViewer-win32-x64`,
+    // `ImageViewer.exe`) regardless of the spaced `productName` display label.
+    name: "ImageViewer",
+    executableName: "ImageViewer",
   },
   rebuildConfig: {},
   makers: [
