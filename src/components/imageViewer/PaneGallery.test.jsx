@@ -2,7 +2,6 @@ import {
   fireEvent,
   render,
   screen,
-  waitForElementToBeRemoved,
 } from "@testing-library/react"
 import { afterEach, describe, expect, it, vi } from "vitest"
 
@@ -112,15 +111,18 @@ describe("PaneGallery (in-pane gallery)", () => {
   it("drills into a subfolder when its tile is tapped", async () => {
     renderGallery()
 
-    // Wait for the cats listing, then drill into the subfolder; the cats'
-    // images leaving confirms the listing was replaced.
+    // Wait for the cats listing, then drill into the subfolder; the subfolder's
+    // image appearing (and the cats' images being gone) confirms the listing was
+    // replaced rather than left stale during the read.
     await screen.findByAltText("cat-01.bmp")
 
     fireEvent.click(screen.getByText("Kittens"))
 
-    await waitForElementToBeRemoved(() =>
+    await screen.findByAltText("kitten-01.bmp")
+
+    expect(
       screen.queryByAltText("cat-01.bmp"),
-    )
+    ).not.toBeInTheDocument()
   })
 
   it("leaves the gallery via the close control", async () => {

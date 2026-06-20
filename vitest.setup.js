@@ -19,6 +19,7 @@ window.api = {
   cliFilePath: "",
   createNewWindow: () => {},
   deleteFilePath: () => Promise.resolve(true),
+  findFirstImage: () => Promise.resolve(null),
   getWindowsDrives: () => [],
   readDirectory: () => Promise.resolve([]),
   statPath: () => ({

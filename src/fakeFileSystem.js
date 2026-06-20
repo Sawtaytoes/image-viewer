@@ -15,6 +15,14 @@
 // distinct shades. The root's loose images are near-gray to mark "you're at
 // the top".
 
+import { imageMimeTypesByExtension } from "./imageMimeTypes"
+
+// Same image-extension set the real preload uses, so the fake tree's gallery
+// detection matches production.
+const imageExtensions = new Set(
+  Object.keys(imageMimeTypesByExtension),
+)
+
 // Convert HSL (hue in [0,360), saturation & lightness in [0,1]) to 0–255 RGB.
 const hslToRgb = (hue, saturation, lightness) => {
   const chroma =
@@ -349,6 +357,55 @@ const createFakeFileSystem = ({ path }) => {
     )
   }
 
+  // Mirror of the real preload's `findFirstImage`: breadth-first hunt for the
+  // first image anywhere under `folderPath` (null ⇒ not a gallery), walking the
+  // in-memory tree instead of disk.
+  const findFirstImage = (folderPath) => {
+    const queue = [folderPath]
+
+    while (queue.length > 0) {
+      const currentPath = queue.shift()
+      const node = nodesByPath.get(currentPath)
+
+      if (!node?.isDirectory) {
+        continue
+      }
+
+      const imageNames = []
+      const subdirectories = []
+
+      for (const childPath of node.children) {
+        const child = nodesByPath.get(childPath)
+
+        if (
+          child.isFile &&
+          imageExtensions.has(
+            path.extname(child.name).toLowerCase(),
+          )
+        ) {
+          imageNames.push(child.name)
+        } else if (child.isDirectory) {
+          subdirectories.push(childPath)
+        }
+      }
+
+      if (imageNames.length > 0) {
+        imageNames.sort((left, right) =>
+          left.localeCompare(right),
+        )
+
+        return Promise.resolve({
+          name: imageNames[0],
+          path: path.join(currentPath, imageNames[0]),
+        })
+      }
+
+      queue.push(...subdirectories)
+    }
+
+    return Promise.resolve(null)
+  }
+
   const readImageData = (filePath) => {
     const node = nodesByPath.get(filePath)
 
@@ -400,6 +457,7 @@ const createFakeFileSystem = ({ path }) => {
     // Open straight into the fake root so the gallery has content immediately.
     cliFilePath: rootPath,
     deleteFilePath,
+    findFirstImage,
     getWindowsDrives: () => [rootPath],
     readDirectory,
     readImageData,

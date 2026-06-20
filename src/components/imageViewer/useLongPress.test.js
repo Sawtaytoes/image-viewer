@@ -104,6 +104,34 @@ describe("useLongPress", () => {
     expect(onComplete).not.toHaveBeenCalled()
   })
 
+  it("never emits a non-zero progress for a quick tap", () => {
+    const onProgress = vi.fn()
+
+    renderLongPress({
+      holdMs: 500,
+      progressDelayMs: 150,
+      onProgress,
+    })
+
+    domElement.dispatchEvent(
+      createPointerEvent("pointerdown"),
+    )
+
+    // Released before the progress delay elapses — the fill ring must stay
+    // hidden so it can't steal the trailing `click`.
+    vi.advanceTimersByTime(100)
+
+    domElement.dispatchEvent(
+      createPointerEvent("pointerup"),
+    )
+
+    expect(
+      onProgress.mock.calls.every(
+        ([fraction]) => fraction === 0,
+      ),
+    ).toBe(true)
+  })
+
   it("fires onCancel when the press is released early", () => {
     const onCancel = vi.fn()
     const onComplete = vi.fn()

@@ -124,6 +124,62 @@ describe("createFakeFileSystem", () => {
     expect(view.getUint8(1)).toBe(0x4d)
   })
 
+  it("finds a folder's first image (name-ascending) for its thumbnail", async () => {
+    const fakeFileSystem = setup()
+
+    const image = await fakeFileSystem.findFirstImage(
+      path.join(rootPath, "Cats"),
+    )
+
+    expect(image).toMatchObject({ name: "cats-01.bmp" })
+  })
+
+  it("descends into subfolders when a folder has no direct images", async () => {
+    const fakeFileSystem = setup()
+
+    const landscapesPath = path.join(rootPath, "Landscapes")
+
+    // Strip Landscapes' own images, leaving only its Mountains subfolder — a
+    // pure container folder still counts as a gallery via its descendants.
+    const entries =
+      await fakeFileSystem.readDirectory(landscapesPath)
+
+    for (const entry of entries.filter(
+      (candidate) => candidate.isFile,
+    )) {
+      await fakeFileSystem.deleteFilePath({
+        filePath: entry.filePath,
+      })
+    }
+
+    const image =
+      await fakeFileSystem.findFirstImage(landscapesPath)
+
+    expect(image).toMatchObject({
+      name: "mountains-01.bmp",
+    })
+  })
+
+  it("returns null for a folder with no images at any depth", async () => {
+    const fakeFileSystem = setup()
+
+    const dogsPath = path.join(rootPath, "Dogs")
+
+    // Dogs has no subfolders, so emptying its images leaves no gallery.
+    const entries =
+      await fakeFileSystem.readDirectory(dogsPath)
+
+    for (const entry of entries) {
+      await fakeFileSystem.deleteFilePath({
+        filePath: entry.filePath,
+      })
+    }
+
+    expect(
+      await fakeFileSystem.findFirstImage(dogsPath),
+    ).toBeNull()
+  })
+
   it("virtually deletes a file so it leaves its folder listing", async () => {
     const fakeFileSystem = setup()
 

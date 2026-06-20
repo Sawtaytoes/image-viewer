@@ -96,7 +96,9 @@ const sortToggleStyles = css`
 	cursor: pointer;
 	display: inline-flex;
 	flex: 0 0 auto;
-	font: inherit;
+	font-family: 'Source Sans Pro', sans-serif;
+	font-size: 15px;
+	font-weight: 600;
 	gap: 4px;
 	padding: 4px 8px;
 	white-space: nowrap;
@@ -153,6 +155,32 @@ const emptyMessageStyles = css`
 	font-weight: 300;
 	padding: 24px;
 	text-align: center;
+`
+
+const spin = keyframes`
+	to {
+		transform: rotate(360deg);
+	}
+`
+
+// Centered spinner shown while a folder's listing is still being read, so
+// climbing into a slow directory reads as "loading" rather than "stuck".
+const loadingStyles = css`
+	align-items: center;
+	display: flex;
+	flex: 1 1 auto;
+	justify-content: center;
+	padding: 24px;
+
+	&::after {
+		animation: ${spin} 700ms linear infinite;
+		border: 3px solid #666;
+		border-radius: 50%;
+		border-top-color: #fafafa;
+		content: '';
+		height: 28px;
+		width: 28px;
+	}
 `
 
 const actionBarSlideIn = keyframes`
@@ -233,7 +261,7 @@ const PaneGallery = ({
     toggleSortOrder(browsePath)
   }, [browsePath, toggleSortOrder])
 
-  const { directories, imageFiles } =
+  const { directories, imageFiles, isLoading } =
     useFolderListing(browsePath)
 
   const isGroupedView =
@@ -297,11 +325,18 @@ const PaneGallery = ({
     setBrowsePath(targetPath)
   }, [])
 
+  // A selection is scoped to the folder it started in: `queueSelectedFolders`
+  // only queues paths still in the current `directories`, so a selection
+  // carried up into another folder would silently drop. Reset it on navigation
+  // rather than stranding stale checkmarks. (Queue more by selecting, opening,
+  // then climbing and selecting again — the queue dedupes and appends.)
   const goUp = useCallback(() => {
     if (canGoUp) {
+      clearMultiSelect()
+
       setBrowsePath(parentPath)
     }
-  }, [canGoUp, parentPath])
+  }, [canGoUp, clearMultiSelect, parentPath])
 
   const openImage = useCallback(
     (filePath) => {
@@ -424,7 +459,9 @@ const PaneGallery = ({
           </button>
         </div>
 
-        {isEmpty ? (
+        {isLoading ? (
+          <div css={loadingStyles} />
+        ) : isEmpty ? (
           <div css={emptyMessageStyles}>
             This folder is empty.
           </div>

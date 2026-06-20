@@ -14,7 +14,8 @@ import useLongPress from "../imageViewer/useLongPress"
 import FileSystemContext from "./FileSystemContext"
 import FillRing from "./FillRing"
 import MultiSelectContext from "./MultiSelectContext"
-import useFolderListing from "./useFolderListing"
+import useFolderThumbnail from "./useFolderThumbnail"
+import useInView from "./useInView"
 
 // `pan-y` keeps the list scrollable on touch — `useLongPress` cancels itself on
 // movement, so `touch-action: none` isn't needed to detect the hold.
@@ -98,6 +99,20 @@ const Directory = ({ directoryName, directoryPath }) => {
 
   const isSelected = selectedFolderPaths.has(directoryPath)
 
+  // Probe for a thumbnail only once the tile is in view. The probe also tells us
+  // whether this is a "gallery" (holds images at any depth); only galleries can
+  // be selected/queued — an image-less container folder can be opened but never
+  // added to the queue.
+  const isInView = useInView(tileRef)
+
+  const { image, isResolved } = useFolderThumbnail(
+    directoryPath,
+    isInView,
+  )
+
+  const isGallery = isResolved && Boolean(image)
+  const isKnownNonGallery = isResolved && !image
+
   useKeyboardControls((event) => {
     isCtrlKeyHeldRef.current = event.ctrlKey
   })
@@ -120,27 +135,36 @@ const Directory = ({ directoryName, directoryPath }) => {
     }
 
     if (isMultiSelectMode) {
-      toggleFolder(directoryPath)
+      // Tapping toggles, but only galleries take part in a selection. A
+      // non-gallery folder is a no-op here — leave select mode to open it.
+      if (isGallery) {
+        toggleFolder(directoryPath)
+      }
     } else {
       goToDirectory()
     }
   }, [
     directoryPath,
     goToDirectory,
+    isGallery,
     isMultiSelectMode,
     toggleFolder,
   ])
 
-  const onLongPressProgress = useCallback((fraction) => {
-    setLongPressProgress(fraction)
-  }, [])
+  const onLongPressProgress = useCallback(
+    (fraction) => {
+      // Don't tease the fill ring on a folder that can't be selected.
+      setLongPressProgress(isKnownNonGallery ? 0 : fraction)
+    },
+    [isKnownNonGallery],
+  )
 
   const onLongPressComplete = useCallback(() => {
     setLongPressProgress(0)
 
-    // Already toggling on tap once we're in the mode — the hold only bootstraps
-    // it, so don't double-toggle.
-    if (isMultiSelectMode) {
+    // Only galleries are selectable; and once we're already in the mode the tap
+    // handler toggles, so the hold only bootstraps it — don't double-toggle.
+    if (!isGallery || isMultiSelectMode) {
       return
     }
 
@@ -152,6 +176,7 @@ const Directory = ({ directoryName, directoryPath }) => {
   }, [
     directoryPath,
     enterMultiSelect,
+    isGallery,
     isMultiSelectMode,
     toggleFolder,
   ])
@@ -167,8 +192,6 @@ const Directory = ({ directoryName, directoryPath }) => {
     onProgress: onLongPressProgress,
   })
 
-  const { imageFiles } = useFolderListing(directoryPath)
-
   return (
     <div
       css={
@@ -182,11 +205,11 @@ const Directory = ({ directoryName, directoryPath }) => {
       <div css={directoryContentStyles}>
         <div css={textStyles}>{directoryName}</div>
 
-        {imageFiles[0] && (
+        {image && (
           <div css={imageStyles}>
             <Image
-              fileName={imageFiles[0].name}
-              filePath={imageFiles[0].path}
+              fileName={image.name}
+              filePath={image.path}
               hasVisibilityDetection
             />
           </div>

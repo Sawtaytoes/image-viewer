@@ -7,7 +7,9 @@ import {
 } from "electron"
 
 import { createFakeFileSystem } from "./fakeFileSystem"
-import getImageMimeType from "./imageMimeTypes"
+import getImageMimeType, {
+  imageMimeTypesByExtension,
+} from "./imageMimeTypes"
 
 // This preload runs with Node access (sandbox:false) while the renderer does
 // not. It exposes a single curated, serializable `window.api` so renderer code
@@ -100,6 +102,97 @@ const readDirectory = (directoryPath) =>
       ),
     )
 
+// Image extensions the renderer can display — the keys of the shared MIME map,
+// so this list never drifts from `readImageData`/`useImageFiles`.
+const imageExtensions = new Set(
+  Object.keys(imageMimeTypesByExtension),
+)
+
+// System trees we never descend into when hunting for a folder's thumbnail:
+// huge, slow, or permission-protected, and never holding gallery images.
+// Mirrors `useDirectories`' hidden-folder list.
+const skippedDirectories = new Set([
+  "$recycle.bin",
+  "$winreagent",
+  "ai_recyclebin",
+  "config.msi",
+  "recovery",
+  "system volume information",
+  "windows",
+])
+
+// Cap how many directories one probe scans so a deep, image-less tree can't
+// stall the gallery — far above any real gallery's nesting.
+const maxDirectoriesScanned = 600
+
+// Breadth-first hunt for the first image anywhere under `folderPath`. The result
+// doubles as both the folder's thumbnail and the "is this a gallery?" test:
+// `null` means no images at any depth, so the folder isn't a gallery and can't
+// be queued. Bailing on the first hit keeps shallow, image-rich folders cheap;
+// the cap bounds the pathological case. Far lighter than `readDirectory`, which
+// stats every entry — this only reads names and stops early.
+const findFirstImage = async (folderPath) => {
+  const queue = [folderPath]
+
+  let scanned = 0
+
+  while (
+    queue.length > 0 &&
+    scanned < maxDirectoriesScanned
+  ) {
+    const currentPath = queue.shift()
+
+    scanned += 1
+
+    let entries
+
+    try {
+      entries = await fs.promises.readdir(currentPath, {
+        withFileTypes: true,
+      })
+    } catch {
+      continue
+    }
+
+    const imageNames = []
+    const subdirectories = []
+
+    for (const entry of entries) {
+      if (
+        entry.isFile() &&
+        imageExtensions.has(
+          path.extname(entry.name).toLowerCase(),
+        )
+      ) {
+        imageNames.push(entry.name)
+      } else if (
+        entry.isDirectory() &&
+        !skippedDirectories.has(entry.name.toLowerCase())
+      ) {
+        subdirectories.push(
+          path.join(currentPath, entry.name),
+        )
+      }
+    }
+
+    if (imageNames.length > 0) {
+      // Name-ascending so the thumbnail is stable rather than readdir-order.
+      imageNames.sort((left, right) =>
+        left.localeCompare(right),
+      )
+
+      return {
+        name: imageNames[0],
+        path: path.join(currentPath, imageNames[0]),
+      }
+    }
+
+    queue.push(...subdirectories)
+  }
+
+  return null
+}
+
 // Reads an image off disk and hands the renderer the raw bytes (as a
 // cloneable ArrayBuffer) plus a MIME type, replacing the old custom-scheme XHR
 // fetch. `fs.promises.readFile` returns a Buffer that may be a view into a
@@ -124,6 +217,9 @@ contextBridge.exposeInMainWorld("api", {
     ? fakeFileSystem.deleteFilePath
     : (payload) =>
         ipcRenderer.invoke("deleteFilePath", payload),
+  findFirstImage: fakeFileSystem
+    ? fakeFileSystem.findFirstImage
+    : findFirstImage,
   getWindowsDrives: fakeFileSystem
     ? fakeFileSystem.getWindowsDrives
     : () => ipcRenderer.sendSync("get-windows-drives"),

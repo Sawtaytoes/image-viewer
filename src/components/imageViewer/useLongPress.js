@@ -7,10 +7,17 @@ const noop = () => {}
 // teardown). A stationary press past `holdMs` completes; moving more than
 // `moveCancelPx` cancels — that's what lets a vertical drag scroll the list
 // instead of selecting.
+//
+// `progressDelayMs` debounces the *visible* progress: a quick tap (down/up
+// faster than the delay) never emits a non-zero fraction, so the fill ring
+// stays unmounted and can't steal the trailing `click`. Past the delay the
+// fill spans the remaining window (`holdMs - progressDelayMs`) so it starts at
+// 0 rather than jumping.
 const useLongPress = ({
   domElementRef,
   holdMs = 500,
   moveCancelPx = 10,
+  progressDelayMs = 150,
   onCancel = noop,
   onComplete = noop,
   onProgress = noop,
@@ -21,6 +28,7 @@ const useLongPress = ({
   optionsRef.current = {
     holdMs,
     moveCancelPx,
+    progressDelayMs,
     onCancel,
     onComplete,
     onProgress,
@@ -32,6 +40,7 @@ const useLongPress = ({
 
     let animationFrameId = null
     let holdTimeoutId = null
+    let progressDelayTimeoutId = null
     let isCompleted = false
     let pointerId = null
     let startX = 0
@@ -50,6 +59,12 @@ const useLongPress = ({
         holdTimeoutId = null
       }
 
+      if (progressDelayTimeoutId !== null) {
+        window.clearTimeout(progressDelayTimeoutId)
+
+        progressDelayTimeoutId = null
+      }
+
       pointerId = null
     }
 
@@ -59,8 +74,13 @@ const useLongPress = ({
         return
       }
 
-      const { holdMs, onComplete, onProgress, onStart } =
-        optionsRef.current
+      const {
+        holdMs,
+        progressDelayMs,
+        onComplete,
+        onProgress,
+        onStart,
+      } = optionsRef.current
 
       isCompleted = false
       pointerId = event.pointerId
@@ -71,7 +91,13 @@ const useLongPress = ({
 
       // The RAF timestamp drives progress (0→1) so no separate clock is
       // needed; `onComplete` rides the timeout so fake-timer tests stay
-      // deterministic.
+      // deterministic. Progress only starts after `progressDelayMs` so a quick
+      // tap never paints the ring, and the fill spans the remaining window.
+      const progressWindowMs = Math.max(
+        1,
+        holdMs - progressDelayMs,
+      )
+
       let startTimestamp = null
 
       const tick = (timestamp) => {
@@ -81,7 +107,7 @@ const useLongPress = ({
 
         const fraction = Math.min(
           1,
-          (timestamp - startTimestamp) / holdMs,
+          (timestamp - startTimestamp) / progressWindowMs,
         )
 
         onProgress(fraction)
@@ -92,7 +118,12 @@ const useLongPress = ({
         }
       }
 
-      animationFrameId = window.requestAnimationFrame(tick)
+      progressDelayTimeoutId = window.setTimeout(() => {
+        progressDelayTimeoutId = null
+
+        animationFrameId =
+          window.requestAnimationFrame(tick)
+      }, progressDelayMs)
 
       holdTimeoutId = window.setTimeout(() => {
         isCompleted = true

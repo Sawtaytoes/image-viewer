@@ -6,6 +6,7 @@
 import type {
   DirectoryEntry,
   ImageBytes,
+  ImageFile,
   PathStat,
 } from "./types"
 
@@ -23,6 +24,12 @@ declare global {
         filePath: string
         isDirectory?: boolean
       }) => Promise<boolean>
+      // The first image anywhere under `folderPath` (breadth-first), or null
+      // when the folder holds no images at any depth — i.e. isn't a gallery.
+      // Doubles as a folder's thumbnail source.
+      findFirstImage: (
+        folderPath: string,
+      ) => Promise<ImageFile | null>
       // Available Windows drive roots (e.g. ["C:\\", "G:\\"]).
       getWindowsDrives: () => string[]
       readDirectory: (

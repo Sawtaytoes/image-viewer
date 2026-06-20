@@ -196,6 +196,12 @@ const FileBrowser = () => {
         nextPaths.add(folderPath)
       }
 
+      // Unchecking the last folder leaves no "Cancel" button to escape with, so
+      // drop out of multi-select automatically once nothing's selected.
+      if (nextPaths.size === 0) {
+        setIsMultiSelectMode(false)
+      }
+
       return nextPaths
     })
   }, [])
