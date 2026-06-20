@@ -78,7 +78,8 @@ const sortToggleStyles = css`
 	cursor: pointer;
 	display: inline-flex;
 	flex: 0 0 auto;
-	font: inherit;
+	font-family: 'Source Sans Pro', sans-serif;
+	font-weight: 400;
 	gap: 4px;
 	padding: 4px 8px;
 	white-space: nowrap;
