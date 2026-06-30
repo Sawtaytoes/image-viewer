@@ -294,6 +294,16 @@ contextBridge.exposeInMainWorld("api", {
   findFirstImage: fakeFileSystem
     ? fakeFileSystem.findFirstImage
     : findFirstImage,
+  // Session-only "resume where I left off", keyed by folder path and shared
+  // across windows (the store lives in main; the fake FS keeps its own renderer
+  // map). `get` resolves to the stored index or null; `set` is fire-and-forget.
+  getFolderLastIndex: fakeFileSystem
+    ? fakeFileSystem.getFolderLastIndex
+    : (folderPath) =>
+        ipcRenderer.invoke(
+          "get-folder-last-index",
+          folderPath,
+        ),
   getWindowsDrives: fakeFileSystem
     ? fakeFileSystem.getWindowsDrives
     : () => ipcRenderer.sendSync("get-windows-drives"),
@@ -303,6 +313,14 @@ contextBridge.exposeInMainWorld("api", {
   readImageData: fakeFileSystem
     ? fakeFileSystem.readImageData
     : readImageData,
+  setFolderLastIndex: fakeFileSystem
+    ? fakeFileSystem.setFolderLastIndex
+    : (folderPath, index) =>
+        ipcRenderer.send(
+          "set-folder-last-index",
+          folderPath,
+          index,
+        ),
   statPath: fakeFileSystem
     ? fakeFileSystem.statPath
     : statPath,

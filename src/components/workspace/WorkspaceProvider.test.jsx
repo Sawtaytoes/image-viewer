@@ -387,6 +387,70 @@ describe("WorkspaceProvider", () => {
     ).toBe(null)
   })
 
+  describe("position memory", () => {
+    afterEach(() => {
+      window.api.setFolderLastIndex = () => {}
+    })
+
+    it("records a folder-backed pane's new index by path", () => {
+      const setFolderLastIndex = vi.fn()
+
+      window.api.setFolderLastIndex = setFolderLastIndex
+
+      const { result } = renderWorkspace()
+
+      act(() => {
+        result.current.addFoldersToQueue([
+          { name: "a", path: "/a" },
+        ])
+      })
+
+      const [folderA] = result.current.queuedFolders
+
+      let paneId
+
+      act(() => {
+        paneId = result.current.addPane().id
+      })
+
+      act(() => {
+        result.current.assignFolderToPane(
+          paneId,
+          folderA.id,
+        )
+      })
+
+      act(() => {
+        result.current.setPaneIndex(paneId, 3)
+      })
+
+      expect(setFolderLastIndex).toHaveBeenCalledWith(
+        "/a",
+        3,
+      )
+    })
+
+    it("does not record an index for a pane with no folder", () => {
+      const setFolderLastIndex = vi.fn()
+
+      window.api.setFolderLastIndex = setFolderLastIndex
+
+      const { result } = renderWorkspace()
+
+      let paneId
+
+      act(() => {
+        paneId = result.current.addPane().id
+      })
+
+      act(() => {
+        result.current.setPaneIndex(paneId, 2)
+      })
+
+      expect(setFolderLastIndex).not.toHaveBeenCalled()
+    })
+  })
+
   describe("deleteFolder", () => {
     afterEach(() => {
       window.api.deleteFilePath = () =>

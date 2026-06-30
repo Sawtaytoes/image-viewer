@@ -270,15 +270,24 @@ const FolderPickerPopover = ({
     [onClose],
   )
 
+  // The one entry point that restores position: picking a queued folder from
+  // this center-click modal resumes it at its stored "where I left off" index
+  // (clamped later by the pane if the folder shrank). Every other entry point —
+  // the tab strip, a gallery tile, a fresh column — still starts at 0. The
+  // lookup is async, so close optimistically and assign once it resolves.
   const pickFolder = useCallback(
-    (event, folderId) => {
+    (event, folder) => {
       event.stopPropagation()
-
-      assignFolderToPane(paneId, folderId)
 
       setActivePaneId(paneId)
 
       onClose()
+
+      Promise.resolve(
+        window.api.getFolderLastIndex(folder.path),
+      ).then((lastIndex) => {
+        assignFolderToPane(paneId, folder.id, lastIndex ?? 0)
+      })
     },
     [assignFolderToPane, onClose, paneId, setActivePaneId],
   )
@@ -370,7 +379,7 @@ const FolderPickerPopover = ({
                 <button
                   css={pickFolderButtonStyles}
                   onClick={(event) => {
-                    pickFolder(event, id)
+                    pickFolder(event, folder)
                   }}
                   title={
                     isOpenElsewhere

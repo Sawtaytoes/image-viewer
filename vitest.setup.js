@@ -21,8 +21,10 @@ window.api = {
   createNewWindow: () => {},
   deleteFilePath: () => Promise.resolve(true),
   findFirstImage: () => Promise.resolve(null),
+  getFolderLastIndex: () => Promise.resolve(null),
   getWindowsDrives: () => [],
   readDirectory: () => Promise.resolve([]),
+  setFolderLastIndex: () => {},
   statPath: () => ({
     exists: false,
     isDirectory: false,

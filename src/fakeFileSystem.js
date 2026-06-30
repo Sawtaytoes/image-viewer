@@ -335,6 +335,22 @@ const createFakeFileSystem = ({ path }) => {
       : { exists: false, isDirectory: false, isFile: false }
   }
 
+  // Mirror of main's session-only "resume where I left off" store, keyed by
+  // folder path. A single renderer map is enough here — the fake FS runs one
+  // window's worth of in-memory state for manual testing.
+  const lastIndexByPath = new Map()
+
+  const getFolderLastIndex = (folderPath) =>
+    Promise.resolve(
+      lastIndexByPath.has(folderPath)
+        ? lastIndexByPath.get(folderPath)
+        : null,
+    )
+
+  const setFolderLastIndex = (folderPath, index) => {
+    lastIndexByPath.set(folderPath, index)
+  }
+
   const readDirectory = (directoryPath) => {
     const node = nodesByPath.get(directoryPath)
 
@@ -493,9 +509,11 @@ const createFakeFileSystem = ({ path }) => {
     countFolderImages,
     deleteFilePath,
     findFirstImage,
+    getFolderLastIndex,
     getWindowsDrives: () => [rootPath],
     readDirectory,
     readImageData,
+    setFolderLastIndex,
     statPath,
   }
 }

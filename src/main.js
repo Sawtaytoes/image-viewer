@@ -169,6 +169,23 @@ ipcMain.on("get-windows-drives", (event) => {
   event.returnValue = getWindowsDrives()
 })
 
+// Session-only "resume where I left off" memory, keyed by folder path so it's
+// shared across every window (queue ids are per-window and can't address a
+// shared store). In-memory in main: it survives across windows for one app run
+// but isn't persisted to disk. Last-one-wins — whoever lands a new index for a
+// path overwrites the single stored value.
+const folderLastIndexByPath = new Map()
+
+ipcMain.handle("get-folder-last-index", (_event, path) =>
+  folderLastIndexByPath.has(path)
+    ? folderLastIndexByPath.get(path)
+    : null,
+)
+
+ipcMain.on("set-folder-last-index", (_event, path, index) => {
+  folderLastIndexByPath.set(path, index)
+})
+
 // Open another window pointed at a file or folder (Ctrl/Shift+click, etc.).
 ipcMain.on("createNewWindow", (_event, data) => {
   createWindow(data)

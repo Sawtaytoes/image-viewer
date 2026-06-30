@@ -35,6 +35,11 @@ declare global {
       findFirstImage: (
         folderPath: string,
       ) => Promise<ImageFile | null>
+      // Session-only "resume where I left off" index for a folder path, shared
+      // across windows. Resolves to the stored index, or null when none.
+      getFolderLastIndex: (
+        folderPath: string,
+      ) => Promise<number | null>
       // Available Windows drive roots (e.g. ["C:\\", "G:\\"]).
       getWindowsDrives: () => string[]
       readDirectory: (
@@ -43,6 +48,12 @@ declare global {
       readImageData: (
         filePath: string,
       ) => Promise<ImageBytes>
+      // Record the last-viewed image index for a folder path (session-only,
+      // shared across windows; last write wins).
+      setFolderLastIndex: (
+        folderPath: string,
+        index: number,
+      ) => void
       statPath: (targetPath: string) => PathStat
       path: {
         basename: (targetPath: string) => string

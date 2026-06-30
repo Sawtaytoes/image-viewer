@@ -266,14 +266,16 @@ const WorkspaceProvider = ({ children }) => {
     })
   }, [])
 
-  // Assigning a folder resets the pane's scroll position to the first image.
+  // Assign a queued folder to a pane. Defaults to the first image, so the tab
+  // strip's reset-to-0 is unchanged; the center-click modal passes the folder's
+  // stored "resume where I left off" index instead (clamped later by the pane).
   const assignFolderToPane = useCallback(
-    (paneId, folderId) => {
+    (paneId, folderId, index = 0) => {
       setWorkspace((previousWorkspace) => ({
         ...previousWorkspace,
         panes: previousWorkspace.panes.map((pane) =>
           pane.id === paneId
-            ? { ...pane, currentIndex: 0, folderId }
+            ? { ...pane, currentIndex: index, folderId }
             : pane,
         ),
       }))
@@ -321,14 +323,39 @@ const WorkspaceProvider = ({ children }) => {
   )
 
   const setPaneIndex = useCallback((paneId, index) => {
-    setWorkspace((previousWorkspace) => ({
-      ...previousWorkspace,
-      panes: previousWorkspace.panes.map((pane) =>
-        pane.id === paneId
-          ? { ...pane, currentIndex: index }
-          : pane,
-      ),
-    }))
+    setWorkspace((previousWorkspace) => {
+      const pane = previousWorkspace.panes.find(
+        (candidate) => candidate.id === paneId,
+      )
+
+      // Record the new spot in the cross-window "resume where I left off" store,
+      // keyed by the pane's folder path. Only on a real change to a folder-backed
+      // pane, so rapid arrow-stepping that re-lands the same index — or a pane
+      // with no folder — doesn't spam the bridge. Last write wins across windows.
+      if (
+        pane &&
+        pane.currentIndex !== index &&
+        pane.folderId != null
+      ) {
+        const folder = previousWorkspace.queuedFolders.find(
+          (queuedFolder) =>
+            queuedFolder.id === pane.folderId,
+        )
+
+        if (folder) {
+          window.api.setFolderLastIndex(folder.path, index)
+        }
+      }
+
+      return {
+        ...previousWorkspace,
+        panes: previousWorkspace.panes.map((currentPane) =>
+          currentPane.id === paneId
+            ? { ...currentPane, currentIndex: index }
+            : currentPane,
+        ),
+      }
+    })
   }, [])
 
   const setActivePaneId = useCallback((paneId) => {
