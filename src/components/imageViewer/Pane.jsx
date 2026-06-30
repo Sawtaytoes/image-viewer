@@ -213,14 +213,22 @@ const Pane = ({
   useViewerKeyboard({
     goToNextImage,
     goToPreviousImage,
-    isEnabled:
-      isActive && !isMenuOpen && !isGalleryOpen,
+    isEnabled: isActive && !isMenuOpen && !isGalleryOpen,
     onClose: clearPanes,
   })
 
   const currentImage = folder
     ? imageFiles[currentIndex]
     : undefined
+
+  // The gallery pre-selects the *next* image (cull-forward flow): one past the
+  // current, clamped so the last image stays selected when there's no next.
+  // Null when the column has no image loaded, so a fresh gallery selects nothing.
+  const nextImagePath = currentImage
+    ? (imageFiles[
+        Math.min(currentIndex + 1, imageFiles.length - 1)
+      ]?.path ?? null)
+    : null
 
   return (
     <div
@@ -232,10 +240,10 @@ const Pane = ({
     >
       {isGalleryOpen ? (
         <PaneGallery
-          currentImagePath={currentImage?.path ?? null}
           folderPath={galleryBrowsePath}
           onClose={closeGallery}
           onOpenImage={openImageFromGallery}
+          selectedImagePath={nextImagePath}
         />
       ) : folder ? (
         currentImage && (

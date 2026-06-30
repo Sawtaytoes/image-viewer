@@ -55,7 +55,11 @@ const fillEmptyPanes = (panes, queuedFolders) => {
 
     takenFolderIds.add(nextFolder.id)
 
-    return { ...pane, currentIndex: 0, folderId: nextFolder.id }
+    return {
+      ...pane,
+      currentIndex: 0,
+      folderId: nextFolder.id,
+    }
   })
 }
 

@@ -86,9 +86,9 @@ describe("FolderPickerPopover (per-column menu)", () => {
       ).toHaveBeenCalledWith(PANE_ID, "folder-1", 7)
     })
 
-    expect(window.api.getFolderLastIndex).toHaveBeenCalledWith(
-      "/cats",
-    )
+    expect(
+      window.api.getFolderLastIndex,
+    ).toHaveBeenCalledWith("/cats")
 
     window.api.getFolderLastIndex = () =>
       Promise.resolve(null)

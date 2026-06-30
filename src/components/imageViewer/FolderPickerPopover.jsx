@@ -286,7 +286,11 @@ const FolderPickerPopover = ({
       Promise.resolve(
         window.api.getFolderLastIndex(folder.path),
       ).then((lastIndex) => {
-        assignFolderToPane(paneId, folder.id, lastIndex ?? 0)
+        assignFolderToPane(
+          paneId,
+          folder.id,
+          lastIndex ?? 0,
+        )
       })
     },
     [assignFolderToPane, onClose, paneId, setActivePaneId],

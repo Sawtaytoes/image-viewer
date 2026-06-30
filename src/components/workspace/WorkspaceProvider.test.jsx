@@ -1,12 +1,6 @@
 import { act, renderHook } from "@testing-library/react"
 import { useContext } from "react"
-import {
-  afterEach,
-  describe,
-  expect,
-  it,
-  vi,
-} from "vitest"
+import { afterEach, describe, expect, it, vi } from "vitest"
 
 import WorkspaceContext from "./WorkspaceContext"
 import WorkspaceProvider from "./WorkspaceProvider"

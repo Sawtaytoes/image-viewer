@@ -7,6 +7,7 @@ import {
   useContext,
   useEffect,
   useMemo,
+  useRef,
   useState,
 } from "react"
 
@@ -223,28 +224,32 @@ const actionButtonContentStyles = css`
 const initialSelectedFolderPaths = new Set()
 
 const propTypes = {
-  // Path of the image the owning column is currently showing, so the tile for
-  // it can be outlined while browsing the folder it lives in. Null when the
-  // column has no image loaded.
-  currentImagePath: PropTypes.string,
   // Where to start browsing (the column's current folder, or a drive root).
   folderPath: PropTypes.string.isRequired,
   onClose: PropTypes.func.isRequired,
   // (folderPath, imageIndex) — the folder being browsed and the tapped image's
   // index within that folder's listing.
   onOpenImage: PropTypes.func.isRequired,
+  // Path of the image to pre-select (the *next* image, for the cull-forward
+  // flow), outlined and scrolled into view on mount while browsing the folder it
+  // lives in. Null when the column has no image loaded.
+  selectedImagePath: PropTypes.string,
 }
 
 // The regular gallery, rendered inside a single column instead of a full-screen
 // overlay. Browse folders (tap to drill in, up-button to climb), tap an image
 // to jump the column to it, or long-press folders to queue several at once.
 const PaneGallery = ({
-  currentImagePath,
   folderPath,
   onClose,
   onOpenImage,
+  selectedImagePath,
 }) => {
   const [browsePath, setBrowsePath] = useState(folderPath)
+
+  // Attached to the pre-selected (next) tile so it can be scrolled into view
+  // once its folder's listing lands — the grid otherwise always opens at the top.
+  const selectedTileRef = useRef(null)
 
   const [isMultiSelectMode, setIsMultiSelectMode] =
     useState(false)
@@ -295,6 +300,25 @@ const PaneGallery = ({
 
     return groupEntriesByDate(combinedEntries)
   }, [directories, imageFiles, isGroupedView])
+
+  // Scroll the pre-selected (next) tile into view once its folder's listing has
+  // rendered — the grid opens scrolled to top, so a selected tile further down
+  // would otherwise be off-screen. Re-checks the listing (so the tile, and its
+  // ref, exists when this runs) and only acts in the folder that actually holds
+  // the selected image; centered so the next image reads as the focal point.
+  useEffect(() => {
+    const isSelectedImageListed = imageFiles.some(
+      (imageFile) => imageFile.path === selectedImagePath,
+    )
+
+    if (!isSelectedImageListed) {
+      return
+    }
+
+    selectedTileRef.current?.scrollIntoView({
+      block: "center",
+    })
+  }, [imageFiles, selectedImagePath])
 
   const parentPath = pathApi.dirname(browsePath)
   const canGoUp =
@@ -491,11 +515,16 @@ const PaneGallery = ({
                       <PaneGalleryImageTile
                         fileName={entry.name}
                         filePath={entry.path}
-                        isCurrent={
-                          entry.path === currentImagePath
+                        isSelected={
+                          entry.path === selectedImagePath
                         }
                         key={entry.path}
                         onOpen={openImage}
+                        tileRef={
+                          entry.path === selectedImagePath
+                            ? selectedTileRef
+                            : undefined
+                        }
                       />
                     ),
                   )}
@@ -516,9 +545,14 @@ const PaneGallery = ({
                   <PaneGalleryImageTile
                     fileName={name}
                     filePath={path}
-                    isCurrent={path === currentImagePath}
+                    isSelected={path === selectedImagePath}
                     key={path}
                     onOpen={openImage}
+                    tileRef={
+                      path === selectedImagePath
+                        ? selectedTileRef
+                        : undefined
+                    }
                   />
                 ))}
               </Fragment>

@@ -182,9 +182,12 @@ ipcMain.handle("get-folder-last-index", (_event, path) =>
     : null,
 )
 
-ipcMain.on("set-folder-last-index", (_event, path, index) => {
-  folderLastIndexByPath.set(path, index)
-})
+ipcMain.on(
+  "set-folder-last-index",
+  (_event, path, index) => {
+    folderLastIndexByPath.set(path, index)
+  },
+)
 
 // Open another window pointed at a file or folder (Ctrl/Shift+click, etc.).
 ipcMain.on("createNewWindow", (_event, data) => {

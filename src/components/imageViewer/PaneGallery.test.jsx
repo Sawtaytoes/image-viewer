@@ -2,6 +2,7 @@ import {
   fireEvent,
   render,
   screen,
+  waitFor,
 } from "@testing-library/react"
 import { afterEach, describe, expect, it, vi } from "vitest"
 
@@ -62,7 +63,9 @@ const kittensListing = [
   },
 ]
 
-const renderGallery = () => {
+const renderGallery = ({
+  selectedImagePath = null,
+} = {}) => {
   const onClose = vi.fn()
   const onOpenImage = vi.fn()
   const addFoldersToQueue = vi.fn()
@@ -83,6 +86,7 @@ const renderGallery = () => {
           folderPath={FOLDER_PATH}
           onClose={onClose}
           onOpenImage={onOpenImage}
+          selectedImagePath={selectedImagePath}
         />
       </WorkspaceContext.Provider>
     </ImageLoaderContext.Provider>,
@@ -94,6 +98,8 @@ const renderGallery = () => {
 describe("PaneGallery (in-pane gallery)", () => {
   afterEach(() => {
     window.api.readDirectory = () => Promise.resolve([])
+
+    Element.prototype.scrollIntoView = () => {}
   })
 
   it("opens the tapped image in this column at its index", async () => {
@@ -123,6 +129,20 @@ describe("PaneGallery (in-pane gallery)", () => {
     expect(
       screen.queryByAltText("cat-01.bmp"),
     ).not.toBeInTheDocument()
+  })
+
+  it("scrolls the pre-selected (next) image tile into view on mount", async () => {
+    const scrollIntoView = vi.fn()
+
+    Element.prototype.scrollIntoView = scrollIntoView
+
+    renderGallery({ selectedImagePath: "/cats/cat-02.bmp" })
+
+    await screen.findByAltText("cat-02.bmp")
+
+    await waitFor(() => {
+      expect(scrollIntoView).toHaveBeenCalled()
+    })
   })
 
   it("leaves the gallery via the close control", async () => {
