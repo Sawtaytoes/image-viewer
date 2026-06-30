@@ -1,4 +1,4 @@
-import { css } from "@emotion/react"
+import { css, keyframes } from "@emotion/react"
 import {
   memo,
   useCallback,
@@ -45,6 +45,33 @@ const fileBrowserStyles = css`
 const virtualizedListContainerStyles = css`
 	grid-row: 3;
 	overflow: hidden;
+`
+
+const spin = keyframes`
+	to {
+		transform: rotate(360deg);
+	}
+`
+
+// Centered spinner shown while a folder's listing is still being read, so a
+// large folder (especially one sorted by date, which stats every file) reads as
+// "loading" rather than a blank window.
+const loadingStyles = css`
+	align-items: center;
+	display: flex;
+	height: 100%;
+	justify-content: center;
+	width: 100%;
+
+	&::after {
+		animation: ${spin} 700ms linear infinite;
+		border: 4px solid #555;
+		border-radius: 50%;
+		border-top-color: #fafafa;
+		content: '';
+		height: 36px;
+		width: 36px;
+	}
 `
 
 const multiSelectActionBarStyles = css`
@@ -102,6 +129,7 @@ const FileBrowser = () => {
     directories,
     filePath,
     imageFiles,
+    isLoading,
     navigateUpFolderTree,
     setFilePath,
   } = useContext(FileSystemContext)
@@ -523,7 +551,9 @@ const FileBrowser = () => {
           css={virtualizedListContainerStyles}
           ref={virtualizedListContainerRef}
         >
-          {isGroupedView ? (
+          {isLoading ? (
+            <div css={loadingStyles} />
+          ) : isGroupedView ? (
             <DateGroupedGrid
               groups={dateGroups}
               itemPadding="2px"

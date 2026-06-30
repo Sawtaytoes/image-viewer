@@ -81,8 +81,11 @@ const FileSystemProvider = ({ children }) => {
     }
   }, [filePath, isRootFilePath])
 
-  const { directories: listedDirectories, imageFiles } =
-    useFolderListing(filePath)
+  const {
+    directories: listedDirectories,
+    imageFiles,
+    isLoading,
+  } = useFolderListing(filePath)
 
   // At the root there is no folder to list, so surface the drives instead.
   const directories = filePath
@@ -94,6 +97,7 @@ const FileSystemProvider = ({ children }) => {
       directories,
       filePath,
       imageFiles,
+      isLoading,
       isRootFilePath,
       navigateUpFolderTree,
       setFilePath,
@@ -102,6 +106,7 @@ const FileSystemProvider = ({ children }) => {
       directories,
       filePath,
       imageFiles,
+      isLoading,
       isRootFilePath,
       navigateUpFolderTree,
     ],
