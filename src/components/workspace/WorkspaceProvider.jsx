@@ -26,13 +26,15 @@ const createPane = () => ({
   id: createId(),
 })
 
-// Fill every empty pane (`folderId == null`) with the first queued folder that
-// isn't already shown in another pane, so a column emptied by remove-from-queue
-// or a folder-delete picks up the next ready gallery instead of dropping back to
-// an empty "Tap to pick folder". Dedupes against the folders other panes hold so
-// the same folder isn't auto-opened in two columns; a freshly filled pane also
-// counts as taken for the panes after it. Panes already holding a folder, and
-// any empty pane with nothing left to load, are returned untouched.
+// Fill every empty pane (`folderId == null`) — newly added OR emptied — with the
+// first queued folder that isn't already shown in another pane, so opening a new
+// column or severing one picks up the next ready gallery instead of dropping back
+// to an empty "Tap to pick folder". Dedupes against the folders other panes hold
+// so the same folder isn't auto-opened in two columns; a freshly filled pane also
+// counts as taken for the panes after it. Panes already holding a folder, and any
+// empty pane with nothing left to load, are returned untouched. Returns the new
+// pane list plus the `(paneId, folder)` pairs filled, so the caller can resume
+// each to its remembered index (an async lookup the reducer can't do inline).
 const fillEmptyPanes = (panes, queuedFolders) => {
   const takenFolderIds = new Set(
     panes
@@ -40,7 +42,9 @@ const fillEmptyPanes = (panes, queuedFolders) => {
       .filter((folderId) => folderId != null),
   )
 
-  return panes.map((pane) => {
+  const filled = []
+
+  const nextPanes = panes.map((pane) => {
     if (pane.folderId != null) {
       return pane
     }
@@ -55,12 +59,16 @@ const fillEmptyPanes = (panes, queuedFolders) => {
 
     takenFolderIds.add(nextFolder.id)
 
+    filled.push({ folder: nextFolder, paneId: pane.id })
+
     return {
       ...pane,
       currentIndex: 0,
       folderId: nextFolder.id,
     }
   })
+
+  return { filled, panes: nextPanes }
 }
 
 // Panes are ephemeral: there are none until the user opens a folder into a
@@ -172,31 +180,111 @@ const WorkspaceProvider = ({ children }) => {
     })
   }, [])
 
+  const setPaneIndex = useCallback((paneId, index) => {
+    setWorkspace((previousWorkspace) => {
+      const pane = previousWorkspace.panes.find(
+        (candidate) => candidate.id === paneId,
+      )
+
+      // Record the new spot in the cross-window "resume where I left off" store,
+      // keyed by the pane's folder path. Only on a real change to a folder-backed
+      // pane, so rapid arrow-stepping that re-lands the same index — or a pane
+      // with no folder — doesn't spam the bridge. Last write wins across windows.
+      if (
+        pane &&
+        pane.currentIndex !== index &&
+        pane.folderId != null
+      ) {
+        const folder = previousWorkspace.queuedFolders.find(
+          (queuedFolder) =>
+            queuedFolder.id === pane.folderId,
+        )
+
+        if (folder) {
+          window.api.setFolderLastIndex(folder.path, index)
+        }
+      }
+
+      return {
+        ...previousWorkspace,
+        panes: previousWorkspace.panes.map((currentPane) =>
+          currentPane.id === paneId
+            ? { ...currentPane, currentIndex: index }
+            : currentPane,
+        ),
+      }
+    })
+  }, [])
+
+  // Resume a pane to a folder's remembered index. The lookup lives in main (async
+  // IPC), so this runs after the assignment lands the folder at index 0; on a
+  // non-null stored index it nudges the pane there (the pane clamps it to the
+  // listing). Every "a folder opened into a column" path routes through here, so
+  // the tab strip, the modal pick, and an auto-loaded column all resume alike.
+  const resumePaneToFolderIndex = useCallback(
+    (paneId, folderPath) => {
+      Promise.resolve(
+        window.api.getFolderLastIndex(folderPath),
+      ).then((lastIndex) => {
+        if (lastIndex != null) {
+          setPaneIndex(paneId, lastIndex)
+        }
+      })
+    },
+    [setPaneIndex],
+  )
+
+  // Resume each pane an auto-fill just populated to its remembered index.
+  const resumeFilledPanes = useCallback(
+    (filled) => {
+      filled.forEach(({ folder, paneId }) => {
+        resumePaneToFolderIndex(paneId, folder.path)
+      })
+    },
+    [resumePaneToFolderIndex],
+  )
+
   // Drop the folder and sever every pane that referenced it (panes don't
   // vanish — they revert to the empty `+` state), then auto-load the next ready
   // queued folder into any pane the removal emptied. References are by id, so no
   // other pane is corrupted.
-  const removeFolder = useCallback((folderId) => {
-    setWorkspace((previousWorkspace) => {
-      const queuedFolders =
-        previousWorkspace.queuedFolders.filter(
-          (folder) => folder.id !== folderId,
+  const removeFolder = useCallback(
+    (folderId) => {
+      setWorkspace((previousWorkspace) => {
+        const queuedFolders =
+          previousWorkspace.queuedFolders.filter(
+            (folder) => folder.id !== folderId,
+          )
+
+        const severedPanes = previousWorkspace.panes.map(
+          (pane) =>
+            pane.folderId === folderId
+              ? { ...pane, folderId: null }
+              : pane,
         )
 
-      const severedPanes = previousWorkspace.panes.map(
-        (pane) =>
-          pane.folderId === folderId
-            ? { ...pane, folderId: null }
-            : pane,
-      )
+        const { filled, panes } = fillEmptyPanes(
+          severedPanes,
+          queuedFolders,
+        )
 
-      return {
-        ...previousWorkspace,
-        panes: fillEmptyPanes(severedPanes, queuedFolders),
-        queuedFolders,
-      }
-    })
-  }, [])
+        // Resume the auto-filled panes after this update commits (a microtask
+        // keeps the async index lookup + its setPaneIndex out of the reducer).
+        if (filled.length > 0) {
+          queueMicrotask(() => {
+            resumeFilledPanes(filled)
+          })
+        }
+
+        return {
+          ...previousWorkspace,
+          panes,
+          queuedFolders,
+        }
+      })
+    },
+    [resumeFilledPanes],
+  )
 
   // Trash the folder from disk (OS recycle bin) and, on success, drop it from
   // the queue + sever any panes on it + auto-load the next ready folder — the
@@ -253,6 +341,34 @@ const WorkspaceProvider = ({ children }) => {
     return pane
   }, [])
 
+  // The `+` button's "open a new column": add a pane and immediately auto-load
+  // the next queued folder not already open elsewhere (resumed to its remembered
+  // index), so a fresh column lands on the next ready gallery instead of an empty
+  // "Tap to pick folder". Falls back to an empty pane when nothing's free. Callers
+  // that open a *specific* folder (the tab strip, the file browser) use raw
+  // `addPane` + an explicit assign instead.
+  const addPaneAndFill = useCallback(() => {
+    setWorkspace((previousWorkspace) => {
+      const panesWithNew = [
+        ...previousWorkspace.panes,
+        createPane(),
+      ]
+
+      const { filled, panes } = fillEmptyPanes(
+        panesWithNew,
+        previousWorkspace.queuedFolders,
+      )
+
+      if (filled.length > 0) {
+        queueMicrotask(() => {
+          resumeFilledPanes(filled)
+        })
+      }
+
+      return { ...previousWorkspace, panes }
+    })
+  }, [resumeFilledPanes])
+
   const removePane = useCallback((paneId) => {
     setWorkspace((previousWorkspace) => {
       const panes = previousWorkspace.panes.filter(
@@ -270,21 +386,35 @@ const WorkspaceProvider = ({ children }) => {
     })
   }, [])
 
-  // Assign a queued folder to a pane. Defaults to the first image, so the tab
-  // strip's reset-to-0 is unchanged; the center-click modal passes the folder's
-  // stored "resume where I left off" index instead (clamped later by the pane).
+  // Assign a queued folder to a pane and resume it to that folder's remembered
+  // index. Lands at index 0 first, then `resumePaneToFolderIndex` nudges it to
+  // the stored spot (clamped later by the pane). Every "open a folder into a
+  // column" entry point — the tab strip and the center-click modal — routes
+  // through here, so they all resume alike.
   const assignFolderToPane = useCallback(
-    (paneId, folderId, index = 0) => {
-      setWorkspace((previousWorkspace) => ({
-        ...previousWorkspace,
-        panes: previousWorkspace.panes.map((pane) =>
-          pane.id === paneId
-            ? { ...pane, currentIndex: index, folderId }
-            : pane,
-        ),
-      }))
+    (paneId, folderId) => {
+      setWorkspace((previousWorkspace) => {
+        const folder = previousWorkspace.queuedFolders.find(
+          (queuedFolder) => queuedFolder.id === folderId,
+        )
+
+        if (folder) {
+          queueMicrotask(() => {
+            resumePaneToFolderIndex(paneId, folder.path)
+          })
+        }
+
+        return {
+          ...previousWorkspace,
+          panes: previousWorkspace.panes.map((pane) =>
+            pane.id === paneId
+              ? { ...pane, currentIndex: 0, folderId }
+              : pane,
+          ),
+        }
+      })
     },
-    [],
+    [resumePaneToFolderIndex],
   )
 
   // Assign a folder by path (from a pane's in-pane gallery): queue it, reusing
@@ -326,42 +456,6 @@ const WorkspaceProvider = ({ children }) => {
     [],
   )
 
-  const setPaneIndex = useCallback((paneId, index) => {
-    setWorkspace((previousWorkspace) => {
-      const pane = previousWorkspace.panes.find(
-        (candidate) => candidate.id === paneId,
-      )
-
-      // Record the new spot in the cross-window "resume where I left off" store,
-      // keyed by the pane's folder path. Only on a real change to a folder-backed
-      // pane, so rapid arrow-stepping that re-lands the same index — or a pane
-      // with no folder — doesn't spam the bridge. Last write wins across windows.
-      if (
-        pane &&
-        pane.currentIndex !== index &&
-        pane.folderId != null
-      ) {
-        const folder = previousWorkspace.queuedFolders.find(
-          (queuedFolder) =>
-            queuedFolder.id === pane.folderId,
-        )
-
-        if (folder) {
-          window.api.setFolderLastIndex(folder.path, index)
-        }
-      }
-
-      return {
-        ...previousWorkspace,
-        panes: previousWorkspace.panes.map((currentPane) =>
-          currentPane.id === paneId
-            ? { ...currentPane, currentIndex: index }
-            : currentPane,
-        ),
-      }
-    })
-  }, [])
-
   const setActivePaneId = useCallback((paneId) => {
     setWorkspace((previousWorkspace) => ({
       ...previousWorkspace,
@@ -384,6 +478,7 @@ const WorkspaceProvider = ({ children }) => {
       addFolderToQueue,
       addFoldersToQueue,
       addPane,
+      addPaneAndFill,
       assignFolderPathToPane,
       assignFolderToPane,
       clearPanes,
@@ -402,6 +497,7 @@ const WorkspaceProvider = ({ children }) => {
       addFolderToQueue,
       addFoldersToQueue,
       addPane,
+      addPaneAndFill,
       assignFolderPathToPane,
       assignFolderToPane,
       clearPanes,

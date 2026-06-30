@@ -111,8 +111,11 @@ const RevealableChrome = ({
   spawn,
   viewerRef,
 }) => {
-  const { addPane, clearPanes, isChromeRevealSuppressed } =
-    useContext(WorkspaceContext)
+  const {
+    addPaneAndFill,
+    clearPanes,
+    isChromeRevealSuppressed,
+  } = useContext(WorkspaceContext)
 
   const { leaveImageViewer } = useContext(
     ImageViewerContext,
@@ -220,10 +223,10 @@ const RevealableChrome = ({
   }, [clearPanes, leaveImageViewer])
 
   const onAddPane = useCallback(() => {
-    addPane()
+    addPaneAndFill()
 
     reveal()
-  }, [addPane, reveal])
+  }, [addPaneAndFill, reveal])
 
   const barStyles = useMemo(
     () => css`

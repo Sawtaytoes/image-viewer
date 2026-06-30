@@ -53,12 +53,6 @@ window.api = {
   },
 }
 
-// jsdom doesn't implement scrollIntoView (the in-pane gallery scrolls its
-// pre-selected tile into view on mount). A no-op keeps that call from throwing.
-if (!Element.prototype.scrollIntoView) {
-  Element.prototype.scrollIntoView = () => {}
-}
-
 // jsdom lacks ResizeObserver, which FileBrowser instantiates.
 if (!globalThis.ResizeObserver) {
   globalThis.ResizeObserver = class {

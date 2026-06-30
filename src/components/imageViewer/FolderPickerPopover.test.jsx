@@ -2,7 +2,6 @@ import {
   fireEvent,
   render,
   screen,
-  waitFor,
 } from "@testing-library/react"
 import { describe, expect, it, vi } from "vitest"
 
@@ -44,7 +43,7 @@ const renderPopover = ({
 }
 
 describe("FolderPickerPopover (per-column menu)", () => {
-  it("assigns a tapped queued folder to the pane and closes", async () => {
+  it("assigns a tapped queued folder to the pane and closes", () => {
     const { actions, onClose } = renderPopover({
       queuedFolders: [
         { id: "folder-1", name: "Cats", path: "/cats" },
@@ -53,45 +52,16 @@ describe("FolderPickerPopover (per-column menu)", () => {
 
     fireEvent.click(screen.getByText("Cats"))
 
-    // Closing and activating happen synchronously; the assign waits on the
-    // async "resume where I left off" lookup (null → start at 0 here).
+    // The provider's assignFolderToPane owns the resume-to-stored-index now, so
+    // the modal just hands it the folder id and activates the pane.
+    expect(actions.assignFolderToPane).toHaveBeenCalledWith(
+      PANE_ID,
+      "folder-1",
+    )
     expect(actions.setActivePaneId).toHaveBeenCalledWith(
       PANE_ID,
     )
     expect(onClose).toHaveBeenCalled()
-
-    await waitFor(() => {
-      expect(
-        actions.assignFolderToPane,
-      ).toHaveBeenCalledWith(PANE_ID, "folder-1", 0)
-    })
-  })
-
-  it("restores a queued folder to its stored index when picked from the modal", async () => {
-    window.api.getFolderLastIndex = vi.fn(() =>
-      Promise.resolve(7),
-    )
-
-    const { actions } = renderPopover({
-      queuedFolders: [
-        { id: "folder-1", name: "Cats", path: "/cats" },
-      ],
-    })
-
-    fireEvent.click(screen.getByText("Cats"))
-
-    await waitFor(() => {
-      expect(
-        actions.assignFolderToPane,
-      ).toHaveBeenCalledWith(PANE_ID, "folder-1", 7)
-    })
-
-    expect(
-      window.api.getFolderLastIndex,
-    ).toHaveBeenCalledWith("/cats")
-
-    window.api.getFolderLastIndex = () =>
-      Promise.resolve(null)
   })
 
   it("opens the gallery view for this column", () => {

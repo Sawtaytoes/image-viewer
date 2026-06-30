@@ -384,6 +384,9 @@ describe("WorkspaceProvider", () => {
   describe("position memory", () => {
     afterEach(() => {
       window.api.setFolderLastIndex = () => {}
+
+      window.api.getFolderLastIndex = () =>
+        Promise.resolve(null)
     })
 
     it("records a folder-backed pane's new index by path", () => {
@@ -442,6 +445,104 @@ describe("WorkspaceProvider", () => {
       })
 
       expect(setFolderLastIndex).not.toHaveBeenCalled()
+    })
+
+    it("resumes a pane to the folder's stored index on assign", async () => {
+      window.api.getFolderLastIndex = vi.fn(() =>
+        Promise.resolve(6),
+      )
+
+      const { result } = renderWorkspace()
+
+      act(() => {
+        result.current.addFoldersToQueue([
+          { name: "a", path: "/a" },
+        ])
+      })
+
+      const [folderA] = result.current.queuedFolders
+
+      let paneId
+
+      act(() => {
+        paneId = result.current.addPane().id
+      })
+
+      await act(async () => {
+        result.current.assignFolderToPane(
+          paneId,
+          folderA.id,
+        )
+
+        // Let the async resume (getFolderLastIndex → setPaneIndex) settle.
+        await Promise.resolve()
+      })
+
+      expect(
+        window.api.getFolderLastIndex,
+      ).toHaveBeenCalledWith("/a")
+
+      expect(
+        result.current.panes.find(
+          (pane) => pane.id === paneId,
+        ).currentIndex,
+      ).toBe(6)
+    })
+  })
+
+  describe("addPaneAndFill", () => {
+    it("opens a new column on the next not-already-open queued folder", () => {
+      const { result } = renderWorkspace()
+
+      act(() => {
+        result.current.addFoldersToQueue([
+          { name: "a", path: "/a" },
+          { name: "b", path: "/b" },
+        ])
+      })
+
+      const [folderA, folderB] =
+        result.current.queuedFolders
+
+      // First new column takes A; a second takes B (A is open elsewhere).
+      act(() => {
+        result.current.addPaneAndFill()
+      })
+
+      expect(result.current.panes.at(-1).folderId).toBe(
+        folderA.id,
+      )
+
+      act(() => {
+        result.current.addPaneAndFill()
+      })
+
+      expect(result.current.panes.at(-1).folderId).toBe(
+        folderB.id,
+      )
+    })
+
+    it("leaves the new column empty when the queue is exhausted", () => {
+      const { result } = renderWorkspace()
+
+      act(() => {
+        result.current.addFoldersToQueue([
+          { name: "a", path: "/a" },
+        ])
+      })
+
+      act(() => {
+        result.current.addPaneAndFill()
+        result.current.addPaneAndFill()
+      })
+
+      // Two columns, one folder: the second falls back to an empty pane.
+      expect(result.current.panes).toHaveLength(2)
+      expect(
+        result.current.panes.filter(
+          (pane) => pane.folderId == null,
+        ),
+      ).toHaveLength(1)
     })
   })
 
