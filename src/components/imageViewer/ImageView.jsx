@@ -3,6 +3,7 @@ import PropTypes from "prop-types"
 import {
   memo,
   useCallback,
+  useEffect,
   useMemo,
   useRef,
   useState,
@@ -110,6 +111,23 @@ const ImageView = ({
 
   const [centerHoldProgress, setCenterHoldProgress] =
     useState(0)
+
+  // Belt-and-suspenders for the "stuck edge" bug: if the window loses focus
+  // while a nav edge is lit, no `pointerleave` reaches the overlay, so force
+  // both hover flags off here too. `usePointerHover` also clears on blur — this
+  // guarantees the painted state resets even if an overlay's listener missed it.
+  useEffect(() => {
+    const onWindowBlur = () => {
+      setIsHoveringNextOverlay(false)
+      setIsHoveringPreviousOverlay(false)
+    }
+
+    window.addEventListener("blur", onWindowBlur)
+
+    return () => {
+      window.removeEventListener("blur", onWindowBlur)
+    }
+  }, [])
 
   usePointerHover({
     callback: ({ isHovering }) => {

@@ -33,6 +33,14 @@ const usePointerHover = ({ callback, domElementRef }) => {
       })
     }
 
+    // Force-clear hover regardless of the event type. Used for `window` blur,
+    // where no `pointerleave`/`pointerout` is delivered while the pointer sits
+    // over the edge — so the overlay would otherwise stay lit ("stuck edge")
+    // until a real boundary crossing re-arms it.
+    const clearHover = (event) => {
+      callbackRef.current({ event, isHovering: false })
+    }
+
     const domElement = domElementRef.current
 
     domElement.addEventListener(
@@ -55,6 +63,8 @@ const usePointerHover = ({ callback, domElementRef }) => {
       hoverStateNotification,
     )
 
+    window.addEventListener("blur", clearHover)
+
     return () => {
       domElement.removeEventListener(
         "pointerup",
@@ -75,6 +85,8 @@ const usePointerHover = ({ callback, domElementRef }) => {
         "pointercancel",
         hoverStateNotification,
       )
+
+      window.removeEventListener("blur", clearHover)
     }
   }, [domElementRef])
 }

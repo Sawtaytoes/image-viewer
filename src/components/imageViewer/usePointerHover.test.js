@@ -120,4 +120,18 @@ describe("usePointerHover", () => {
 
     expect(lastIsHovering(callback)).toBe(false)
   })
+
+  it("clears hovering when the window loses focus (stuck-edge fix)", () => {
+    const callback = renderPointerHover()
+
+    domElement.dispatchEvent(
+      createPointerEvent("pointerenter"),
+    )
+
+    // No pointerleave/out is delivered while the pointer sits over the edge and
+    // the window blurs — the hover must clear anyway.
+    window.dispatchEvent(new Event("blur"))
+
+    expect(lastIsHovering(callback)).toBe(false)
+  })
 })
