@@ -1,5 +1,23 @@
 # Worker brief: viewer position memory, folder-delete, and live-test fixes
 
+> **STATUS: ✅ implemented** on `feat/typescript-conversion` (commits `aaceaa2`,
+> `b38e8f1`, `c840dde`, `a02425e`, `19dbf38`). Three live corrections were applied
+> on top of the brief below — **these supersede the corresponding sections:**
+>
+> 1. **P2 (next image on gallery open) was dropped entirely.** No image-grid
+>    "next tile" selection and no scroll-into-view. The in-pane gallery keeps
+>    outlining the **current** image, as before.
+> 2. **Resume-where-I-left-off applies on _every_ folder-open into a column** —
+>    the center-click modal pick, a tab-strip select, **and** an auto-loaded
+>    column — not only the modal. `assignFolderToPane` owns the resume (lands at 0,
+>    then async-resumes to the stored index; the pane clamps).
+> 3. **Auto-load-next also fills brand-new columns.** Opening a new view (the `+`,
+>    via `addPaneAndFill`) loads the next queued folder not already open elsewhere,
+>    resumed — same rule as an emptied column. Still does **not** apply to
+>    "Close column" (`removePane`).
+> New `window.api`: `getFolderLastIndex(path)` / `setFolderLastIndex(path, index)`
+> (session-only `Map` in main; mirrored in the fake FS).
+
 - **Context:** follow-up to
   [feature-side-by-side-columns-refinements.md](feature-side-by-side-columns-refinements.md). Captures
   a second hands-on testing session (mouse + Windows, multi-window). The columns viewer, the queue
