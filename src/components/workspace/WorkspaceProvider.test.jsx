@@ -1,6 +1,12 @@
 import { act, renderHook } from "@testing-library/react"
 import { useContext } from "react"
-import { describe, expect, it } from "vitest"
+import {
+  afterEach,
+  describe,
+  expect,
+  it,
+  vi,
+} from "vitest"
 
 import WorkspaceContext from "./WorkspaceContext"
 import WorkspaceProvider from "./WorkspaceProvider"
@@ -299,5 +305,159 @@ describe("WorkspaceProvider", () => {
     )
 
     expect(pane.currentIndex).toBe(4)
+  })
+
+  it("auto-loads the next not-already-open queued folder into an emptied pane", () => {
+    const { result } = renderWorkspace()
+
+    act(() => {
+      result.current.addFoldersToQueue([
+        { name: "a", path: "/a" },
+        { name: "b", path: "/b" },
+        { name: "c", path: "/c" },
+      ])
+    })
+
+    const [folderA, folderB, folderC] =
+      result.current.queuedFolders
+
+    let firstPaneId
+    let secondPaneId
+
+    act(() => {
+      firstPaneId = result.current.addPane().id
+      secondPaneId = result.current.addPane().id
+    })
+
+    act(() => {
+      result.current.assignFolderToPane(
+        firstPaneId,
+        folderA.id,
+      )
+
+      result.current.assignFolderToPane(
+        secondPaneId,
+        folderB.id,
+      )
+    })
+
+    // Removing folder A empties the first pane; it should pick up C (the first
+    // queued folder not already open) rather than B, which pane two holds.
+    act(() => {
+      result.current.removeFolder(folderA.id)
+    })
+
+    const firstPane = result.current.panes.find(
+      (pane) => pane.id === firstPaneId,
+    )
+
+    expect(firstPane.folderId).toBe(folderC.id)
+    expect(firstPane.currentIndex).toBe(0)
+  })
+
+  it("leaves an emptied pane empty when no other queued folder is free", () => {
+    const { result } = renderWorkspace()
+
+    act(() => {
+      result.current.addFoldersToQueue([
+        { name: "a", path: "/a" },
+      ])
+    })
+
+    const [folderA] = result.current.queuedFolders
+
+    let paneId
+
+    act(() => {
+      paneId = result.current.addPane().id
+    })
+
+    act(() => {
+      result.current.assignFolderToPane(paneId, folderA.id)
+    })
+
+    act(() => {
+      result.current.removeFolder(folderA.id)
+    })
+
+    expect(
+      result.current.panes.find(
+        (pane) => pane.id === paneId,
+      ).folderId,
+    ).toBe(null)
+  })
+
+  describe("deleteFolder", () => {
+    afterEach(() => {
+      window.api.deleteFilePath = () =>
+        Promise.resolve(true)
+    })
+
+    it("trashes the folder, then dequeues it and severs its panes", async () => {
+      const deleteFilePath = vi.fn(() =>
+        Promise.resolve(true),
+      )
+
+      window.api.deleteFilePath = deleteFilePath
+
+      const { result } = renderWorkspace()
+
+      act(() => {
+        result.current.addFoldersToQueue([
+          { name: "a", path: "/a" },
+        ])
+      })
+
+      const [folderA] = result.current.queuedFolders
+
+      let paneId
+
+      act(() => {
+        paneId = result.current.addPane().id
+      })
+
+      act(() => {
+        result.current.assignFolderToPane(
+          paneId,
+          folderA.id,
+        )
+      })
+
+      await act(async () => {
+        await result.current.deleteFolder(folderA.id)
+      })
+
+      expect(deleteFilePath).toHaveBeenCalledWith({
+        filePath: "/a",
+        isDirectory: true,
+      })
+      expect(result.current.queuedFolders).toHaveLength(0)
+      expect(
+        result.current.panes.find(
+          (pane) => pane.id === paneId,
+        ).folderId,
+      ).toBe(null)
+    })
+
+    it("leaves the queue untouched when the trash op fails", async () => {
+      window.api.deleteFilePath = () =>
+        Promise.resolve(false)
+
+      const { result } = renderWorkspace()
+
+      act(() => {
+        result.current.addFoldersToQueue([
+          { name: "a", path: "/a" },
+        ])
+      })
+
+      const [folderA] = result.current.queuedFolders
+
+      await act(async () => {
+        await result.current.deleteFolder(folderA.id)
+      })
+
+      expect(result.current.queuedFolders).toHaveLength(1)
+    })
   })
 })

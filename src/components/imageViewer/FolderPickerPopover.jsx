@@ -127,7 +127,7 @@ const folderNameStyles = css`
 `
 
 // Small ✕ to drop the folder from the queue. Immediate — no confirmation, since
-// it doesn't touch any files (that's what "Delete image" is for).
+// it doesn't touch any files (that's what the trashcan is for).
 const removeFromQueueButtonStyles = css`
 	align-items: center;
 	background: transparent;
@@ -147,12 +147,14 @@ const removeFromQueueButtonStyles = css`
 	}
 `
 
-// Reddened destructive action for trashing the current image file itself.
-const deleteImageRowStyles = css`
+// Red trashcan beside the ✕: deletes the folder from disk (OS trash) after a
+// confirm, vs. the ✕'s queue-only removal. Reddened so the destructive action
+// reads as distinct from the harmless remove-from-queue.
+const deleteFolderButtonStyles = css`
 	color: #ff8a80;
 
 	&:hover {
-		background-color: rgba(255, 138, 128, 0.15);
+		background-color: rgba(255, 138, 128, 0.2);
 	}
 `
 
@@ -196,9 +198,6 @@ const dividerStyles = css`
 const propTypes = {
   currentFolderId: PropTypes.string,
   onClose: PropTypes.func.isRequired,
-  // Trash the column's current image; omitted when the column has none loaded,
-  // which hides the "Delete image" action.
-  onDeleteImage: PropTypes.func,
   onOpenGallery: PropTypes.func.isRequired,
   paneId: PropTypes.string.isRequired,
 }
@@ -206,12 +205,12 @@ const propTypes = {
 const FolderPickerPopover = ({
   currentFolderId,
   onClose,
-  onDeleteImage,
   onOpenGallery,
   paneId,
 }) => {
   const {
     assignFolderToPane,
+    deleteFolder,
     panes = [],
     queuedFolders,
     removeFolder,
@@ -219,10 +218,10 @@ const FolderPickerPopover = ({
     setActivePaneId,
   } = useContext(WorkspaceContext)
 
-  const [
-    isDeleteImageModalOpen,
-    setIsDeleteImageModalOpen,
-  ] = useState(false)
+  // The queued folder pending disk deletion (the trashcan opens the confirm);
+  // null when no confirm is showing.
+  const [folderPendingDelete, setFolderPendingDelete] =
+    useState(null)
 
   // Folder ids loaded in *other* columns, so each row can flag a folder that's
   // already open elsewhere (the current pane's folder gets the active highlight
@@ -311,25 +310,35 @@ const FolderPickerPopover = ({
     [paneId, removePane],
   )
 
-  const openDeleteImageModal = useCallback((event) => {
-    event.stopPropagation()
+  // The trashcan only arms the confirm; the actual disk delete waits for the
+  // modal's "Yes" (see `confirmDeleteFolder`).
+  const requestDeleteFolder = useCallback(
+    (event, folder) => {
+      event.stopPropagation()
 
-    setIsDeleteImageModalOpen(true)
+      setFolderPendingDelete(folder)
+    },
+    [],
+  )
+
+  const closeDeleteFolderModal = useCallback(() => {
+    setFolderPendingDelete(null)
   }, [])
 
-  const closeDeleteImageModal = useCallback(() => {
-    setIsDeleteImageModalOpen(false)
-  }, [])
+  // Trash the folder from disk, then dismiss the modal. `deleteFolder` also
+  // dequeues it and auto-loads the next ready folder into any emptied pane, so
+  // the menu can stay open over the refreshed queue.
+  const confirmDeleteFolder = useCallback(() => {
+    if (!folderPendingDelete) {
+      return
+    }
 
-  // Trash the image, then dismiss the whole menu — the column has already moved
-  // on to the next image behind the backdrop.
-  const confirmDeleteImage = useCallback(() => {
-    Promise.resolve(onDeleteImage?.()).then(() => {
-      closeDeleteImageModal()
-
-      onClose()
+    Promise.resolve(
+      deleteFolder(folderPendingDelete.id),
+    ).then(() => {
+      setFolderPendingDelete(null)
     })
-  }, [closeDeleteImageModal, onClose, onDeleteImage])
+  }, [deleteFolder, folderPendingDelete])
 
   return (
     <div
@@ -343,7 +352,8 @@ const FolderPickerPopover = ({
             No folders queued yet.
           </div>
         ) : (
-          queuedFolders.map(({ id, name }) => {
+          queuedFolders.map((folder) => {
+            const { id, name } = folder
             const isCurrent = id === currentFolderId
             const isOpenElsewhere =
               !isCurrent && folderIdsOpenElsewhere.has(id)
@@ -377,6 +387,21 @@ const FolderPickerPopover = ({
                 </button>
 
                 <button
+                  aria-label={`Delete ${name} from disk`}
+                  css={css`
+										${removeFromQueueButtonStyles}
+										${deleteFolderButtonStyles}
+									`}
+                  onClick={(event) => {
+                    requestDeleteFolder(event, folder)
+                  }}
+                  title="Delete folder from disk"
+                  type="button"
+                >
+                  <DeleteForeverIcon />
+                </button>
+
+                <button
                   aria-label={`Remove ${name} from queue`}
                   css={removeFromQueueButtonStyles}
                   onClick={(event) => {
@@ -403,20 +428,6 @@ const FolderPickerPopover = ({
           Gallery view
         </button>
 
-        {onDeleteImage && (
-          <button
-            css={css`
-							${rowStyles}
-							${deleteImageRowStyles}
-						`}
-            onClick={openDeleteImageModal}
-            type="button"
-          >
-            <DeleteForeverIcon />
-            Delete image
-          </button>
-        )}
-
         <button
           css={rowStyles}
           onClick={closeColumn}
@@ -428,9 +439,9 @@ const FolderPickerPopover = ({
       </div>
 
       <DeleteFileModal
-        isVisible={isDeleteImageModalOpen}
-        onClose={closeDeleteImageModal}
-        onConfirm={confirmDeleteImage}
+        isVisible={folderPendingDelete !== null}
+        onClose={closeDeleteFolderModal}
+        onConfirm={confirmDeleteFolder}
       />
     </div>
   )

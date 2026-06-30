@@ -10,7 +10,6 @@ import {
 } from "react"
 
 import useFolderListing from "../fileBrowser/useFolderListing"
-import DeleteFileModal from "../toolkit/DeleteFileModal"
 import WorkspaceContext from "../workspace/WorkspaceContext"
 import EmptyPaneAffordance from "./EmptyPaneAffordance"
 import FolderPickerPopover from "./FolderPickerPopover"
@@ -84,7 +83,6 @@ const Pane = ({
 }) => {
   const {
     assignFolderPathToPane,
-    assignFolderToPane,
     clearPanes,
     queuedFolders,
     setActivePaneId,
@@ -93,9 +91,6 @@ const Pane = ({
   } = useContext(WorkspaceContext)
 
   const [isMenuOpen, setIsMenuOpen] = useState(false)
-
-  const [isDeleteModalOpen, setIsDeleteModalOpen] =
-    useState(false)
 
   // Non-null while this column is showing the in-pane gallery; holds the path
   // currently being browsed there. Local to the pane so each column browses
@@ -107,9 +102,7 @@ const Pane = ({
     ({ id }) => id === pane.folderId,
   )
 
-  const { imageFiles, refresh } = useFolderListing(
-    folder?.path,
-  )
+  const { imageFiles } = useFolderListing(folder?.path)
 
   const setCurrentIndex = useCallback(
     (index) => {
@@ -135,71 +128,10 @@ const Pane = ({
     setCurrentIndex,
   })
 
-  // Trash the column's current image (OS recycle bin, like the file browser),
-  // then keep the column coherent: if that was the last image, revert the
-  // column to the empty `+` state rather than leaving a blank column staring
-  // back; otherwise hold the same slot (now showing the next image, clamped to
-  // the new end) and re-read the folder. Shared by the `[Delete]` key and the
-  // per-column menu's delete action so both behave identically.
-  const deleteCurrentImage = useCallback(() => {
-    const imageToDelete = imageFiles[currentIndex]
-
-    if (!imageToDelete) {
-      return Promise.resolve()
-    }
-
-    return window.api
-      .deleteFilePath({
-        filePath: imageToDelete.path,
-        isDirectory: false,
-      })
-      .then(() => {
-        const remainingCount = imageFiles.length - 1
-
-        if (remainingCount <= 0) {
-          assignFolderToPane(pane.id, null)
-        } else {
-          setCurrentIndex(
-            Math.min(currentIndex, remainingCount - 1),
-          )
-
-          refresh()
-        }
-      })
-  }, [
-    assignFolderToPane,
-    currentIndex,
-    imageFiles,
-    pane.id,
-    refresh,
-    setCurrentIndex,
-  ])
-
-  // `[Delete]` on the active column asks before trashing (the confirmation
-  // modal is what guards the stray Delete key). Only arm it when there's
-  // actually an image showing.
-  const requestDelete = useCallback(() => {
-    if (!imageFiles[currentIndex]) {
-      return
-    }
-
-    setIsDeleteModalOpen(true)
-  }, [currentIndex, imageFiles])
-
-  const closeDeleteModal = useCallback(() => {
-    setIsDeleteModalOpen(false)
-  }, [])
-
-  const confirmDelete = useCallback(() => {
-    deleteCurrentImage().then(() => {
-      setIsDeleteModalOpen(false)
-    })
-  }, [deleteCurrentImage])
-
   // Center-tap means "control this column": select it and open its menu (the
   // Kavita-style per-column control) — the modal for assigning a queued folder,
-  // opening the gallery, deleting, or closing the column. A center-hold instead
-  // jumps straight to the gallery (see `openGallery`).
+  // opening the gallery, or closing the column. A center-hold instead jumps
+  // straight to the gallery (see `openGallery`).
   const openMenu = useCallback(
     (point) => {
       if (point) {
@@ -273,20 +205,17 @@ const Pane = ({
     wasElevatedRef.current = isElevated
   }, [isElevated, suppressChromeReveal])
 
-  // Only the active column owns the keyboard, and it's silenced while the menu,
-  // the in-pane gallery, or the delete confirmation is open (each handles its
-  // own Esc/Enter) — so the first Esc closes that, and the next one leaves the
-  // viewer.
+  // Only the active column owns the keyboard, and it's silenced while the menu
+  // or the in-pane gallery is open (each handles its own Esc) — so the first Esc
+  // closes that, and the next one leaves the viewer. The viewer deletes folders
+  // (from the menu's trashcan), not single images, so there's no `[Delete]` key
+  // action here.
   useViewerKeyboard({
     goToNextImage,
     goToPreviousImage,
     isEnabled:
-      isActive &&
-      !isMenuOpen &&
-      !isGalleryOpen &&
-      !isDeleteModalOpen,
+      isActive && !isMenuOpen && !isGalleryOpen,
     onClose: clearPanes,
-    onDelete: requestDelete,
   })
 
   const currentImage = folder
@@ -329,19 +258,10 @@ const Pane = ({
         <FolderPickerPopover
           currentFolderId={pane.folderId}
           onClose={closeMenu}
-          onDeleteImage={
-            currentImage ? deleteCurrentImage : undefined
-          }
           onOpenGallery={openGallery}
           paneId={pane.id}
         />
       )}
-
-      <DeleteFileModal
-        isVisible={isDeleteModalOpen}
-        onClose={closeDeleteModal}
-        onConfirm={confirmDelete}
-      />
     </div>
   )
 }

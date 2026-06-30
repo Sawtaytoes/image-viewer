@@ -17,6 +17,8 @@ const renderPopover = ({
 } = {}) => {
   const actions = {
     assignFolderToPane: vi.fn(),
+    deleteFolder: vi.fn(() => Promise.resolve(true)),
+    removeFolder: vi.fn(),
     removePane: vi.fn(),
     setActivePaneId: vi.fn(),
   }
@@ -118,6 +120,58 @@ describe("FolderPickerPopover (per-column menu)", () => {
       screen.queryByTitle(
         "Birds — already open in another column",
       ),
+    ).not.toBeInTheDocument()
+  })
+
+  it("removes a queued folder from the queue via the ✕ (no confirm, no disk)", () => {
+    const { actions } = renderPopover({
+      queuedFolders: [
+        { id: "folder-1", name: "Cats", path: "/cats" },
+      ],
+    })
+
+    fireEvent.click(
+      screen.getByLabelText("Remove Cats from queue"),
+    )
+
+    expect(actions.removeFolder).toHaveBeenCalledWith(
+      "folder-1",
+    )
+    // The ✕ is queue-only — it never trashes the folder from disk.
+    expect(actions.deleteFolder).not.toHaveBeenCalled()
+  })
+
+  it("deletes a queued folder from disk only after the confirm", () => {
+    const { actions } = renderPopover({
+      queuedFolders: [
+        { id: "folder-1", name: "Cats", path: "/cats" },
+      ],
+    })
+
+    // The trashcan arms the confirm; it doesn't delete on the first click.
+    fireEvent.click(
+      screen.getByLabelText("Delete Cats from disk"),
+    )
+    expect(actions.deleteFolder).not.toHaveBeenCalled()
+
+    // Confirming ("Yes") trashes the folder.
+    fireEvent.click(screen.getByText("Yes"))
+
+    expect(actions.deleteFolder).toHaveBeenCalledWith(
+      "folder-1",
+    )
+  })
+
+  it("no longer offers a single-image delete action", () => {
+    renderPopover({
+      currentFolderId: "folder-1",
+      queuedFolders: [
+        { id: "folder-1", name: "Cats", path: "/cats" },
+      ],
+    })
+
+    expect(
+      screen.queryByText("Delete image"),
     ).not.toBeInTheDocument()
   })
 

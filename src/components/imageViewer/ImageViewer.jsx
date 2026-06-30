@@ -8,7 +8,6 @@ import {
   useState,
 } from "react"
 
-import DeleteFileModal from "../toolkit/DeleteFileModal"
 import WorkspaceContext from "../workspace/WorkspaceContext"
 import ImageView from "./ImageView"
 import ImageViewerContext from "./ImageViewerContext"
@@ -101,9 +100,6 @@ const LegacyImageColumn = ({
     isAtEnd,
   } = useImageNavigation()
 
-  const [isDeleteModalOpen, setIsDeleteModalOpen] =
-    useState(false)
-
   const close = useCallback(
     (point) => {
       if (point) {
@@ -119,48 +115,14 @@ const LegacyImageColumn = ({
     [leaveImageViewer, spawn],
   )
 
-  const requestDelete = useCallback(() => {
-    if (!imageFilePath) {
-      return
-    }
-
-    setIsDeleteModalOpen(true)
-  }, [imageFilePath])
-
-  const closeDeleteModal = useCallback(() => {
-    setIsDeleteModalOpen(false)
-  }, [])
-
-  // The single-image view has no sibling list to fall through to, so deleting
-  // drops back to the gallery (which re-reads the folder, now minus the file)
-  // rather than trying to advance in place.
-  const confirmDelete = useCallback(() => {
-    if (!imageFilePath) {
-      setIsDeleteModalOpen(false)
-
-      return
-    }
-
-    window.api
-      .deleteFilePath({
-        filePath: imageFilePath,
-        isDirectory: false,
-      })
-      .then(() => {
-        setIsDeleteModalOpen(false)
-
-        leaveImageViewer()
-      })
-  }, [imageFilePath, leaveImageViewer])
-
   // Only the active column owns the keyboard, so arrows don't drive a column
-  // the user isn't looking at; the delete confirmation owns Enter/Esc while up.
+  // the user isn't looking at. The viewer deletes folders, not single images,
+  // so there's no `[Delete]` action on the legacy single-image column either.
   useViewerKeyboard({
     goToNextImage,
     goToPreviousImage,
-    isEnabled: isActive && !isDeleteModalOpen,
+    isEnabled: isActive,
     onClose: close,
-    onDelete: requestDelete,
   })
 
   return (
@@ -180,12 +142,6 @@ const LegacyImageColumn = ({
         isAtBeginning={isAtBeginning}
         isAtEnd={isAtEnd}
         onCenterTap={close}
-      />
-
-      <DeleteFileModal
-        isVisible={isDeleteModalOpen}
-        onClose={closeDeleteModal}
-        onConfirm={confirmDelete}
       />
     </div>
   )

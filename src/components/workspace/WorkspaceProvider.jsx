@@ -26,6 +26,39 @@ const createPane = () => ({
   id: createId(),
 })
 
+// Fill every empty pane (`folderId == null`) with the first queued folder that
+// isn't already shown in another pane, so a column emptied by remove-from-queue
+// or a folder-delete picks up the next ready gallery instead of dropping back to
+// an empty "Tap to pick folder". Dedupes against the folders other panes hold so
+// the same folder isn't auto-opened in two columns; a freshly filled pane also
+// counts as taken for the panes after it. Panes already holding a folder, and
+// any empty pane with nothing left to load, are returned untouched.
+const fillEmptyPanes = (panes, queuedFolders) => {
+  const takenFolderIds = new Set(
+    panes
+      .map((pane) => pane.folderId)
+      .filter((folderId) => folderId != null),
+  )
+
+  return panes.map((pane) => {
+    if (pane.folderId != null) {
+      return pane
+    }
+
+    const nextFolder = queuedFolders.find(
+      (folder) => !takenFolderIds.has(folder.id),
+    )
+
+    if (!nextFolder) {
+      return pane
+    }
+
+    takenFolderIds.add(nextFolder.id)
+
+    return { ...pane, currentIndex: 0, folderId: nextFolder.id }
+  })
+}
+
 // Panes are ephemeral: there are none until the user opens a folder into a
 // column, and closing the last one drops back to the gallery. The queue
 // (queuedFolders / tabs) is the persistent thing.
@@ -136,21 +169,61 @@ const WorkspaceProvider = ({ children }) => {
   }, [])
 
   // Drop the folder and sever every pane that referenced it (panes don't
-  // vanish — they revert to the empty `+` state). References are by id, so no
+  // vanish — they revert to the empty `+` state), then auto-load the next ready
+  // queued folder into any pane the removal emptied. References are by id, so no
   // other pane is corrupted.
   const removeFolder = useCallback((folderId) => {
-    setWorkspace((previousWorkspace) => ({
-      ...previousWorkspace,
-      panes: previousWorkspace.panes.map((pane) =>
-        pane.folderId === folderId
-          ? { ...pane, folderId: null }
-          : pane,
-      ),
-      queuedFolders: previousWorkspace.queuedFolders.filter(
-        (folder) => folder.id !== folderId,
-      ),
-    }))
+    setWorkspace((previousWorkspace) => {
+      const queuedFolders =
+        previousWorkspace.queuedFolders.filter(
+          (folder) => folder.id !== folderId,
+        )
+
+      const severedPanes = previousWorkspace.panes.map(
+        (pane) =>
+          pane.folderId === folderId
+            ? { ...pane, folderId: null }
+            : pane,
+      )
+
+      return {
+        ...previousWorkspace,
+        panes: fillEmptyPanes(severedPanes, queuedFolders),
+        queuedFolders,
+      }
+    })
   }, [])
+
+  // Trash the folder from disk (OS recycle bin) and, on success, drop it from
+  // the queue + sever any panes on it + auto-load the next ready folder — the
+  // same cleanup as remove-from-queue, but only after the file op resolves so a
+  // failed delete leaves the queue untouched. Distinct from `removeFolder` (the
+  // ✕), which only touches renderer state.
+  const deleteFolder = useCallback(
+    (folderId) => {
+      const folder = workspace.queuedFolders.find(
+        (queuedFolder) => queuedFolder.id === folderId,
+      )
+
+      if (!folder) {
+        return Promise.resolve(false)
+      }
+
+      return window.api
+        .deleteFilePath({
+          filePath: folder.path,
+          isDirectory: true,
+        })
+        .then((didDelete) => {
+          if (didDelete) {
+            removeFolder(folderId)
+          }
+
+          return didDelete
+        })
+    },
+    [removeFolder, workspace.queuedFolders],
+  )
 
   // Empty the whole queue at once and sever every pane that referenced a queued
   // folder (panes revert to the empty `+` state rather than vanishing), mirroring
@@ -284,6 +357,7 @@ const WorkspaceProvider = ({ children }) => {
       assignFolderToPane,
       clearPanes,
       clearQueue,
+      deleteFolder,
       isChromeRevealSuppressed,
       panes: workspace.panes,
       queuedFolders: workspace.queuedFolders,
@@ -301,6 +375,7 @@ const WorkspaceProvider = ({ children }) => {
       assignFolderToPane,
       clearPanes,
       clearQueue,
+      deleteFolder,
       isChromeRevealSuppressed,
       removeFolder,
       removePane,
