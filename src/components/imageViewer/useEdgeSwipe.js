@@ -55,7 +55,9 @@ const useEdgeSwipe = ({
       // A drag starting inside a pane's gallery/menu belongs to that overlay,
       // not to the chrome reveal — leave it disarmed so the overlay keeps its
       // own gestures.
-      if (event.target?.closest?.("[data-viewer-overlay]")) {
+      if (
+        event.target?.closest?.("[data-viewer-overlay]")
+      ) {
         return
       }
 

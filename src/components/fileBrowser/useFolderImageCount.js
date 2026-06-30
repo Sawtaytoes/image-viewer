@@ -16,7 +16,9 @@ const useFolderImageCount = (folderPath, isEnabled) => {
 
     let isCancelled = false
 
-    Promise.resolve(window.api.countFolderImages(folderPath))
+    Promise.resolve(
+      window.api.countFolderImages(folderPath),
+    )
       .then((value) => {
         if (!isCancelled) {
           setCount(value)
