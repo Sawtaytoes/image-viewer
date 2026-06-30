@@ -22,20 +22,13 @@ const useFolderListing = (folderPath) => {
     Boolean(folderPath),
   )
 
-  // Bumped to force a re-read of the same folder after the listing changes on
-  // disk (e.g. an image is deleted from a pane) — `folderPath` alone wouldn't
-  // change, so the effect needs another dependency to re-run.
-  const [refreshToken, setRefreshToken] = useState(0)
-
-  const refreshListing = useCallback(() => {
-    setRefreshToken((token) => token + 1)
-  }, [])
-
-  useEffect(() => {
-    // `refreshListing` bumps this purely to re-run the read for the same
-    // folder; referencing it here is what ties the effect to that trigger.
-    void refreshToken
-
+  // The read itself, shared by the mount effect and `refresh()`. `refresh`
+  // re-reads the *same* folder after its contents change on disk (e.g. deleting
+  // an image from a pane) — `folderPath` alone wouldn't change, so the effect
+  // can't retrigger on its own. `from(promise)` completes after one emit, so a
+  // refresh's subscription self-disposes; the returned teardown is only used
+  // when the effect re-runs or unmounts.
+  const loadListing = useCallback(() => {
     if (!folderPath) {
       setDirectoryContents(initialDirectoryContents)
       setIsLoading(false)
@@ -65,7 +58,9 @@ const useFolderListing = (folderPath) => {
     return () => {
       subscription.unsubscribe()
     }
-  }, [folderPath, refreshToken])
+  }, [folderPath])
+
+  useEffect(() => loadListing(), [loadListing])
 
   const directories = useDirectories(
     directoryContents,
@@ -81,7 +76,7 @@ const useFolderListing = (folderPath) => {
     directories,
     imageFiles,
     isLoading,
-    refreshListing,
+    refresh: loadListing,
   }
 }
 

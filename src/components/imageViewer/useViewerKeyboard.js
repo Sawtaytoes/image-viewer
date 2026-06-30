@@ -10,6 +10,7 @@ const useViewerKeyboard = ({
   goToPreviousImage,
   isEnabled,
   onClose,
+  onDelete,
 }) => {
   useEffect(() => {
     if (!isEnabled) {
@@ -21,6 +22,9 @@ const useViewerKeyboard = ({
       ArrowRight: goToNextImage,
       Backspace: onClose,
       ControlLeft: goToNextImage,
+      // `onDelete` is optional; when a view doesn't pass it, `[Delete]` is a
+      // no-op rather than mapped to anything destructive.
+      Delete: onDelete,
       Enter: onClose,
       Escape: onClose,
       ShiftLeft: goToPreviousImage,
@@ -32,8 +36,10 @@ const useViewerKeyboard = ({
         return
       }
 
-      if (keyConfigurations[event.code]) {
-        keyConfigurations[event.code]()
+      const handler = keyConfigurations[event.code]
+
+      if (handler) {
+        handler()
       }
     }
 
@@ -42,7 +48,13 @@ const useViewerKeyboard = ({
     return () => {
       window.removeEventListener("keydown", onKeyDown)
     }
-  }, [goToNextImage, goToPreviousImage, isEnabled, onClose])
+  }, [
+    goToNextImage,
+    goToPreviousImage,
+    isEnabled,
+    onClose,
+    onDelete,
+  ])
 }
 
 export default useViewerKeyboard
