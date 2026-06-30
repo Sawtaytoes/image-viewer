@@ -65,12 +65,21 @@ const statPath = (targetPath) => {
 
 // Async directory listing, mapped to plain objects so it can cross the bridge.
 // Replaces the renderer's bindNodeCallback(fs.readdir) + inline mapping.
+//
 // `modifiedTime` (epoch ms) rides along so the renderer can offer a
-// sort-by-date-modified view; it needs a `stat` per entry (the `Dirent` from
-// `readdir` doesn't carry mtime), run in parallel. An unreadable entry
-// (permission, broken symlink) keeps `modifiedTime: 0` so it sorts last rather
-// than failing the whole listing.
-const readDirectory = (directoryPath) =>
+// sort-by-date-modified view, but the `Dirent` from `readdir` doesn't carry
+// mtime — getting it costs a `stat` per entry. On large folders that stat storm
+// blocks the whole listing from resolving, so the gallery can't show until
+// every file is stat'd (it used to appear instantly, then fill in). Only the
+// `modifiedDesc` sort needs mtime, so the renderer opts in via
+// `withModifiedTime`; the default name sort skips the stats entirely and the
+// listing resolves from the single `readdir`. An unreadable entry (permission,
+// broken symlink) keeps `modifiedTime: 0` so it sorts last rather than failing
+// the whole listing.
+const readDirectory = (
+  directoryPath,
+  { withModifiedTime = false } = {},
+) =>
   fs.promises
     .readdir(directoryPath, { withFileTypes: true })
     .then((entries) =>
@@ -83,12 +92,14 @@ const readDirectory = (directoryPath) =>
 
           let modifiedTime = 0
 
-          try {
-            modifiedTime = (
-              await fs.promises.stat(filePath)
-            ).mtimeMs
-          } catch {
-            modifiedTime = 0
+          if (withModifiedTime) {
+            try {
+              modifiedTime = (
+                await fs.promises.stat(filePath)
+              ).mtimeMs
+            } catch {
+              modifiedTime = 0
+            }
           }
 
           return {

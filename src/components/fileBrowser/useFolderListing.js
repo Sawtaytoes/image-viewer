@@ -1,6 +1,16 @@
-import { useCallback, useEffect, useState } from "react"
+import {
+  useCallback,
+  useContext,
+  useEffect,
+  useState,
+} from "react"
 import { from } from "rxjs"
 
+import SettingsContext from "../settings/SettingsContext"
+import {
+  getFolderSortOrder,
+  sortOrders,
+} from "../settings/sortOrders"
 import useDirectories from "./useDirectories"
 import useImageFiles from "./useImageFiles"
 
@@ -11,6 +21,16 @@ import useImageFiles from "./useImageFiles"
 const initialDirectoryContents = []
 
 const useFolderListing = (folderPath) => {
+  const { sortOrdersByFolder } = useContext(SettingsContext)
+
+  // Only the date-modified sort needs each entry's mtime, and fetching it costs
+  // a `stat` per file that blocks the whole listing (see `readDirectory` in the
+  // preload). Skip it for the default name sort so the listing loads instantly
+  // and images fill in afterward, the way it did before date sort existed.
+  const needsModifiedTime =
+    getFolderSortOrder(sortOrdersByFolder, folderPath) ===
+    sortOrders.modifiedDesc
+
   const [directoryContents, setDirectoryContents] =
     useState(initialDirectoryContents)
 
@@ -42,7 +62,9 @@ const useFolderListing = (folderPath) => {
     setIsLoading(true)
 
     const subscription = from(
-      window.api.readDirectory(folderPath),
+      window.api.readDirectory(folderPath, {
+        withModifiedTime: needsModifiedTime,
+      }),
     ).subscribe({
       next: (contents) => {
         setDirectoryContents(contents)
@@ -58,7 +80,7 @@ const useFolderListing = (folderPath) => {
     return () => {
       subscription.unsubscribe()
     }
-  }, [folderPath])
+  }, [folderPath, needsModifiedTime])
 
   useEffect(() => loadListing(), [loadListing])
 

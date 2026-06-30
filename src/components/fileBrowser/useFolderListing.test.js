@@ -34,7 +34,13 @@ describe("useFolderListing", () => {
       expect(readDirectory).toHaveBeenCalledTimes(2)
     })
 
-    expect(readDirectory).toHaveBeenLastCalledWith("/pics")
+    // Default (name) sort skips the per-entry mtime stat, so it opts out.
+    expect(readDirectory).toHaveBeenLastCalledWith(
+      "/pics",
+      {
+        withModifiedTime: false,
+      },
+    )
   })
 
   it("does not read when there is no folder path", () => {

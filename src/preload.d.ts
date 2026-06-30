@@ -42,8 +42,13 @@ declare global {
       ) => Promise<number | null>
       // Available Windows drive roots (e.g. ["C:\\", "G:\\"]).
       getWindowsDrives: () => string[]
+      // `withModifiedTime` opts into a `stat` per entry for `modifiedTime`
+      // (needed only by the date-modified sort); the default name sort skips it
+      // so large folders list instantly.
       readDirectory: (
         directoryPath: string,
+        // eslint-disable-next-line @typescript-eslint/naming-convention -- matches the preload's runtime option name
+        options?: { withModifiedTime?: boolean },
       ) => Promise<DirectoryEntry[]>
       readImageData: (
         filePath: string,
