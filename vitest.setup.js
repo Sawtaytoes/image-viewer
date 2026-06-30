@@ -17,6 +17,7 @@ const extname = (filePath) => {
 
 window.api = {
   cliFilePath: "",
+  countFolderImages: () => Promise.resolve(0),
   createNewWindow: () => {},
   deleteFilePath: () => Promise.resolve(true),
   findFirstImage: () => Promise.resolve(null),

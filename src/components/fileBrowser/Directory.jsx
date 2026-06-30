@@ -14,6 +14,7 @@ import useLongPress from "../imageViewer/useLongPress"
 import FileSystemContext from "./FileSystemContext"
 import FillRing from "./FillRing"
 import MultiSelectContext from "./MultiSelectContext"
+import useFolderImageCount from "./useFolderImageCount"
 import useFolderThumbnail from "./useFolderThumbnail"
 import useInView from "./useInView"
 
@@ -73,6 +74,25 @@ const checkBadgeStyles = css`
 	width: 26px;
 `
 
+// Image count, pinned bottom-right over the thumbnail. Sits opposite the
+// top-right check badge so the two never overlap, and only shows for a gallery
+// with a known, non-zero count.
+const countBadgeStyles = css`
+	align-items: center;
+	background-color: rgba(0, 0, 0, 0.6);
+	border-radius: 11px;
+	bottom: 8px;
+	color: #fafafa;
+	display: flex;
+	font-size: 13px;
+	font-weight: 600;
+	justify-content: center;
+	min-width: 22px;
+	padding: 2px 7px;
+	position: absolute;
+	right: 8px;
+`
+
 const propTypes = {
   directoryName: PropTypes.string.isRequired,
   directoryPath: PropTypes.string.isRequired,
@@ -106,6 +126,11 @@ const Directory = ({ directoryName, directoryPath }) => {
   const isInView = useInView(tileRef)
 
   const { image, isResolved } = useFolderThumbnail(
+    directoryPath,
+    isInView,
+  )
+
+  const imageCount = useFolderImageCount(
     directoryPath,
     isInView,
   )
@@ -218,6 +243,10 @@ const Directory = ({ directoryName, directoryPath }) => {
 
       {longPressProgress > 0 && (
         <FillRing progress={longPressProgress} />
+      )}
+
+      {Boolean(imageCount) && (
+        <div css={countBadgeStyles}>{imageCount}</div>
       )}
 
       {isSelected && <div css={checkBadgeStyles}>✓</div>}

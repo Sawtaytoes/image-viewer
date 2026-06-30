@@ -406,6 +406,40 @@ const createFakeFileSystem = ({ path }) => {
     return Promise.resolve(null)
   }
 
+  // Mirror of the real preload's `countFolderImages`: total images anywhere
+  // under `folderPath`, walking the in-memory tree instead of disk.
+  const countFolderImages = (folderPath) => {
+    const queue = [folderPath]
+
+    let count = 0
+
+    while (queue.length > 0) {
+      const currentPath = queue.shift()
+      const node = nodesByPath.get(currentPath)
+
+      if (!node?.isDirectory) {
+        continue
+      }
+
+      for (const childPath of node.children) {
+        const child = nodesByPath.get(childPath)
+
+        if (
+          child.isFile &&
+          imageExtensions.has(
+            path.extname(child.name).toLowerCase(),
+          )
+        ) {
+          count += 1
+        } else if (child.isDirectory) {
+          queue.push(childPath)
+        }
+      }
+    }
+
+    return Promise.resolve(count)
+  }
+
   const readImageData = (filePath) => {
     const node = nodesByPath.get(filePath)
 
@@ -456,6 +490,7 @@ const createFakeFileSystem = ({ path }) => {
   return {
     // Open straight into the fake root so the gallery has content immediately.
     cliFilePath: rootPath,
+    countFolderImages,
     deleteFilePath,
     findFirstImage,
     getWindowsDrives: () => [rootPath],

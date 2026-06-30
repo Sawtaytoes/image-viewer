@@ -15,6 +15,11 @@ declare global {
     api: {
       // File/folder path the window was launched with ("" when none).
       cliFilePath: string
+      // Total images anywhere under `folderPath` (bounded breadth-first walk),
+      // for the per-folder image-count badge.
+      countFolderImages: (
+        folderPath: string,
+      ) => Promise<number>
       // Open another window pointed at a file or folder.
       createNewWindow: (payload: {
         filePath: string

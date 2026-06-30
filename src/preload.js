@@ -193,6 +193,55 @@ const findFirstImage = async (folderPath) => {
   return null
 }
 
+// Counts every image under `folderPath` (at any depth), reusing
+// `findFirstImage`'s bounded breadth-first walk but without the early bail —
+// names only, no per-entry stat, capped the same way so a deep tree can't stall.
+// Powers the per-folder image-count badge; callers gate it on visibility so only
+// on-screen tiles pay for it.
+const countFolderImages = async (folderPath) => {
+  const queue = [folderPath]
+
+  let scanned = 0
+  let count = 0
+
+  while (
+    queue.length > 0 &&
+    scanned < maxDirectoriesScanned
+  ) {
+    const currentPath = queue.shift()
+
+    scanned += 1
+
+    let entries
+
+    try {
+      entries = await fs.promises.readdir(currentPath, {
+        withFileTypes: true,
+      })
+    } catch {
+      continue
+    }
+
+    for (const entry of entries) {
+      if (
+        entry.isFile() &&
+        imageExtensions.has(
+          path.extname(entry.name).toLowerCase(),
+        )
+      ) {
+        count += 1
+      } else if (
+        entry.isDirectory() &&
+        !skippedDirectories.has(entry.name.toLowerCase())
+      ) {
+        queue.push(path.join(currentPath, entry.name))
+      }
+    }
+  }
+
+  return count
+}
+
 // Reads an image off disk and hands the renderer the raw bytes (as a
 // cloneable ArrayBuffer) plus a MIME type, replacing the old custom-scheme XHR
 // fetch. `fs.promises.readFile` returns a Buffer that may be a view into a
@@ -231,6 +280,9 @@ const readImageData = (filePath) => {
 
 contextBridge.exposeInMainWorld("api", {
   cliFilePath,
+  countFolderImages: fakeFileSystem
+    ? fakeFileSystem.countFolderImages
+    : countFolderImages,
   createNewWindow: (payload) =>
     ipcRenderer.send("createNewWindow", payload),
   // In fake mode the delete is virtual (mutates the in-memory tree, never the
