@@ -50,34 +50,44 @@ const backdropStyles = css`
 	z-index: 1;
 `
 
+// Sized generously: this is the primary touch target in multi-view, so it gets a
+// real minimum width and large rows rather than shrinking to its content. Icons
+// are forced larger here (the shared SvgIcon is a fixed 24px) so they match the
+// bumped-up text.
 const popoverStyles = css`
 	animation: ${popoverPopIn} 160ms ease;
 	background-color: #2b2b2b;
-	border-radius: 8px;
+	border-radius: 12px;
 	box-shadow: 0 8px 24px rgba(0, 0, 0, 0.5);
 	display: flex;
 	flex-direction: column;
-	gap: 2px;
-	max-height: 80%;
-	max-width: 90%;
+	gap: 4px;
+	max-height: 85%;
+	max-width: 92%;
+	min-width: 460px;
 	overflow-y: auto;
-	padding: 8px;
+	padding: 12px;
 	user-select: none;
+
+	svg {
+		height: 30px;
+		width: 30px;
+	}
 `
 
 const rowStyles = css`
 	align-items: center;
 	background: transparent;
 	border: 0;
-	border-radius: 5px;
+	border-radius: 7px;
 	color: #fafafa;
 	cursor: pointer;
 	display: flex;
 	font-family: 'Source Sans Pro', sans-serif;
-	font-size: 18px;
+	font-size: 24px;
 	font-weight: 300;
-	gap: 8px;
-	padding: 10px 14px;
+	gap: 14px;
+	padding: 16px 22px;
 	text-align: left;
 	white-space: nowrap;
 
@@ -86,15 +96,15 @@ const rowStyles = css`
 	}
 `
 
-// A queued folder is now a flex row: the folder picker (most of the width) plus
-// a trailing remove-from-queue button, so the picker can't be a single <button>
+// A queued folder is a flex row: the folder picker (most of the width) plus a
+// trailing remove-from-queue button, so the picker can't be a single <button>
 // (no button-in-button). The container carries the open-state highlights.
 const queuedFolderRowStyles = css`
 	align-items: center;
-	border-radius: 5px;
+	border-radius: 7px;
 	display: flex;
-	gap: 2px;
-	padding-right: 6px;
+	gap: 4px;
+	padding-right: 8px;
 `
 
 // The folder-picking part of the row; fills the row and ellipsizes long names.
@@ -102,17 +112,17 @@ const pickFolderButtonStyles = css`
 	align-items: center;
 	background: transparent;
 	border: 0;
-	border-radius: 5px;
+	border-radius: 7px;
 	color: #fafafa;
 	cursor: pointer;
 	display: flex;
 	flex: 1 1 auto;
 	font-family: 'Source Sans Pro', sans-serif;
-	font-size: 18px;
+	font-size: 24px;
 	font-weight: 300;
-	gap: 8px;
+	gap: 14px;
 	min-width: 0;
-	padding: 10px 14px;
+	padding: 16px 22px;
 	text-align: left;
 
 	&:hover {
@@ -126,8 +136,10 @@ const folderNameStyles = css`
 	white-space: nowrap;
 `
 
-// Small ✕ to drop the folder from the queue. Immediate — no confirmation, since
-// it doesn't touch any files (that's what the trashcan is for).
+// The one per-row action: drop the folder from the queue. Immediate — no
+// confirmation, since it doesn't touch any files. A big, finger-sized hit area
+// (folder deletion lives in a separate, deliberate action below to keep this
+// from being a delete-by-accident).
 const removeFromQueueButtonStyles = css`
 	align-items: center;
 	background: transparent;
@@ -137,24 +149,24 @@ const removeFromQueueButtonStyles = css`
 	cursor: pointer;
 	display: inline-flex;
 	flex: 0 0 auto;
-	height: 30px;
+	height: 48px;
 	justify-content: center;
 	padding: 0;
-	width: 30px;
+	width: 48px;
 
 	&:hover {
 		background-color: rgba(255, 255, 255, 0.2);
 	}
 `
 
-// Red trashcan beside the ✕: deletes the folder from disk (OS trash) after a
-// confirm, vs. the ✕'s queue-only removal. Reddened so the destructive action
-// reads as distinct from the harmless remove-from-queue.
-const deleteFolderButtonStyles = css`
+// The single, deliberate folder-delete action (bottom of the menu, not per row):
+// trashes the current column's folder from disk after a confirm. Reddened so the
+// destructive action reads as distinct from the harmless menu rows.
+const deleteFolderRowStyles = css`
 	color: #ff8a80;
 
 	&:hover {
-		background-color: rgba(255, 138, 128, 0.2);
+		background-color: rgba(255, 138, 128, 0.15);
 	}
 `
 
@@ -175,16 +187,16 @@ const openElsewhereDotStyles = css`
 	background-color: #2a6f97;
 	border-radius: 50%;
 	flex: 0 0 auto;
-	height: 8px;
-	margin-left: auto;
-	width: 8px;
+	height: 10px;
+	width: 10px;
 `
 
 const emptyMessageStyles = css`
 	color: #aaa;
 	font-family: 'Source Sans Pro', sans-serif;
+	font-size: 20px;
 	font-weight: 300;
-	padding: 16px;
+	padding: 20px;
 `
 
 // Visually separates the folder list from the column actions below it.
@@ -192,7 +204,7 @@ const dividerStyles = css`
 	background-color: #444;
 	flex: 0 0 auto;
 	height: 1px;
-	margin: 4px 0;
+	margin: 6px 0;
 `
 
 const propTypes = {
@@ -218,10 +230,20 @@ const FolderPickerPopover = ({
     setActivePaneId,
   } = useContext(WorkspaceContext)
 
-  // The queued folder pending disk deletion (the trashcan opens the confirm);
-  // null when no confirm is showing.
+  // The folder pending disk deletion (the bottom "Delete folder" action opens
+  // the confirm); null when no confirm is showing.
   const [folderPendingDelete, setFolderPendingDelete] =
     useState(null)
+
+  // This column's loaded folder, if any — the target of the "Delete folder"
+  // action and the row that gets the active highlight.
+  const currentFolder = useMemo(
+    () =>
+      queuedFolders.find(
+        (folder) => folder.id === currentFolderId,
+      ) ?? null,
+    [currentFolderId, queuedFolders],
+  )
 
   // Folder ids loaded in *other* columns, so each row can flag a folder that's
   // already open elsewhere (the current pane's folder gets the active highlight
@@ -313,15 +335,15 @@ const FolderPickerPopover = ({
     [paneId, removePane],
   )
 
-  // The trashcan only arms the confirm; the actual disk delete waits for the
-  // modal's "Yes" (see `confirmDeleteFolder`).
-  const requestDeleteFolder = useCallback(
-    (event, folder) => {
+  // Deliberate folder delete: only arms the confirm; the actual disk delete
+  // waits for the modal's "Yes" (see `confirmDeleteFolder`).
+  const openDeleteFolderConfirm = useCallback(
+    (event) => {
       event.stopPropagation()
 
-      setFolderPendingDelete(folder)
+      setFolderPendingDelete(currentFolder)
     },
-    [],
+    [currentFolder],
   )
 
   const closeDeleteFolderModal = useCallback(() => {
@@ -329,7 +351,7 @@ const FolderPickerPopover = ({
   }, [])
 
   // Trash the folder from disk, then dismiss the modal. `deleteFolder` also
-  // dequeues it and auto-loads the next ready folder into any emptied pane, so
+  // dequeues it and auto-loads the next ready folder into the emptied column, so
   // the menu can stay open over the refreshed queue.
   const confirmDeleteFolder = useCallback(() => {
     if (!folderPendingDelete) {
@@ -390,21 +412,6 @@ const FolderPickerPopover = ({
                 </button>
 
                 <button
-                  aria-label={`Delete ${name} from disk`}
-                  css={css`
-										${removeFromQueueButtonStyles}
-										${deleteFolderButtonStyles}
-									`}
-                  onClick={(event) => {
-                    requestDeleteFolder(event, folder)
-                  }}
-                  title="Delete folder from disk"
-                  type="button"
-                >
-                  <DeleteForeverIcon />
-                </button>
-
-                <button
                   aria-label={`Remove ${name} from queue`}
                   css={removeFromQueueButtonStyles}
                   onClick={(event) => {
@@ -430,6 +437,20 @@ const FolderPickerPopover = ({
           <GridIcon />
           Gallery view
         </button>
+
+        {currentFolder && (
+          <button
+            css={css`
+							${rowStyles}
+							${deleteFolderRowStyles}
+						`}
+            onClick={openDeleteFolderConfirm}
+            type="button"
+          >
+            <DeleteForeverIcon />
+            Delete folder
+          </button>
+        )}
 
         <button
           css={rowStyles}

@@ -145,17 +145,17 @@ describe("FolderPickerPopover (per-column menu)", () => {
     expect(actions.deleteFolder).not.toHaveBeenCalled()
   })
 
-  it("deletes a queued folder from disk only after the confirm", () => {
+  it("deletes the current column's folder from disk only after the confirm", () => {
     const { actions } = renderPopover({
+      currentFolderId: "folder-1",
       queuedFolders: [
         { id: "folder-1", name: "Cats", path: "/cats" },
       ],
     })
 
-    // The trashcan arms the confirm; it doesn't delete on the first click.
-    fireEvent.click(
-      screen.getByLabelText("Delete Cats from disk"),
-    )
+    // The single, deliberate "Delete folder" action arms the confirm; it
+    // doesn't delete on the first click.
+    fireEvent.click(screen.getByText("Delete folder"))
     expect(actions.deleteFolder).not.toHaveBeenCalled()
 
     // Confirming ("Yes") trashes the folder.
@@ -164,6 +164,24 @@ describe("FolderPickerPopover (per-column menu)", () => {
     expect(actions.deleteFolder).toHaveBeenCalledWith(
       "folder-1",
     )
+  })
+
+  it("offers no folder-delete action when the column has no folder loaded", () => {
+    renderPopover({
+      currentFolderId: null,
+      queuedFolders: [
+        { id: "folder-1", name: "Cats", path: "/cats" },
+      ],
+    })
+
+    // The delete acts on the current column's folder; with none loaded there's
+    // nothing to delete, so the action is hidden (only the ✕ remove remains).
+    expect(
+      screen.queryByText("Delete folder"),
+    ).not.toBeInTheDocument()
+    expect(
+      screen.getByLabelText("Remove Cats from queue"),
+    ).toBeInTheDocument()
   })
 
   it("no longer offers a single-image delete action", () => {
