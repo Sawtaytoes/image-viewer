@@ -12,6 +12,7 @@ import FillRing from "../fileBrowser/FillRing"
 import Image from "./Image"
 import useLongPress from "./useLongPress"
 import usePointerHover from "./usePointerHover"
+import useWheelNavigation from "./useWheelNavigation"
 
 const imageViewStyles = css`
 	align-items: center;
@@ -98,6 +99,7 @@ const ImageView = ({
     setIsHoveringPreviousOverlay,
   ] = useState(false)
 
+  const rootRef = useRef()
   const navigateNextOverlayRef = useRef()
   const navigatePreviousOverlayRef = useRef()
   const centerZoneRef = useRef()
@@ -175,6 +177,13 @@ const ImageView = ({
     onProgress: onCenterHoldProgress,
   })
 
+  // Wheel ("middle mouse") up/down steps the image like the left/right zones.
+  useWheelNavigation({
+    domElementRef: rootRef,
+    goToNextImage,
+    goToPreviousImage,
+  })
+
   const navigateNextOverlayStyles = useMemo(
     () => css`
 				${navigationControlsStyles}
@@ -202,7 +211,7 @@ const ImageView = ({
   )
 
   return (
-    <div css={imageViewStyles}>
+    <div css={imageViewStyles} ref={rootRef}>
       <div css={imageStyles}>
         <Image
           fileName={imageFileName}

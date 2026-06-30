@@ -8,7 +8,6 @@ import {
   useEffect,
   useMemo,
   useRef,
-  useState,
 } from "react"
 
 import AddIcon from "../icons/AddIcon"
@@ -39,16 +38,17 @@ const hitStripStyles = css`
 `
 
 // Faint pill hinting the bar can be pulled/hovered down; only shown while the
-// bar is hidden so it doesn't sit on top of the revealed chrome.
+// bar is hidden so it doesn't sit on top of the revealed chrome. Sized up so
+// it's an obvious grab target for the drag-down-to-reveal gesture.
 const grabHandleStyles = css`
-	background-color: rgba(255, 255, 255, 0.25);
-	border-radius: 2px;
-	height: 4px;
+	background-color: rgba(255, 255, 255, 0.3);
+	border-radius: 3px;
+	height: 6px;
 	left: 50%;
 	position: absolute;
-	top: 6px;
+	top: 8px;
 	transform: translateX(-50%);
-	width: 36px;
+	width: 64px;
 `
 
 const chromeBarStyles = css`
@@ -92,18 +92,31 @@ const tabStripSlotStyles = css`
 `
 
 const propTypes = {
+  // Chrome visibility lives in `ImageViewer` so the active column can outline
+  // itself while the bar is up; this component owns every transition of it.
+  isVisible: PropTypes.bool.isRequired,
+  setIsVisible: PropTypes.func.isRequired,
   spawn: PropTypes.func.isRequired,
+  // The full-viewer element the drag-down-to-reveal gesture listens on, so the
+  // swipe can start anywhere in the top portion of the screen, not just the
+  // thin top strip.
+  viewerRef: PropTypes.shape({
+    current: PropTypes.instanceOf(Element),
+  }).isRequired,
 }
 
-const RevealableChrome = ({ spawn }) => {
+const RevealableChrome = ({
+  isVisible,
+  setIsVisible,
+  spawn,
+  viewerRef,
+}) => {
   const { addPane, clearPanes, isChromeRevealSuppressed } =
     useContext(WorkspaceContext)
 
   const { leaveImageViewer } = useContext(
     ImageViewerContext,
   )
-
-  const [isVisible, setIsVisible] = useState(true)
 
   const autoHideTimerRef = useRef()
   const hitStripRef = useRef()
@@ -114,7 +127,7 @@ const RevealableChrome = ({ spawn }) => {
     autoHideTimerRef.current = window.setTimeout(() => {
       setIsVisible(false)
     }, AUTO_HIDE_MS)
-  }, [])
+  }, [setIsVisible])
 
   const reveal = useCallback(
     (point) => {
@@ -126,14 +139,14 @@ const RevealableChrome = ({ spawn }) => {
 
       scheduleAutoHide()
     },
-    [scheduleAutoHide, spawn],
+    [scheduleAutoHide, setIsVisible, spawn],
   )
 
   const dismiss = useCallback(() => {
     window.clearTimeout(autoHideTimerRef.current)
 
     setIsVisible(false)
-  }, [])
+  }, [setIsVisible])
 
   // Mouse summon: actually moving the pointer over the top edge reveals the bar.
   // Closing a pane's gallery/menu unmounts it from above this strip, and Chromium
@@ -170,7 +183,7 @@ const RevealableChrome = ({ spawn }) => {
     window.clearTimeout(autoHideTimerRef.current)
 
     setIsVisible(true)
-  }, [])
+  }, [setIsVisible])
 
   const onReveal = useCallback(
     ({ x }) => {
@@ -179,8 +192,14 @@ const RevealableChrome = ({ spawn }) => {
     [reveal],
   )
 
+  // Touch summon: a downward drag that starts anywhere in the top ~40% of the
+  // viewer reveals the bar (an upward drag dismisses it). Listening on the whole
+  // viewer — not just the thin top strip — makes the queue far easier to pull up
+  // by touch. Gestures that start inside a pane's gallery/menu are ignored so
+  // they don't fight that overlay's own scrolling/taps (see `useEdgeSwipe`).
   useEdgeSwipe({
-    domElementRef: hitStripRef,
+    domElementRef: viewerRef,
+    edgeRatio: 0.4,
     onDismiss: dismiss,
     onReveal,
   })

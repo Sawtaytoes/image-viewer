@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react"
+import { useCallback, useEffect, useState } from "react"
 import { from } from "rxjs"
 
 import useDirectories from "./useDirectories"
@@ -22,7 +22,20 @@ const useFolderListing = (folderPath) => {
     Boolean(folderPath),
   )
 
+  // Bumped to force a re-read of the same folder after the listing changes on
+  // disk (e.g. an image is deleted from a pane) — `folderPath` alone wouldn't
+  // change, so the effect needs another dependency to re-run.
+  const [refreshToken, setRefreshToken] = useState(0)
+
+  const refreshListing = useCallback(() => {
+    setRefreshToken((token) => token + 1)
+  }, [])
+
   useEffect(() => {
+    // `refreshListing` bumps this purely to re-run the read for the same
+    // folder; referencing it here is what ties the effect to that trigger.
+    void refreshToken
+
     if (!folderPath) {
       setDirectoryContents(initialDirectoryContents)
       setIsLoading(false)
@@ -52,7 +65,7 @@ const useFolderListing = (folderPath) => {
     return () => {
       subscription.unsubscribe()
     }
-  }, [folderPath])
+  }, [folderPath, refreshToken])
 
   const directories = useDirectories(
     directoryContents,
@@ -68,6 +81,7 @@ const useFolderListing = (folderPath) => {
     directories,
     imageFiles,
     isLoading,
+    refreshListing,
   }
 }
 

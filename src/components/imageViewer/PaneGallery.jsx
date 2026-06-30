@@ -223,6 +223,10 @@ const actionButtonContentStyles = css`
 const initialSelectedFolderPaths = new Set()
 
 const propTypes = {
+  // Path of the image the owning column is currently showing, so the tile for
+  // it can be outlined while browsing the folder it lives in. Null when the
+  // column has no image loaded.
+  currentImagePath: PropTypes.string,
   // Where to start browsing (the column's current folder, or a drive root).
   folderPath: PropTypes.string.isRequired,
   onClose: PropTypes.func.isRequired,
@@ -235,6 +239,7 @@ const propTypes = {
 // overlay. Browse folders (tap to drill in, up-button to climb), tap an image
 // to jump the column to it, or long-press folders to queue several at once.
 const PaneGallery = ({
+  currentImagePath,
   folderPath,
   onClose,
   onOpenImage,
@@ -421,7 +426,7 @@ const PaneGallery = ({
     <MultiSelectContext.Provider
       value={multiSelectProviderValue}
     >
-      <div css={galleryStyles}>
+      <div css={galleryStyles} data-viewer-overlay>
         <div css={headerStyles}>
           <button
             css={iconButtonStyles}
@@ -486,6 +491,9 @@ const PaneGallery = ({
                       <PaneGalleryImageTile
                         fileName={entry.name}
                         filePath={entry.path}
+                        isCurrent={
+                          entry.path === currentImagePath
+                        }
                         key={entry.path}
                         onOpen={openImage}
                       />
@@ -508,6 +516,7 @@ const PaneGallery = ({
                   <PaneGalleryImageTile
                     fileName={name}
                     filePath={path}
+                    isCurrent={path === currentImagePath}
                     key={path}
                     onOpen={openImage}
                   />

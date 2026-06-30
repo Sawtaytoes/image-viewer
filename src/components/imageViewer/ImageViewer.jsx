@@ -1,6 +1,12 @@
 import { css, keyframes } from "@emotion/react"
 import PropTypes from "prop-types"
-import { memo, useCallback, useContext } from "react"
+import {
+  memo,
+  useCallback,
+  useContext,
+  useRef,
+  useState,
+} from "react"
 
 import WorkspaceContext from "../workspace/WorkspaceContext"
 import ImageView from "./ImageView"
@@ -63,8 +69,15 @@ const tapFeedbackLayerStyles = css`
 	z-index: 5;
 `
 
+// Same blue inset ring the panes use, applied to the legacy single-image
+// column only while the queue bar is revealed (see `Pane`'s `activePaneStyles`).
+const activeLegacyColumnStyles = css`
+	box-shadow: inset 0 0 0 3px #2a6f97;
+`
+
 const legacyColumnPropTypes = {
   isActive: PropTypes.bool.isRequired,
+  isChromeRevealed: PropTypes.bool.isRequired,
   spawn: PropTypes.func.isRequired,
 }
 
@@ -72,7 +85,11 @@ const legacyColumnPropTypes = {
 // one column alongside any panes. Its center-tap still closes (`leaveImageViewer`)
 // — unlike a pane, there's no folder to swap, so the "control this column" menu
 // would only offer close anyway.
-const LegacyImageColumn = ({ isActive, spawn }) => {
+const LegacyImageColumn = ({
+  isActive,
+  isChromeRevealed,
+  spawn,
+}) => {
   const { imageFileName, imageFilePath, leaveImageViewer } =
     useContext(ImageViewerContext)
 
@@ -108,7 +125,14 @@ const LegacyImageColumn = ({ isActive, spawn }) => {
   })
 
   return (
-    <div css={legacyColumnStyles}>
+    <div
+      css={[
+        legacyColumnStyles,
+        isActive &&
+          isChromeRevealed &&
+          activeLegacyColumnStyles,
+      ]}
+    >
       <ImageView
         goToNextImage={goToNextImage}
         goToPreviousImage={goToPreviousImage}
@@ -133,6 +157,15 @@ const ImageViewer = () => {
 
   const { feedback, remove, spawn } = useTapFeedback()
 
+  // Lifted out of RevealableChrome so the active column can outline itself only
+  // while the queue bar is showing (the bar manages every transition; this is
+  // just the shared source of truth). The viewer root is the swipe surface for
+  // the drag-down-to-reveal gesture.
+  const [isChromeVisible, setIsChromeVisible] =
+    useState(true)
+
+  const viewerRef = useRef()
+
   const isOpen = panes.length > 0 || Boolean(imageFilePath)
 
   if (!isOpen) {
@@ -146,15 +179,20 @@ const ImageViewer = () => {
     panes.length === 0 && Boolean(imageFilePath)
 
   return (
-    <div css={imageViewerStyles}>
+    <div css={imageViewerStyles} ref={viewerRef}>
       <div css={columnsRowStyles}>
         {hasLegacyColumn && (
-          <LegacyImageColumn isActive spawn={spawn} />
+          <LegacyImageColumn
+            isActive
+            isChromeRevealed={isChromeVisible}
+            spawn={spawn}
+          />
         )}
 
         {panes.map((pane) => (
           <Pane
             isActive={pane.id === activePaneId}
+            isChromeRevealed={isChromeVisible}
             key={pane.id}
             pane={pane}
             spawn={spawn}
@@ -162,7 +200,12 @@ const ImageViewer = () => {
         ))}
       </div>
 
-      <RevealableChrome spawn={spawn} />
+      <RevealableChrome
+        isVisible={isChromeVisible}
+        setIsVisible={setIsChromeVisible}
+        spawn={spawn}
+        viewerRef={viewerRef}
+      />
 
       <div css={tapFeedbackLayerStyles}>
         {feedback.map((item) => (

@@ -12,6 +12,7 @@ const PANE_ID = "pane-1"
 
 const renderPopover = ({
   currentFolderId = null,
+  panes = [],
   queuedFolders = [],
 } = {}) => {
   const actions = {
@@ -25,7 +26,7 @@ const renderPopover = ({
 
   render(
     <WorkspaceContext.Provider
-      value={{ ...actions, queuedFolders }}
+      value={{ ...actions, panes, queuedFolders }}
     >
       <FolderPickerPopover
         currentFolderId={currentFolderId}
@@ -85,6 +86,39 @@ describe("FolderPickerPopover (per-column menu)", () => {
     expect(
       screen.getByText("Close column"),
     ).toBeInTheDocument()
+  })
+
+  it("flags a queued folder that's open in another column", () => {
+    renderPopover({
+      currentFolderId: "folder-1",
+      panes: [
+        { folderId: "folder-1", id: PANE_ID },
+        { folderId: "folder-2", id: "pane-2" },
+      ],
+      queuedFolders: [
+        { id: "folder-1", name: "Cats" },
+        { id: "folder-2", name: "Dogs" },
+        { id: "folder-3", name: "Birds" },
+      ],
+    })
+
+    // Open elsewhere → flagged. The current pane's folder and an unopened
+    // folder are not.
+    expect(
+      screen.getByTitle(
+        "Dogs — already open in another column",
+      ),
+    ).toBeInTheDocument()
+    expect(
+      screen.queryByTitle(
+        "Cats — already open in another column",
+      ),
+    ).not.toBeInTheDocument()
+    expect(
+      screen.queryByTitle(
+        "Birds — already open in another column",
+      ),
+    ).not.toBeInTheDocument()
   })
 
   it("closes on Escape", () => {

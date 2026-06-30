@@ -56,8 +56,17 @@ const elevatedPaneStyles = css`
 	z-index: 2;
 `
 
+// Shown only while the top queue bar is revealed, so the user can see which
+// column a queue-tab tap (or the `+`) will load into. Hidden again the moment
+// the bar auto-hides — an always-on outline read as a glitch.
+const activePaneStyles = css`
+	box-shadow: inset 0 0 0 3px #2a6f97;
+`
+
 const propTypes = {
   isActive: PropTypes.bool.isRequired,
+  // True while the top queue/chrome bar is revealed; gates the active outline.
+  isChromeRevealed: PropTypes.bool.isRequired,
   pane: PropTypes.shape({
     currentIndex: PropTypes.number.isRequired,
     folderId: PropTypes.string,
@@ -66,7 +75,12 @@ const propTypes = {
   spawn: PropTypes.func.isRequired,
 }
 
-const Pane = ({ isActive, pane, spawn }) => {
+const Pane = ({
+  isActive,
+  isChromeRevealed,
+  pane,
+  spawn,
+}) => {
   const {
     assignFolderPathToPane,
     clearPanes,
@@ -88,7 +102,9 @@ const Pane = ({ isActive, pane, spawn }) => {
     ({ id }) => id === pane.folderId,
   )
 
-  const { imageFiles } = useFolderListing(folder?.path)
+  const { imageFiles, refreshListing } = useFolderListing(
+    folder?.path,
+  )
 
   const setCurrentIndex = useCallback(
     (index) => {
@@ -115,7 +131,9 @@ const Pane = ({ isActive, pane, spawn }) => {
   })
 
   // Center-tap means "control this column": select it and open its menu (the
-  // Kavita-style per-column control). Closing the column is a menu action now.
+  // Kavita-style per-column control) — the modal for assigning a queued folder,
+  // opening the gallery, deleting, or closing the column. A center-hold instead
+  // jumps straight to the gallery (see `openGallery`).
   const openMenu = useCallback(
     (point) => {
       if (point) {
@@ -137,9 +155,9 @@ const Pane = ({ isActive, pane, spawn }) => {
     setIsMenuOpen(false)
   }, [])
 
-  // "Gallery view" from the menu → turn this column into a browsable gallery,
-  // starting at its current folder (or a drive root when empty). Stays in-pane,
-  // so the side-by-side layout is preserved.
+  // "Gallery view" (from the menu or a center-hold) → turn this column into a
+  // browsable gallery, starting at its current folder (or a drive root when
+  // empty). Stays in-pane, so the side-by-side layout is preserved.
   const openGallery = useCallback(() => {
     setIsMenuOpen(false)
 
@@ -203,16 +221,36 @@ const Pane = ({ isActive, pane, spawn }) => {
     ? imageFiles[currentIndex]
     : undefined
 
+  // Trash the column's current image (OS recycle bin, like the file browser),
+  // then re-read the folder so the now-shorter listing paints. `currentIndex`
+  // is clamped against the new length on the next render, so the next image
+  // slides into view without a manual index fixup.
+  const deleteCurrentImage = useCallback(() => {
+    if (!currentImage) {
+      return Promise.resolve()
+    }
+
+    return window.api
+      .deleteFilePath({
+        filePath: currentImage.path,
+        isDirectory: false,
+      })
+      .then(() => {
+        refreshListing()
+      })
+  }, [currentImage, refreshListing])
+
   return (
     <div
-      css={
-        isElevated
-          ? [paneStyles, elevatedPaneStyles]
-          : paneStyles
-      }
+      css={[
+        paneStyles,
+        isElevated && elevatedPaneStyles,
+        isActive && isChromeRevealed && activePaneStyles,
+      ]}
     >
       {isGalleryOpen ? (
         <PaneGallery
+          currentImagePath={currentImage?.path ?? null}
           folderPath={galleryBrowsePath}
           onClose={closeGallery}
           onOpenImage={openImageFromGallery}
@@ -226,8 +264,8 @@ const Pane = ({ isActive, pane, spawn }) => {
             imageFilePath={currentImage.path}
             isAtBeginning={isAtBeginning}
             isAtEnd={isAtEnd}
-            onCenterHold={openMenu}
-            onCenterTap={openGallery}
+            onCenterHold={openGallery}
+            onCenterTap={openMenu}
           />
         )
       ) : (
@@ -238,6 +276,9 @@ const Pane = ({ isActive, pane, spawn }) => {
         <FolderPickerPopover
           currentFolderId={pane.folderId}
           onClose={closeMenu}
+          onDeleteImage={
+            currentImage ? deleteCurrentImage : undefined
+          }
           onOpenGallery={openGallery}
           paneId={pane.id}
         />

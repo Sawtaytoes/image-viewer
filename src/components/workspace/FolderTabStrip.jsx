@@ -47,18 +47,21 @@ const clearQueueButtonStyles = css`
 	}
 `
 
+// Sized up from the original compact chip: the queue auto-hides, so when it is
+// up the tabs need to be a comfortable touch target rather than a tiny pill.
 const tabStyles = css`
 	align-items: center;
 	background-color: #555;
-	border-radius: 5px;
+	border-radius: 6px;
 	color: #fafafa;
 	cursor: pointer;
 	display: inline-flex;
 	flex: 0 0 auto;
 	font-family: 'Source Sans Pro', sans-serif;
+	font-size: 18px;
 	font-weight: 300;
-	gap: 4px;
-	padding: 4px 4px 4px 10px;
+	gap: 6px;
+	padding: 8px 8px 8px 14px;
 	user-select: none;
 `
 
@@ -80,10 +83,10 @@ const closeButtonStyles = css`
 	color: inherit;
 	cursor: pointer;
 	display: inline-flex;
-	height: 24px;
+	height: 30px;
 	justify-content: center;
 	padding: 0;
-	width: 24px;
+	width: 30px;
 
 	&:hover {
 		background-color: rgba(255, 255, 255, 0.2);

@@ -4,12 +4,19 @@ const noop = () => {}
 
 // Pointer hook (same `usePointerHover` idiom: callbacks in a ref, listeners on
 // `domElementRef`, full teardown). A downward drag that *starts within the top
-// edge strip* reveals; an upward drag of similar magnitude dismisses. Touch
+// edge region* reveals; an upward drag of similar magnitude dismisses. Touch
 // gets implicit pointer capture, so the move keeps reporting after the finger
-// leaves the thin strip; `pointerout` is intentionally not an end event here.
+// leaves that region; `pointerout` is intentionally not an end event here.
+//
+// The edge region is either a fixed `edgePx` from the top or, when `edgeRatio`
+// is given, that fraction of the viewport height (resolved at press time so it
+// tracks window resizes). A gesture that begins inside an element marked
+// `data-viewer-overlay` (a pane's gallery/menu) is ignored, so the broad
+// drag-down surface never steals that overlay's own scrolling and taps.
 const useEdgeSwipe = ({
   domElementRef,
   edgePx = 32,
+  edgeRatio = null,
   thresholdPx = 60,
   onDismiss = noop,
   onProgress = noop,
@@ -19,6 +26,7 @@ const useEdgeSwipe = ({
 
   optionsRef.current = {
     edgePx,
+    edgeRatio,
     onDismiss,
     onProgress,
     onReveal,
@@ -44,10 +52,23 @@ const useEdgeSwipe = ({
         return
       }
 
+      // A drag starting inside a pane's gallery/menu belongs to that overlay,
+      // not to the chrome reveal — leave it disarmed so the overlay keeps its
+      // own gestures.
+      if (event.target?.closest?.("[data-viewer-overlay]")) {
+        return
+      }
+
+      const { edgePx, edgeRatio } = optionsRef.current
+
+      const edge =
+        edgeRatio === null
+          ? edgePx
+          : window.innerHeight * edgeRatio
+
       pointerId = event.pointerId
       startY = event.clientY
-      startedAtEdge =
-        event.clientY <= optionsRef.current.edgePx
+      startedAtEdge = event.clientY <= edge
       isResolved = false
     }
 
