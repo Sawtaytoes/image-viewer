@@ -11,7 +11,7 @@
 - **Owner-observed:** packaged app on Windows 11, `G:\Pictures`. Folders list (fast!), every image tile
   is blank with a stuck thin white progress bar.
 - **Context:** written right after the migration by the agent who did it, before context was lost.
-  Cross-refs: [../known-issues.md](../known-issues.md), [../research/0002-electron-security-model.md](../research/0002-electron-security-model.md).
+  Cross-refs: [../known-issues.md](../known-issues.md), [../decisions/2026-06-02-electron-security-contextisolation-preload.md](../decisions/2026-06-02-electron-security-contextisolation-preload.md).
 
 ## How image loading works (the data flow)
 

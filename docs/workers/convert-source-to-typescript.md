@@ -1,6 +1,6 @@
 # Convert `src/**` to TypeScript — cleanly
 
-Executes **Phase 2** of [ADR 0004](../research/0004-typescript-strategy.md) ("tooling now, source
+Executes **Phase 2** of [ADR 0004](../decisions/2026-06-02-typescript-tooling-now-convert-later.md) ("tooling now, source
 conversion later"). The tooling is already in place: `tsconfig.json` with `strict:true`,
 `allowJs:true`, `checkJs:false`; `@types/react`, `@types/react-dom`, `@types/node`,
 `typescript-eslint`; and the Vite/Forge build understands `.ts`/`.tsx`. What's missing is the source

@@ -1,6 +1,6 @@
 # Upgrade plan — Phase 1 (living runbook)
 
-> Decisions behind each step live in [`docs/research/`](research/). Status is tracked in
+> Decisions behind each step live in [`docs/decisions/`](decisions/). Status is tracked in
 > [`progress-log.md`](progress-log.md). Later phases are in [`roadmap.md`](roadmap.md).
 
 ## Goal
@@ -22,17 +22,17 @@ the secure Electron model, modern tooling, a test harness, and these docs. **No 
 
 ## Steps
 
-1. **Tooling baseline** ([0001](research/0001-build-toolchain.md), [0003](research/0003-linting-and-formatting.md), [0004](research/0004-typescript-strategy.md), [0005](research/0005-icons-and-deps.md))
+1. **Tooling baseline** ([0001](decisions/2026-06-02-build-toolchain-electron-forge-vite.md), [0003](decisions/2026-06-02-linting-biome-plus-minimal-eslint.md), [0004](decisions/2026-06-02-typescript-tooling-now-convert-later.md), [0005](decisions/2026-06-02-inline-svg-icons-drop-mui.md))
    - Rewrite `package.json` deps + scripts. Add `forge.config.ts`, `vite.{main,preload,renderer}.config.ts`,
      `forge.env.d.ts`, `tsconfig.json`, `biome.json`, `eslint.config.mjs`, `.editorconfig`.
    - Move `src/index.html` → root `index.html` with `<script type="module" src="/src/renderer.js">`.
    - Delete `webpack.*.config.js`, `webpack.rules.js`, `babel.config.js`, `.eslintrc.js`,
      `.eslintignore`, `.browserslistrc`, `nodemon.json`, `config/`, old `forge.config.js`.
-2. **Main process** `src/main.js` ([0002](research/0002-electron-security-model.md), [0006](research/0006-drive-enumeration-wmic.md))
+2. **Main process** `src/main.js` ([0002](decisions/2026-06-02-electron-security-contextisolation-preload.md), [0006](decisions/2026-06-02-drive-enumeration-no-wmic.md))
    - Secure `webPreferences`; `protocol.handle` for `safe-file-protocol`; `shell.trashItem` + `fs.rm`
      fallback for delete; pass first-window file path via `additionalArguments`; replace `wmic` drive
      enumeration with `fs.existsSync` probing + `get-windows-drives` sync IPC.
-3. **Preload** new `src/preload.js` — `contextBridge.exposeInMainWorld('api', …)` ([0002](research/0002-electron-security-model.md)).
+3. **Preload** new `src/preload.js` — `contextBridge.exposeInMainWorld('api', …)` ([0002](decisions/2026-06-02-electron-security-contextisolation-preload.md)).
 4. **Renderer** — replace every `electron`/`fs`/`path`/`process` import with `window.api`
    (`FileSystemProvider`, `ImageViewerProvider`, `Directory`, `DirectoryControls`, `FileBrowser`,
    `ImageFile`, `TitleBar`, `useImageFiles`, `reduxObservable`).

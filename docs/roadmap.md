@@ -19,14 +19,17 @@ from the original `TASKS.md` or the kickoff conversation is lost.
 
 1. **Startup speed** — "takes forever to load"; the single most important improvement. Profile cold
    start; lazy-load the image pipeline; self-host fonts; trim bundle. (`wmic` removal in Phase 1 is a
-   first down-payment — see [research/0006](research/0006-drive-enumeration-wmic.md).)
+   first down-payment — see [research/0006](decisions/2026-06-02-drive-enumeration-no-wmic.md).)
 2. **Built-in file manager / file viewer** — so the app no longer depends on Windows Explorer.
 3. **Multiple galleries at once / side-by-side views** — open more than one folder; compare.
-4. **Delete UX** — the delete *path* is fixed in Phase 1 (trash via `shell.trashItem`). Still to do:
-   a real "Are you sure?" confirmation wired to keyboard (`[Enter]`=yes/`[Esc]`=no) and **guarding the
-   stray `[Delete]` key** the owner hits by accident.
+4. **Delete UX** — ✅ **Done.** Trash via `shell.trashItem` (Phase 1) + a real "Are you sure?"
+   `ConfirmationModal` wired to the keyboard (`[Enter]`=yes / `[Esc]`/`[Backspace]`=no). The modal is
+   itself the guard against a stray `[Delete]` key — `[Delete]` opens the prompt rather than deleting.
+   Live in the **file browser** and (branch `feat/viewer-delete`) the **image viewer**: `[Delete]` on the
+   active column trashes the current image, advances to the next (or reverts the column to empty when it
+   was the folder's last image); the legacy single-image view deletes and drops back to the gallery.
 5. **Full TypeScript conversion** of `src/**` (Phase 1 only sets up TS tooling — see
-   [research/0004](research/0004-typescript-strategy.md)).
+   [research/0004](decisions/2026-06-02-typescript-tooling-now-convert-later.md)).
 
 ## Carried over from the original `TASKS.md`
 
@@ -37,7 +40,7 @@ from the original `TASKS.md` or the kickoff conversation is lost.
 - Custom scrollbar overlay to stop shaky resize when the scrollbar appears/disappears.
 - Fix second-instance white-screen / multi-window-not-loading (most visible in the packaged exe).
 - Keyboard-state provider so each component can enable/disable keys based on screen state.
-- Load fonts locally instead of from Google Fonts (faster multi-instance startup).
+- Load fonts locally instead of from Google Fonts (faster multi-instance startup). **Agreed direction, now locked** — self-host the fonts (docs/decisions/2026-06-30-self-host-fonts-locally.md).
 - Priority levels for image loading; focused window bumps its images' priority; off-screen images
   lowest priority; throttle very-low-priority downloads; keep images cached until a max size is hit.
 
@@ -62,7 +65,7 @@ from the original `TASKS.md` or the kickoff conversation is lost.
 - Editable URL via `history` (possibly React-Router-DOM).
 - Hover/click highlight on controls; fix stuck hover state.
 - `[Delete]` to delete with a key-driven confirmation modal (see Delete UX above).
-- Switch back to `<canvas>` rendering for higher quality.
+- Switch back to `<canvas>` rendering for higher quality. **Superseded** — `<img>` was deliberately chosen for performance; do not revert without the owner re-deciding (docs/decisions/2020-11-25-render-images-as-img-not-canvas.md).
 
 ### Future / maybe
 - Cache directory listings (parent + subdirs), SWR-style.

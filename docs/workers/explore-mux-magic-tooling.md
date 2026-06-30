@@ -2,7 +2,7 @@
 
 - **Agent type:** Explore (read-only)
 - **Run:** 2026-06-02, Phase 1 planning
-- **Feeds:** [research/0003-linting-and-formatting.md](../research/0003-linting-and-formatting.md)
+- **Feeds:** [decisions/2026-06-02-linting-biome-plus-minimal-eslint.md](../decisions/2026-06-02-linting-biome-plus-minimal-eslint.md)
 
 ## Prompt
 

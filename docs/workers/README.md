@@ -4,10 +4,10 @@ Prompts handed to sub-agents during this project, kept so the research is reprod
 delegated work follows the same shape. One file per worker task.
 
 - [explore-mux-magic-tooling.md](explore-mux-magic-tooling.md) — extract the Biome/ESLint/TS setup
-  from the sibling `mux-magic` repo to copy here (feeds [0003](../research/0003-linting-and-formatting.md)).
+  from the sibling `mux-magic` repo to copy here (feeds [0003](../decisions/2026-06-02-linting-biome-plus-minimal-eslint.md)).
 - [explore-renderer-api-surface.md](explore-renderer-api-surface.md) — exhaustively inventory the
   renderer's Node/Electron API usage to design the preload bridge (feeds
-  [0002](../research/0002-electron-security-model.md)).
+  [0002](../decisions/2026-06-02-electron-security-contextisolation-preload.md)).
 
 ## Open briefs (work to be picked up later)
 
@@ -16,7 +16,7 @@ delegated work follows the same shape. One file per worker task.
 - [release-pipeline.md](release-pipeline.md) — ✅ **Done.** CI that publishes a downloadable EXE to Gitea +
   GitHub Releases on a version tag.
 - [convert-source-to-typescript.md](convert-source-to-typescript.md) — executes **Phase 2** of
-  [ADR 0004](../research/0004-typescript-strategy.md): rename `src/**/*.js` → `.ts`/`.tsx` and type it
+  [ADR 0004](../decisions/2026-06-02-typescript-tooling-now-convert-later.md): rename `src/**/*.js` → `.ts`/`.tsx` and type it
   *cleanly* — generics and correct DOM types over `any`/`as`/`unknown`, `PointerEventHandler` over
   hand-annotated events. Lower priority than the folder-queue + columns work below.
 

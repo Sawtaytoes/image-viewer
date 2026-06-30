@@ -1,8 +1,16 @@
 # AGENTS.md
 
 Slim guide for working in this repo without breaking it. Deeper rationale lives in
-[`docs/`](docs/) (decisions in [`docs/research/`](docs/research/), the runbook in
+[`docs/`](docs/) (locked decisions in [`docs/decisions/`](docs/decisions/), the runbook in
 [`docs/upgrade-plan.md`](docs/upgrade-plan.md), the wishlist in [`docs/roadmap.md`](docs/roadmap.md)).
+
+> **Before you "fix", "clean up", or revert anything that looks odd, check
+> [`docs/decisions/`](docs/decisions/).** It is the paper trail of settled decisions and the things
+> the owner explicitly rejected ("no, that's wrong"). Every entry is **locked** — if a change really
+> needs to reverse one, add a new dated file that supersedes it ([`TEMPLATE.md`](docs/decisions/TEMPLATE.md));
+> do not quietly undo it. A few that bite most often: images load via `window.api.readImageData`, **not**
+> a custom protocol; render with `<img>`, **not** `<canvas>`; the packaged app is one word `ImageViewer`;
+> fonts are self-hosted locally, **not** the Google CDN.
 
 ## What this is
 
@@ -31,6 +39,7 @@ read `process`. All of that goes through the preload bridge, exposed as **`windo
 (see [`src/preload.js`](src/preload.js)).
 
 `window.api` surface:
+
 | Member | Purpose |
 | --- | --- |
 | `cliFilePath` | file/folder the window was launched with (from `--filePath=` additionalArguments) |
@@ -59,7 +68,7 @@ everything crossing `contextBridge` **plain/serializable** (map `Dirent`/`Stats`
   `net.fetch` + XHR) was removed because it was fragile on Windows paths; see
   [`docs/workers/fix-image-loading.md`](docs/workers/fix-image-loading.md).
 - **Drive list** comes from probing `A:`–`Z:` with `fs.existsSync` (NOT `wmic`, which is gone on
-  Win11 — see [`docs/research/0006`](docs/research/0006-drive-enumeration-wmic.md)).
+  Win11 — see [`drive-enumeration-no-wmic`](docs/decisions/2026-06-02-drive-enumeration-no-wmic.md)).
 - The launch file path is read from `process.argv` and passed to every window via
   `additionalArguments: ['--filePath=…']`.
 
@@ -67,7 +76,8 @@ everything crossing `contextBridge` **plain/serializable** (map `Dirent`/`Stats`
 
 - **File extensions:** JSX → **`.jsx`**, pure logic → **`.js`** (Vite 8/oxc rejects JSX in `.js`).
   Source is still JavaScript; the `.js → .ts`/`.tsx` conversion is a later phase
-  ([`docs/research/0004`](docs/research/0004-typescript-strategy.md)). Imports are extensionless.
+  ([`typescript-tooling-now-convert-later`](docs/decisions/2026-06-02-typescript-tooling-now-convert-later.md)).
+  Imports are extensionless.
 - **Formatting/linting:** Biome is primary (`biome.json`); a minimal ESLint flat config
   (`eslint.config.mjs`) adds a few `.ts/.tsx`-only rules. Run `yarn lint` before committing.
 - **Entry points** referenced by `forge.config.ts`: `src/main.js`, `src/preload.js`, and the root
@@ -77,7 +87,9 @@ everything crossing `contextBridge` **plain/serializable** (map `Dirent`/`Stats`
 
 1. Renderer importing Node/electron directly (use `window.api`).
 2. Delete-to-trash flow and the `deleteFilePath` IPC contract.
-3. The `safe-file-protocol` scheme + its privileged registration (images won't load otherwise).
+3. Image loading via `window.api.readImageData` (preload) → `Blob`. **Do NOT reintroduce the old
+   `safe-file-protocol` custom scheme** — it never delivered pixels on Windows and was deliberately
+   removed (see [`no-custom-protocol-read-image-bytes-in-preload`](docs/decisions/2026-06-03-no-custom-protocol-read-image-bytes-in-preload.md)).
 4. Passing the launch path via `additionalArguments` / reading `cliFilePath` in preload.
 5. `nodeLinker: node-modules` in `.yarnrc.yml` (PnP breaks Electron Forge packaging).
 

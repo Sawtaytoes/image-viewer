@@ -28,7 +28,7 @@
       with: { node-version: 24 }
     - run: corepack enable
     - run: yarn install --immutable
-    - run: node node_modules/electron/install.js   # Yarn 4 enableScripts caveat — see research/0008
+    - run: node node_modules/electron/install.js   # Yarn 4 enableScripts caveat — see decisions/2026-06-02-yarn4-nodelinker-node-modules
     - run: yarn make
     - run: yarn publish        # uses publisher-github; needs GITHUB_TOKEN
       env: { GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }} }
@@ -42,7 +42,7 @@
    - `POST /api/v1/repos/sawtaytoes/image-viewer/releases` (create release for the tag),
    - `POST /api/v1/repos/.../releases/{id}/assets?name=...` (attach each artifact),
      authenticated with a token that has `write:repository` (the existing `GITEA_TOKEN` works for this;
-     see [memory] / [research/0008](../research/0008-package-manager-yarn4.md)).
+     see [memory] / [research/0008](../decisions/2026-06-02-yarn4-nodelinker-node-modules.md)).
 2. Or run the same upload step from the **GitHub** workflow (cross-publish to Gitea) so only one runner
    is needed — curl the Gitea API with a `GITEA_TOKEN` secret.
 
@@ -50,7 +50,7 @@
 
 - **Yarn 4 + scripts:** CI must enable Corepack and ensure Electron's binary is fetched
   (`enableScripts: true` is set in `.yarnrc.yml`, but a belt-and-suspenders `node node_modules/electron/install.js`
-  avoids the "binary missing" issue we hit locally — see [research/0008](../research/0008-package-manager-yarn4.md)).
+  avoids the "binary missing" issue we hit locally — see [research/0008](../decisions/2026-06-02-yarn4-nodelinker-node-modules.md)).
 - **Code signing:** the Windows installer will be **unsigned** → SmartScreen "unknown publisher"
   warnings. Real signing needs a code-signing cert (paid). Acceptable for personal use; note it.
 - **Windows runner for Gitea:** Gitea Actions needs a registered runner; GitHub provides `windows-latest`

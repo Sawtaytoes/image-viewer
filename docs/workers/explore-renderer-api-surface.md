@@ -2,7 +2,7 @@
 
 - **Agent type:** Explore (read-only)
 - **Run:** 2026-06-02, Phase 1 planning
-- **Feeds:** [research/0002-electron-security-model.md](../research/0002-electron-security-model.md)
+- **Feeds:** [decisions/2026-06-02-electron-security-contextisolation-preload.md](../decisions/2026-06-02-electron-security-contextisolation-preload.md)
   (the preload bridge design)
 
 ## Prompt
@@ -31,4 +31,4 @@ Async: `fs.readdir` via RxJS `bindNodeCallback` in `FileSystemProvider.js` + `Di
 `path.*` used in those plus `TitleBar.js`, `useImageFiles.js`, `reduxObservable.js`.
 `safe-file-protocol://<path>` built in `createFileDownloadObservable.js` (browser XHR — unchanged).
 Forge Vite constants: `MAIN_WINDOW_VITE_DEV_SERVER_URL`, `MAIN_WINDOW_VITE_NAME`; preload referenced
-as `path.join(__dirname,'preload.js')`. → full mapping table in research/0002.
+as `path.join(__dirname,'preload.js')`. → full mapping table in decisions/2026-06-02-electron-security-contextisolation-preload.md.
