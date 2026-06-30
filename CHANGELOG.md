@@ -1,3 +1,32 @@
+# [2.1.0](https://github.com/Sawtaytoes/image-viewer/compare/v2.0.2...v2.1.0) (2026-06-30)
+
+
+### Bug Fixes
+
+* **build:** emit one-word ImageViewer folder and executable names ([a37af79](https://github.com/Sawtaytoes/image-viewer/commit/a37af793c9275acec9a6a88f300027cd1c8bd535))
+* **fileBrowser:** apply Source Sans Pro to sort toggle ([24ad223](https://github.com/Sawtaytoes/image-viewer/commit/24ad2238d172579282899dc97320590626b3869a))
+* **viewer:** clear stuck nav-edge hover on window blur ([aaceaa2](https://github.com/Sawtaytoes/image-viewer/commit/aaceaa25819761a94415c6372860f67156c54046))
+
+
+### Features
+
+* **fileBrowser:** lazy folder thumbnails via in-view findFirstImage ([82290fb](https://github.com/Sawtaytoes/image-viewer/commit/82290fbe51ef59d10de27f9106616e8e66d2103d))
+* **fileBrowser:** per-folder image-count badge ([81b553c](https://github.com/Sawtaytoes/image-viewer/commit/81b553caefc8312751f61ba47b653bbc7dc9ecc6))
+* **fileBrowser:** show a loading spinner while a folder lists ([bb233ff](https://github.com/Sawtaytoes/image-viewer/commit/bb233ff866b111ede616a8c355dace7764cd4c03))
+* **images:** HEIC/HEIF support via main-process JPEG transcode ([17a265f](https://github.com/Sawtaytoes/image-viewer/commit/17a265ff6a8709ab5190bf49613bfd9543a6eedd))
+* **imageViewer:** delete the current image with [Delete] + confirmation ([1a6c27d](https://github.com/Sawtaytoes/image-viewer/commit/1a6c27d46a6c1cab43258ab2861cd68499349968))
+* **imageViewer:** queue/gallery refinements + wheel nav (WIP) ([77a4e69](https://github.com/Sawtaytoes/image-viewer/commit/77a4e69ac1a542791e4a6384c67f80b777b6210a))
+* **viewer:** cross-window resume-where-I-left-off per folder ([c840dde](https://github.com/Sawtaytoes/image-viewer/commit/c840dde1fec47a23c06aff9fd67c8e4774de9706))
+* **viewer:** delete folders not images; auto-load next on empty ([b38e8f1](https://github.com/Sawtaytoes/image-viewer/commit/b38e8f18ddfcf1afa71e84b13c3388e7b056a6d5))
+* **viewer:** pre-select and scroll to the next image on gallery open ([8b2e1ee](https://github.com/Sawtaytoes/image-viewer/commit/8b2e1ee3a3c4cffa1001b9e4760b120865a6f72f))
+* **viewer:** resume position on every folder-open; auto-fill new columns ([19dbf38](https://github.com/Sawtaytoes/image-viewer/commit/19dbf382ad38ec18a6b3df9854915994fde9ca04))
+* **viewer:** scale up the per-column menu; make folder-delete deliberate ([4c519da](https://github.com/Sawtaytoes/image-viewer/commit/4c519daf0dba6ca918eb4dc9d4d43957146cf83f))
+
+
+### Reverts
+
+* **viewer:** drop next-image gallery pre-select and scroll ([a02425e](https://github.com/Sawtaytoes/image-viewer/commit/a02425e225e8106d6434216b9bdd879d6d4da322))
+
 ## [2.0.2](https://github.com/Sawtaytoes/image-viewer/compare/v2.0.1...v2.0.2) (2026-06-19)
 
 
