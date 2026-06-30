@@ -2,12 +2,19 @@
 // `readImageData` tags the bytes with one of these so the renderer can build a
 // correctly-typed Blob. Mirrors the extension list in
 // src/components/fileBrowser/useImageFiles.js — keep the two in sync.
+//
+// HEIC/HEIF are the exception: Chromium can't decode them, so main transcodes
+// them to JPEG and the renderer only ever sees `image/jpeg` for those — the
+// entries below are documentation of the source format, not a Blob type the
+// renderer uses.
 const imageMimeTypesByExtension: Record<string, string> = {
   ".apng": "image/apng",
   ".avif": "image/avif",
   ".bmp": "image/bmp",
   ".cur": "image/x-icon",
   ".gif": "image/gif",
+  ".heic": "image/heic",
+  ".heif": "image/heif",
   ".ico": "image/x-icon",
   ".jfif": "image/jpeg",
   ".jpeg": "image/jpeg",

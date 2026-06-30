@@ -11,6 +11,10 @@ const validImageExtensions = [
   ".avif",
   ".bmp",
   ".gif",
+  // HEIC/HEIF: listed here so iPhone photos appear; Chromium can't decode them,
+  // so main transcodes their bytes to JPEG in readImageData (see preload.js).
+  ".heic",
+  ".heif",
   ".ico",
   ".cur",
   ".jpg",

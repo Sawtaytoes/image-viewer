@@ -65,5 +65,37 @@ are too slow.
 
 ## Status
 
-☐ needs work — pick a decode library, wire it into `readImageData`, add the extensions, then tackle
-thumbnail performance (cache or embedded-preview extraction).
+☑ **Done** (branch `feat/heic-support`) — `.heic`/`.heif` are now listed and rendered.
+
+**What shipped**
+- Added `.heic`/`.heif` to `validImageExtensions`
+  ([useImageFiles.js](../../src/components/fileBrowser/useImageFiles.js)) and to the MIME table
+  ([imageMimeTypes.js](../../src/imageMimeTypes.js), documented as source-format only since the
+  renderer only ever sees the transcoded `image/jpeg`).
+- **Transcode in main, not preload.** `readImageData` in [preload.js](../../src/preload.js) routes only
+  `.heic`/`.heif` to a new `ipcMain.handle("readHeicAsJpeg")` in [main.js](../../src/main.js); every
+  other format stays on the fast direct-`fs` preload path. The handler reads the file, decodes via
+  `heic-convert` (libheif), and returns `{ data: ArrayBuffer, mimeType: "image/jpeg" }` — so the
+  renderer pipeline (`createFileDownloadObservable` → `Blob`) needed **zero** changes.
+- **Library: `heic-convert`** (pure-JS `libheif-js` WASM + `jpeg-js`). The `wasm-bundle` variant
+  `heic-decode` uses inlines its WASM as base64 — no sidecar `.wasm` — so it bundles cleanly.
+- **Bundled, not externalized.** Forge's Vite plugin packs only `.vite/build` into `app.asar` and drops
+  `node_modules`, so an external dep would be missing at runtime. `heic-convert` is therefore bundled;
+  the lazy `import("heic-convert")` code-splits into a `heic-convert-*.js` chunk that ships inside the
+  asar (verified). It's loaded lazily so it never touches startup. See
+  [vite.main.config.ts](../../vite.main.config.ts) for why it's *not* in `rollupOptions.external`.
+- **Caching:** decoded JPEGs are memoized in main by `path+mtime` with a 64-entry LRU bound, so
+  re-browsing a folder of HEICs doesn't re-run the slow WASM decode.
+
+**Verified:** `yarn typecheck` / `yarn lint` / `yarn test:run` (74) all green; `yarn package` builds and
+the asar contains main + the libheif chunk + the `readHeicAsJpeg` handler. A **real** 2.9 MB iPhone-style
+HEIC decoded to a valid JPEG both under plain Node (~2.6 s) and under Electron's own runtime (~1.3 s).
+
+**Still needs a human pass + follow-ups:**
+- Hands-on confirm in the GUI: a folder of `.heic` shows tiles and opens in single + columns view, and
+  **EXIF orientation** is correct (portrait iPhone shots not sideways — libheif applies the HEIF
+  `irot`/`imir` transforms, but verify on a real portrait photo).
+- **Thumbnail performance:** ~1.3 s/image on the main thread, serialized by the download queue. Fine for
+  opening one image; a large HEIC folder fills its grid slowly on first browse (cached afterward).
+  Future: extract the embedded JPEG preview for tiles, and/or move the decode off the main thread
+  (`utilityProcess`/worker) so back-to-back decodes don't block other main-process IPC.

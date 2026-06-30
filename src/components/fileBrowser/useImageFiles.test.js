@@ -46,4 +46,19 @@ describe("useImageFiles", () => {
 
     expect(result.current).toHaveLength(1)
   })
+
+  it("includes HEIC/HEIF photos (transcoded later, but listed here)", () => {
+    const directoryContents = [
+      entry("iphone.heic", true),
+      entry("iphone.HEIF", true),
+    ]
+
+    const { result } = renderHook(() =>
+      useImageFiles(directoryContents),
+    )
+
+    expect(
+      result.current.map((image) => image.name),
+    ).toEqual(["iphone.heic", "iphone.HEIF"])
+  })
 })
