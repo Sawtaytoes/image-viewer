@@ -1,3 +1,10 @@
+## [2.1.1](https://github.com/Sawtaytoes/image-viewer/compare/v2.1.0...v2.1.1) (2026-07-04)
+
+
+### Bug Fixes
+
+* **release:** build Windows installers as a workflow step so releases get assets ([b924151](https://github.com/Sawtaytoes/image-viewer/commit/b92415125fadf5ad9e6c9482ab2e87c792745b15))
+
 # [2.1.0](https://github.com/Sawtaytoes/image-viewer/compare/v2.0.2...v2.1.0) (2026-06-30)
 
 
