@@ -16,12 +16,6 @@
       }
     ],
     [
-      "@semantic-release/exec",
-      {
-        "prepareCmd": "yarn make"
-      }
-    ],
-    [
       "@semantic-release/github",
       {
         "assets": [

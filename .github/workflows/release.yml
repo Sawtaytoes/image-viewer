@@ -20,7 +20,7 @@ jobs:
     runs-on: windows-latest
 
     steps:
-      - uses: actions/checkout@v6
+      - uses: actions/checkout@v7
         with:
           # semantic-release needs full history + tags to compute the next version.
           fetch-depth: 0
@@ -41,7 +41,57 @@ jobs:
       - name: Ensure Electron binary
         run: node node_modules/electron/install.js
 
-      - name: Release
+      # `yarn make` is unreliable when invoked from inside semantic-release's
+      # @semantic-release/exec prepare step — it dies partway through packaging
+      # and never builds the installers, so the release published with no assets.
+      # Building it as a first-class workflow step (below) is reliable, so we
+      # determine the next version here, stamp it in, build, then let
+      # semantic-release publish the already-built out/make artifacts.
+      - name: Determine next version
+        id: version
+        shell: bash
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          set -o pipefail
+          yarn semantic-release --dry-run 2>&1 | tee sr-dry.log
+          next="$(grep -oiE 'next release version is [0-9]+\.[0-9]+\.[0-9]+' sr-dry.log \
+                  | grep -oE '[0-9]+\.[0-9]+\.[0-9]+' | head -n1)"
+          if [ -z "$next" ]; then
+            echo "No release is due for these commits."
+            echo "release=false" >> "$GITHUB_OUTPUT"
+          else
+            echo "Next version: $next"
+            echo "release=true" >> "$GITHUB_OUTPUT"
+            echo "version=$next" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: Stamp version into package.json
+        if: steps.version.outputs.release == 'true'
+        run: npm version ${{ steps.version.outputs.version }} --no-git-tag-version --allow-same-version
+
+      - name: Build Windows distributables
+        if: steps.version.outputs.release == 'true'
+        run: yarn make
+
+      # Guard: never publish an empty release again. Fail loudly if make
+      # produced no installers.
+      - name: Verify artifacts exist
+        if: steps.version.outputs.release == 'true'
+        shell: bash
+        run: |
+          shopt -s nullglob
+          files=(out/make/squirrel.windows/x64/*Setup.exe out/make/zip/win32/x64/*.zip)
+          if [ ${#files[@]} -eq 0 ]; then
+            echo "::error::No installers were produced in out/make — failing so we don't publish an empty release."
+            find out -type f 2>/dev/null || true
+            exit 1
+          fi
+          echo "Built artifacts:"
+          printf '  %s\n' "${files[@]}"
+
+      - name: Publish release (uploads pre-built assets)
+        if: steps.version.outputs.release == 'true'
         run: yarn semantic-release
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
