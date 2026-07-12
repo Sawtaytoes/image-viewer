@@ -194,6 +194,15 @@ const createWindow = ({
       mainWindow.setFullScreen(true)
     } else if (inheritMaximized) {
       mainWindow.maximize()
+    } else if (targetDisplay) {
+      // Re-assert the target monitor's work area now that the window is realized
+      // on it. Same mixed-DPI fix as the identify overlay: the constructor bounds
+      // are mapped in the wrong DIP space when the target display's scale factor
+      // differs from the primary's, so the window opens too small (only part of
+      // the screen); a second `setBounds` once Electron knows the monitor fills it.
+      const { x, y, width, height } = targetDisplay.workArea
+
+      mainWindow.setBounds({ height, width, x, y })
     }
 
     mainWindow.show()

@@ -145,7 +145,10 @@ const removeFromQueueButtonStyles = css`
 	background: transparent;
 	border: 0;
 	border-radius: 50%;
-	color: inherit;
+	/* Explicit light color: the row container has no color of its own, so
+	   inheriting left the X at the document default (near-black) and invisible on
+	   the dark menu. */
+	color: #d6d6d6;
 	cursor: pointer;
 	display: inline-flex;
 	flex: 0 0 auto;
@@ -156,6 +159,7 @@ const removeFromQueueButtonStyles = css`
 
 	&:hover {
 		background-color: rgba(255, 255, 255, 0.2);
+		color: #ffffff;
 	}
 `
 
@@ -171,8 +175,10 @@ const deleteFolderRowStyles = css`
 `
 
 // The pane's current folder, called out so the user can see which one is loaded.
+// A brighter blue than the app's accent so the selected row is obvious at a
+// glance rather than a dull, easy-to-miss fill.
 const activeRowStyles = css`
-	background-color: #2a6f97;
+	background-color: #3d9be0;
 `
 
 // A folder already loaded in a *different* column. Not the full active-row
