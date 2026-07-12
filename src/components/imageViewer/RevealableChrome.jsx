@@ -8,12 +8,15 @@ import {
   useEffect,
   useMemo,
   useRef,
+  useState,
 } from "react"
 
 import AddIcon from "../icons/AddIcon"
 import ArrowBackIcon from "../icons/ArrowBackIcon"
+import NewWindowIcon from "../icons/NewWindowIcon"
 import FolderTabStrip from "../workspace/FolderTabStrip"
 import WorkspaceContext from "../workspace/WorkspaceContext"
+import DisplayPickerPopover from "./DisplayPickerPopover"
 import ImageViewerContext from "./ImageViewerContext"
 import useEdgeSwipe from "./useEdgeSwipe"
 
@@ -115,11 +118,15 @@ const RevealableChrome = ({
     addPaneAndFill,
     clearPanes,
     isChromeRevealSuppressed,
+    suppressChromeReveal,
   } = useContext(WorkspaceContext)
 
   const { leaveImageViewer } = useContext(
     ImageViewerContext,
   )
+
+  const [isDisplayMenuOpen, setIsDisplayMenuOpen] =
+    useState(false)
 
   const autoHideTimerRef = useRef()
   const hitStripRef = useRef()
@@ -228,6 +235,24 @@ const RevealableChrome = ({
     reveal()
   }, [addPaneAndFill, reveal])
 
+  const openDisplayMenu = useCallback(() => {
+    // Keep the bar up while the menu is open (the fullscreen overlay sits above
+    // it anyway) so it's still there when the menu closes.
+    window.clearTimeout(autoHideTimerRef.current)
+
+    setIsDisplayMenuOpen(true)
+  }, [])
+
+  const closeDisplayMenu = useCallback(() => {
+    setIsDisplayMenuOpen(false)
+
+    // Same hover-reveal suppression the pane menus use: closing the overlay from
+    // under a stationary cursor would otherwise re-pop the bar.
+    suppressChromeReveal()
+
+    scheduleAutoHide()
+  }, [scheduleAutoHide, suppressChromeReveal])
+
   const barStyles = useMemo(
     () => css`
 			${chromeBarStyles}
@@ -273,7 +298,21 @@ const RevealableChrome = ({
         >
           <AddIcon />
         </button>
+
+        <button
+          aria-label="Spawn window on another display"
+          css={chromeButtonStyles}
+          onClick={openDisplayMenu}
+          title="Open a new window on another display"
+          type="button"
+        >
+          <NewWindowIcon />
+        </button>
       </div>
+
+      {isDisplayMenuOpen && (
+        <DisplayPickerPopover onClose={closeDisplayMenu} />
+      )}
     </Fragment>
   )
 }

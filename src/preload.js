@@ -23,6 +23,14 @@ import getImageMimeType, {
 // `--filePath`). Off by default; the real-disk paths below are used.
 const isFakeFileSystem = process.argv.includes("--fakeFs")
 
+// A window spawned onto another display (from the "Spawn window" menu) carries
+// this flag so the renderer boots straight into the viewer with one column
+// auto-filled from the shared queue, instead of the file browser. Same launch
+// channel as `--filePath`/`--fakeFs`.
+const isSpawnedViewer = process.argv.includes(
+  "--spawnedViewer",
+)
+
 const fakeFileSystem = isFakeFileSystem
   ? createFakeFileSystem({ path })
   : null
@@ -296,6 +304,66 @@ contextBridge.exposeInMainWorld("api", {
     : countFolderImages,
   createNewWindow: (payload) =>
     ipcRenderer.send("createNewWindow", payload),
+  // Connected displays for the "spawn window on another screen" menu. Always via
+  // IPC (even in fake mode — it touches no disk), so the menu reflects the real
+  // monitors and spawned windows land on them.
+  getDisplays: () => ipcRenderer.invoke("get-displays"),
+  // Show/hide the transient "which monitor is this?" overlay while hovering a row
+  // in the spawn-window menu.
+  identifyDisplay: (displayId) =>
+    ipcRenderer.send("identify-display:show", displayId),
+  stopIdentifyDisplay: () =>
+    ipcRenderer.send("identify-display:hide"),
+  // Set on a window spawned onto another display: boot into the viewer with one
+  // auto-filled column rather than the file browser.
+  isSpawnedViewer,
+  // Which folder paths are open in *other* windows, so a fresh column/window
+  // auto-fills the next folder not already open anywhere. `get` hydrates on mount,
+  // `set` reports this window's open folders, `onChanged` tracks the others.
+  openFolders: {
+    get: () => ipcRenderer.invoke("get-open-folders"),
+    onChanged: (callback) => {
+      const listener = (_event, paths) => callback(paths)
+
+      ipcRenderer.on("openFolders:changed", listener)
+
+      return () => {
+        ipcRenderer.removeListener(
+          "openFolders:changed",
+          listener,
+        )
+      }
+    },
+    set: (paths) =>
+      ipcRenderer.send("set-open-folders", paths),
+  },
+  // The shared, cross-window folder queue (lives in main; see main.js). Mutations
+  // go to main and come back to every window via `onChanged`. Not branched on the
+  // fake FS — the queue holds only folder identity and uses no disk, so fake and
+  // real windows can even share one queue in `start:fake`.
+  queue: {
+    add: (folder) =>
+      ipcRenderer.invoke("queue:add", folder),
+    addMany: (folders) =>
+      ipcRenderer.invoke("queue:addMany", folders),
+    clear: () => ipcRenderer.send("queue:clear"),
+    get: () => ipcRenderer.invoke("queue:get"),
+    onChanged: (callback) => {
+      const listener = (_event, folders) =>
+        callback(folders)
+
+      ipcRenderer.on("queue:changed", listener)
+
+      return () => {
+        ipcRenderer.removeListener(
+          "queue:changed",
+          listener,
+        )
+      }
+    },
+    remove: (folderId) =>
+      ipcRenderer.send("queue:remove", folderId),
+  },
   // In fake mode the delete is virtual (mutates the in-memory tree, never the
   // disk and never the trash); otherwise it goes to main's trash/rm handler.
   deleteFilePath: fakeFileSystem

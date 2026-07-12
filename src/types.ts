@@ -34,6 +34,35 @@ export interface PathStat {
   isFile: boolean
 }
 
+// A queued folder — the identity record the shared queue traffics in (no image
+// data). Ids are minted by whichever renderer first queues a path and kept
+// canonical in main, so a pane's `folderId` resolves the same in every window.
+export interface QueuedFolder {
+  id: string
+  name: string
+  path: string
+}
+
+// A rectangle in the virtual screen space (Electron display bounds/workArea).
+export interface DisplayRect {
+  height: number
+  width: number
+  x: number
+  y: number
+}
+
+// One connected display, from `window.api.getDisplays()` — for the "spawn window
+// on another screen" menu. `resolutionLabel` is rotation-aware (a portrait
+// monitor reads "1080×1920").
+export interface Display {
+  bounds: DisplayRect
+  id: number
+  isPrimary: boolean
+  label: string
+  resolutionLabel: string
+  workArea: DisplayRect
+}
+
 // Bytes + MIME type returned by `window.api.readImageData`. Named `ImageBytes`
 // rather than `ImageData` to avoid colliding with the lib.dom `ImageData`
 // global.
