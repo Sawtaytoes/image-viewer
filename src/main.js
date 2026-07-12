@@ -202,6 +202,17 @@ const createWindow = ({
   if (isDevelopment) {
     mainWindow.webContents.openDevTools()
   }
+
+  // Capture the id now — the webContents is gone by the time `closed` fires — so
+  // this window's open folders stop counting toward the cross-window "open
+  // elsewhere" set when it goes away, freeing those folders for auto-fill again.
+  const windowId = mainWindow.webContents.id
+
+  mainWindow.on("closed", () => {
+    if (openFolderPathsByWindowId.delete(windowId)) {
+      broadcastOpenFolders()
+    }
+  })
 }
 
 // Synchronous bridge for the drive list (consumed at renderer module-load time).
@@ -332,6 +343,71 @@ ipcMain.on("queue:clear", () => {
   }
 })
 
+// Which folder *paths* each window currently has open in a pane, keyed by the
+// window's webContents id. Lets a newly spawned window — or a new column in any
+// window — auto-fill the next queued folder that isn't already open in ANY window
+// (the cross-window version of skipping folders open in other columns). Cleaned
+// up when a window closes (see `createWindow`).
+const openFolderPathsByWindowId = new Map()
+
+// Tell every window which paths are open in the *other* windows (never its own),
+// so each can exclude those when auto-filling a fresh column/window.
+const broadcastOpenFolders = () => {
+  for (const browserWindow of BrowserWindow.getAllWindows()) {
+    const selfId = browserWindow.webContents.id
+
+    const openElsewhere = new Set()
+
+    for (const [
+      windowId,
+      paths,
+    ] of openFolderPathsByWindowId) {
+      if (windowId === selfId) {
+        continue
+      }
+
+      for (const folderPath of paths) {
+        openElsewhere.add(folderPath)
+      }
+    }
+
+    browserWindow.webContents.send("openFolders:changed", [
+      ...openElsewhere,
+    ])
+  }
+}
+
+// A window hydrates the "open in other windows" set from this on mount (paths
+// open anywhere except the caller).
+ipcMain.handle("get-open-folders", (event) => {
+  const selfId = event.sender.id
+
+  const openElsewhere = new Set()
+
+  for (const [
+    windowId,
+    paths,
+  ] of openFolderPathsByWindowId) {
+    if (windowId === selfId) {
+      continue
+    }
+
+    for (const folderPath of paths) {
+      openElsewhere.add(folderPath)
+    }
+  }
+
+  return [...openElsewhere]
+})
+
+// A window reports the folder paths it currently has open whenever its panes
+// change.
+ipcMain.on("set-open-folders", (event, paths) => {
+  openFolderPathsByWindowId.set(event.sender.id, paths)
+
+  broadcastOpenFolders()
+})
+
 // Enumerate connected displays for the "spawn window on another screen" menu.
 // `resolutionLabel` uses the rotation-aware logical bounds, so a portrait monitor
 // reads 1080×1920.
@@ -388,8 +464,11 @@ const showIdentifyOverlay = (displayId) => {
     frame: false,
     hasShadow: false,
     height,
-    movable: false,
-    resizable: false,
+    // Resizable so the post-show `setBounds` below can re-assert the exact rect
+    // (a non-resizable window ignores programmatic resizes on Windows). The
+    // overlay is click-through and non-focusable, so the user still can't resize
+    // it.
+    resizable: true,
     show: false,
     skipTaskbar: true,
     transparent: true,
@@ -426,12 +505,21 @@ const showIdentifyOverlay = (displayId) => {
 
   identifyOverlayWindow.once("ready-to-show", () => {
     if (
-      identifyOverlayWindow &&
-      !identifyOverlayWindow.isDestroyed()
+      !identifyOverlayWindow ||
+      identifyOverlayWindow.isDestroyed()
     ) {
-      // showInactive so the overlay never takes focus from the picker.
-      identifyOverlayWindow.showInactive()
+      return
     }
+
+    // Re-assert the exact rectangle now that the window is realized on the target
+    // monitor. On a mixed-DPI setup (e.g. a 1080×1920 portrait screen at a
+    // different scale factor than the primary) the constructor bounds are mapped
+    // in the wrong DIP space and the overlay only partly fills the screen; a
+    // second `setBounds` once Electron knows which monitor it's on fixes the fit.
+    identifyOverlayWindow.setBounds({ height, width, x, y })
+
+    // showInactive so the overlay never takes focus from the picker.
+    identifyOverlayWindow.showInactive()
   })
 }
 

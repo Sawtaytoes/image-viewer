@@ -26,6 +26,11 @@ window.api = {
   getWindowsDrives: () => [],
   identifyDisplay: () => {},
   isSpawnedViewer: false,
+  openFolders: {
+    get: () => Promise.resolve([]),
+    onChanged: () => () => {},
+    set: () => {},
+  },
   queue: {
     add: (folder) => Promise.resolve(folder),
     addMany: () => Promise.resolve([]),

@@ -317,6 +317,26 @@ contextBridge.exposeInMainWorld("api", {
   // Set on a window spawned onto another display: boot into the viewer with one
   // auto-filled column rather than the file browser.
   isSpawnedViewer,
+  // Which folder paths are open in *other* windows, so a fresh column/window
+  // auto-fills the next folder not already open anywhere. `get` hydrates on mount,
+  // `set` reports this window's open folders, `onChanged` tracks the others.
+  openFolders: {
+    get: () => ipcRenderer.invoke("get-open-folders"),
+    onChanged: (callback) => {
+      const listener = (_event, paths) => callback(paths)
+
+      ipcRenderer.on("openFolders:changed", listener)
+
+      return () => {
+        ipcRenderer.removeListener(
+          "openFolders:changed",
+          listener,
+        )
+      }
+    },
+    set: (paths) =>
+      ipcRenderer.send("set-open-folders", paths),
+  },
   // The shared, cross-window folder queue (lives in main; see main.js). Mutations
   // go to main and come back to every window via `onChanged`. Not branched on the
   // fake FS — the queue holds only folder identity and uses no disk, so fake and

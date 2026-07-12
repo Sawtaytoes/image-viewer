@@ -41,6 +41,15 @@ declare global {
       // True when this window was spawned onto another display — boot straight
       // into the viewer with one auto-filled column.
       isSpawnedViewer: boolean
+      // Folder paths open in *other* windows, for cross-window auto-fill dedupe.
+      openFolders: {
+        get: () => Promise<string[]>
+        // Subscribe to changes in what's open elsewhere; returns an unsubscribe.
+        onChanged: (
+          callback: (paths: string[]) => void,
+        ) => () => void
+        set: (paths: string[]) => void
+      }
       // The shared, cross-window folder queue (canonical store in main).
       queue: {
         add: (folder: QueuedFolder) => Promise<QueuedFolder>

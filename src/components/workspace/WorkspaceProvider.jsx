@@ -89,6 +89,24 @@ const WorkspaceProvider = ({ children }) => {
     createInitialWorkspace,
   )
 
+  // Folder paths currently open in *other* windows (from main). A ref, not state:
+  // it only gates which folder an auto-fill *chooses* — it never severs an
+  // existing pane (the same folder open in two windows is fine) — so it doesn't
+  // need to trigger a re-render. Kept fresh by the mount effect below.
+  const foldersOpenElsewhereRef = useRef(new Set())
+
+  // Queued folders not already open in another window — the candidates a fresh
+  // column/window auto-fills from, so opening one lands on the next *unopened*
+  // gallery instead of repeating what another monitor already shows.
+  const availableQueuedFolders = useCallback(
+    (queuedFolders) =>
+      queuedFolders.filter(
+        (folder) =>
+          !foldersOpenElsewhereRef.current.has(folder.path),
+      ),
+    [],
+  )
+
   // Briefly tells the revealable chrome to ignore hover-reveal right after a
   // pane's gallery/menu closes. Closing unmounts an overlay from above the
   // chrome's top hit-strip, and the browser then fires a pointer event on the
@@ -266,52 +284,60 @@ const WorkspaceProvider = ({ children }) => {
   useEffect(() => {
     let isMounted = true
 
-    Promise.resolve(window.api.queue.get()).then(
-      (folders) => {
-        if (!isMounted) {
-          return
+    Promise.all([
+      Promise.resolve(window.api.queue.get()),
+      Promise.resolve(window.api.openFolders.get()),
+    ]).then(([folders, openElsewhere]) => {
+      if (!isMounted) {
+        return
+      }
+
+      // Seed the "open elsewhere" set before the spawn auto-fill below reads it,
+      // so a spawned window skips whatever another monitor already shows.
+      foldersOpenElsewhereRef.current = new Set(
+        openElsewhere,
+      )
+
+      setWorkspace((previousWorkspace) => {
+        // Don't clobber folders queued locally before this initial fetch
+        // resolved: any such add already went to main and its broadcast (via
+        // `onChanged`) carries the full canonical queue, so this one-time
+        // hydrate only matters while the local mirror is still empty.
+        if (previousWorkspace.queuedFolders.length > 0) {
+          return previousWorkspace
         }
 
-        setWorkspace((previousWorkspace) => {
-          // Don't clobber folders queued locally before this initial fetch
-          // resolved: any such add already went to main and its broadcast (via
-          // `onChanged`) carries the full canonical queue, so this one-time
-          // hydrate only matters while the local mirror is still empty.
-          if (previousWorkspace.queuedFolders.length > 0) {
-            return previousWorkspace
-          }
+        const withQueue = {
+          ...previousWorkspace,
+          queuedFolders: folders,
+        }
 
-          const withQueue = {
-            ...previousWorkspace,
-            queuedFolders: folders,
-          }
+        // A window spawned onto another display boots straight into the viewer
+        // with a single column auto-filled from the next folder not already open
+        // in another window.
+        if (
+          !window.api.isSpawnedViewer ||
+          folders.length === 0
+        ) {
+          return withQueue
+        }
 
-          // A window spawned onto another display boots straight into the viewer
-          // with a single column auto-filled from the shared queue.
-          if (
-            !window.api.isSpawnedViewer ||
-            folders.length === 0
-          ) {
-            return withQueue
-          }
+        const { filled, panes } = fillEmptyPanes(
+          [...withQueue.panes, createPane()],
+          availableQueuedFolders(folders),
+        )
 
-          const { filled, panes } = fillEmptyPanes(
-            [...withQueue.panes, createPane()],
-            folders,
-          )
+        if (filled.length > 0) {
+          queueMicrotask(() => {
+            resumeFilledPanes(filled)
+          })
+        }
 
-          if (filled.length > 0) {
-            queueMicrotask(() => {
-              resumeFilledPanes(filled)
-            })
-          }
+        return { ...withQueue, panes }
+      })
+    })
 
-          return { ...withQueue, panes }
-        })
-      },
-    )
-
-    const unsubscribe = window.api.queue.onChanged(
+    const unsubscribeQueue = window.api.queue.onChanged(
       (folders) => {
         setWorkspace((previousWorkspace) => ({
           ...previousWorkspace,
@@ -320,12 +346,20 @@ const WorkspaceProvider = ({ children }) => {
       },
     )
 
+    const unsubscribeOpenFolders =
+      window.api.openFolders.onChanged((openElsewhere) => {
+        foldersOpenElsewhereRef.current = new Set(
+          openElsewhere,
+        )
+      })
+
     return () => {
       isMounted = false
 
-      unsubscribe()
+      unsubscribeQueue()
+      unsubscribeOpenFolders()
     }
-  }, [resumeFilledPanes])
+  }, [availableQueuedFolders, resumeFilledPanes])
 
   // Panes are per-window but the queue is shared: whenever the mirrored queue
   // changes — including a remove/clear from *another* window — sever any pane whose
@@ -368,7 +402,7 @@ const WorkspaceProvider = ({ children }) => {
 
       const { filled, panes } = fillEmptyPanes(
         severedPanes,
-        currentQueuedFolders,
+        availableQueuedFolders(currentQueuedFolders),
       )
 
       if (filled.length > 0) {
@@ -385,7 +419,34 @@ const WorkspaceProvider = ({ children }) => {
 
       return { ...previousWorkspace, panes }
     })
-  }, [workspace.queuedFolders, resumeFilledPanes])
+  }, [
+    availableQueuedFolders,
+    workspace.queuedFolders,
+    resumeFilledPanes,
+  ])
+
+  // Report this window's open folder paths to main whenever its panes (or the
+  // queue backing their names) change, so other windows can skip them when
+  // auto-filling. Derived from panes → folderId → queued path, deduped.
+  useEffect(() => {
+    const openPaths = new Set()
+
+    for (const pane of workspace.panes) {
+      if (pane.folderId == null) {
+        continue
+      }
+
+      const folder = workspace.queuedFolders.find(
+        (queuedFolder) => queuedFolder.id === pane.folderId,
+      )
+
+      if (folder) {
+        openPaths.add(folder.path)
+      }
+    }
+
+    window.api.openFolders.set([...openPaths])
+  }, [workspace.panes, workspace.queuedFolders])
 
   // Drop the folder from the shared queue and notify main. Panes aren't severed
   // here: because the queue is shared across windows, the pane-reconciliation
@@ -471,11 +532,11 @@ const WorkspaceProvider = ({ children }) => {
   }, [])
 
   // The `+` button's "open a new column": add a pane and immediately auto-load
-  // the next queued folder not already open elsewhere (resumed to its remembered
-  // index), so a fresh column lands on the next ready gallery instead of an empty
-  // "Tap to pick folder". Falls back to an empty pane when nothing's free. Callers
-  // that open a *specific* folder (the tab strip, the file browser) use raw
-  // `addPane` + an explicit assign instead.
+  // the next queued folder not already open in this window *or another window*
+  // (resumed to its remembered index), so a fresh column lands on the next ready
+  // gallery instead of an empty "Tap to pick folder". Falls back to an empty pane
+  // when nothing's free. Callers that open a *specific* folder (the tab strip, the
+  // file browser) use raw `addPane` + an explicit assign instead.
   const addPaneAndFill = useCallback(() => {
     setWorkspace((previousWorkspace) => {
       const panesWithNew = [
@@ -485,7 +546,9 @@ const WorkspaceProvider = ({ children }) => {
 
       const { filled, panes } = fillEmptyPanes(
         panesWithNew,
-        previousWorkspace.queuedFolders,
+        availableQueuedFolders(
+          previousWorkspace.queuedFolders,
+        ),
       )
 
       if (filled.length > 0) {
@@ -496,7 +559,7 @@ const WorkspaceProvider = ({ children }) => {
 
       return { ...previousWorkspace, panes }
     })
-  }, [resumeFilledPanes])
+  }, [availableQueuedFolders, resumeFilledPanes])
 
   const removePane = useCallback((paneId) => {
     setWorkspace((previousWorkspace) => {
