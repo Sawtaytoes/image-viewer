@@ -66,7 +66,7 @@ const tabStyles = css`
 `
 
 const activeTabStyles = css`
-	background-color: #2a6f97;
+	background-color: #3d9be0;
 `
 
 const tabNameStyles = css`
