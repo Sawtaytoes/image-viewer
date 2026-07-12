@@ -5,9 +5,11 @@
 
 import type {
   DirectoryEntry,
+  Display,
   ImageBytes,
   ImageFile,
   PathStat,
+  QueuedFolder,
 } from "./types"
 
 declare global {
@@ -20,10 +22,39 @@ declare global {
       countFolderImages: (
         folderPath: string,
       ) => Promise<number>
-      // Open another window pointed at a file or folder.
+      // Open another window: pointed at a file/folder, or spawned onto a display
+      // (`displayId`) sharing the live queue (`spawnedViewer`).
       createNewWindow: (payload: {
-        filePath: string
+        filePath?: string
+        displayId?: number
+        // The IPC payload field main reads to boot the new window into the
+        // viewer; renaming it to satisfy the is/has convention would churn the
+        // whole spawn path for no gain.
+        // eslint-disable-next-line @typescript-eslint/naming-convention
+        spawnedViewer?: boolean
       }) => void
+      // Connected displays for the "spawn window on another screen" menu.
+      getDisplays: () => Promise<Display[]>
+      // Show/hide the transient "which monitor is this?" identify overlay.
+      identifyDisplay: (displayId: number) => void
+      stopIdentifyDisplay: () => void
+      // True when this window was spawned onto another display — boot straight
+      // into the viewer with one auto-filled column.
+      isSpawnedViewer: boolean
+      // The shared, cross-window folder queue (canonical store in main).
+      queue: {
+        add: (folder: QueuedFolder) => Promise<QueuedFolder>
+        addMany: (
+          folders: QueuedFolder[],
+        ) => Promise<QueuedFolder[]>
+        clear: () => void
+        get: () => Promise<QueuedFolder[]>
+        // Subscribe to queue changes (from any window); returns an unsubscribe.
+        onChanged: (
+          callback: (folders: QueuedFolder[]) => void,
+        ) => () => void
+        remove: (folderId: string) => void
+      }
       // Trash a file or folder (resolves to whether it was removed).
       deleteFilePath: (payload: {
         filePath: string
