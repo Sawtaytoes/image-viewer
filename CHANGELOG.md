@@ -1,3 +1,16 @@
+# [2.2.0](https://github.com/Sawtaytoes/image-viewer/compare/v2.1.1...v2.2.0) (2026-07-12)
+
+
+### Bug Fixes
+
+* brighter selection blue, visible menu X icons, and fill target monitor ([b8d84ae](https://github.com/Sawtaytoes/image-viewer/commit/b8d84aecec3b7a3a36d144cd56ff1997224774b9)), closes [#2a6f97](https://github.com/Sawtaytoes/image-viewer/issues/2a6f97) [#3d9be0](https://github.com/Sawtaytoes/image-viewer/issues/3d9be0)
+
+
+### Features
+
+* cross-window open-folder dedupe + fix identify overlay on mixed-DPI displays ([41101f3](https://github.com/Sawtaytoes/image-viewer/commit/41101f3042bf55e9fdb276264b54033db2bc1912))
+* spawn viewer windows on other displays with a shared queue ([e0906d8](https://github.com/Sawtaytoes/image-viewer/commit/e0906d8478cf4d5c66060346f257085d22ece23a))
+
 ## [2.1.1](https://github.com/Sawtaytoes/image-viewer/compare/v2.1.0...v2.1.1) (2026-07-04)
 
 
