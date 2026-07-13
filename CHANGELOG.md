@@ -1,3 +1,10 @@
+## [2.2.1](https://github.com/Sawtaytoes/image-viewer/compare/v2.2.0...v2.2.1) (2026-07-13)
+
+
+### Bug Fixes
+
+* remove hardcoded 0.75 zoom that shrank UI in packaged app ([#2](https://github.com/Sawtaytoes/image-viewer/issues/2)) ([bcc0639](https://github.com/Sawtaytoes/image-viewer/commit/bcc0639aee2d80d6e8cabe1ddd1f64331b27801f))
+
 # [2.2.0](https://github.com/Sawtaytoes/image-viewer/compare/v2.1.1...v2.2.0) (2026-07-12)
 
 
