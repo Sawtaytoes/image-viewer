@@ -1,10 +1,6 @@
 import fs from "node:fs"
 import path from "node:path"
-import {
-  contextBridge,
-  ipcRenderer,
-  webFrame,
-} from "electron"
+import { contextBridge, ipcRenderer } from "electron"
 
 import { createFakeFileSystem } from "./fakeFileSystem"
 import getImageMimeType, {
@@ -34,11 +30,6 @@ const isSpawnedViewer = process.argv.includes(
 const fakeFileSystem = isFakeFileSystem
   ? createFakeFileSystem({ path })
   : null
-
-// Surface Pro / high-DPI tablets are scaled up; shrink the UI to fit more on
-// screen. Ported from the previous GitHub line (was in renderer.js, which can
-// no longer import `electron` under contextIsolation).
-webFrame.setZoomFactor(0.75)
 
 // File/folder path the window was launched with (passed via
 // `additionalArguments` from main). Replaces the old renderer process.argv +
