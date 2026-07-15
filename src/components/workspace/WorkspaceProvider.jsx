@@ -89,6 +89,35 @@ const WorkspaceProvider = ({ children }) => {
     createInitialWorkspace,
   )
 
+  // Whether a saved queue slot exists on disk, so the title bar can enable its
+  // "Load queue" button. Hydrated once on mount and kept live via main's
+  // `queue:savedChanged` broadcast (a save in any window lights it up in all).
+  const [hasSavedQueue, setHasSavedQueue] = useState(false)
+
+  useEffect(() => {
+    let isMounted = true
+
+    Promise.resolve(window.api.queue.hasSaved()).then(
+      (isSaved) => {
+        if (isMounted) {
+          setHasSavedQueue(isSaved)
+        }
+      },
+    )
+
+    const unsubscribe = window.api.queue.onSavedChanged(
+      (isSaved) => {
+        setHasSavedQueue(isSaved)
+      },
+    )
+
+    return () => {
+      isMounted = false
+
+      unsubscribe()
+    }
+  }, [])
+
   // Folder paths currently open in *other* windows (from main). A ref, not state:
   // it only gates which folder an auto-fill *chooses* — it never severs an
   // existing pane (the same folder open in two windows is fine) — so it doesn't
@@ -520,6 +549,22 @@ const WorkspaceProvider = ({ children }) => {
     window.api.queue.clear()
   }, [])
 
+  // Snapshot the current queue into the saved slot (main persists it and
+  // broadcasts the new saved-state). Resolves once written so callers can
+  // sequence a clear after it — e.g. the title bar's "Save for later" closes the
+  // queue only once the snapshot is safely on disk.
+  const saveQueue = useCallback(
+    () => Promise.resolve(window.api.queue.save()),
+    [],
+  )
+
+  // Replace the live queue with the saved slot. Main swaps `queuedFolders` and
+  // broadcasts `queue:changed`, so this window's mirror (and every other's)
+  // reconciles panes to the loaded list via the existing `onChanged` path.
+  const loadQueue = useCallback(() => {
+    window.api.queue.load()
+  }, [])
+
   const addPane = useCallback(() => {
     const pane = createPane()
 
@@ -688,11 +733,14 @@ const WorkspaceProvider = ({ children }) => {
       clearPanes,
       clearQueue,
       deleteFolder,
+      hasSavedQueue,
       isChromeRevealSuppressed,
+      loadQueue,
       panes: workspace.panes,
       queuedFolders: workspace.queuedFolders,
       removeFolder,
       removePane,
+      saveQueue,
       setActivePaneId,
       setPaneIndex,
       suppressChromeReveal,
@@ -707,9 +755,12 @@ const WorkspaceProvider = ({ children }) => {
       clearPanes,
       clearQueue,
       deleteFolder,
+      hasSavedQueue,
       isChromeRevealSuppressed,
+      loadQueue,
       removeFolder,
       removePane,
+      saveQueue,
       setActivePaneId,
       setPaneIndex,
       suppressChromeReveal,

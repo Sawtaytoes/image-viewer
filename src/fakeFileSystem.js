@@ -456,6 +456,48 @@ const createFakeFileSystem = ({ path }) => {
     return Promise.resolve(count)
   }
 
+  // Mirror of the real preload's `searchFolders`: recursive, case-insensitive
+  // folder-name search under `rootPath`, walking the in-memory tree. Descendants
+  // only (never `rootPath` itself), nearest-first like the disk version.
+  const searchFolders = (rootPath, query) => {
+    const needle = query.trim().toLowerCase()
+
+    if (!needle) {
+      return Promise.resolve([])
+    }
+
+    const queue = [rootPath]
+    const results = []
+
+    while (queue.length > 0) {
+      const currentPath = queue.shift()
+      const node = nodesByPath.get(currentPath)
+
+      if (!node?.isDirectory) {
+        continue
+      }
+
+      for (const childPath of node.children) {
+        const child = nodesByPath.get(childPath)
+
+        if (!child.isDirectory) {
+          continue
+        }
+
+        if (child.name.toLowerCase().includes(needle)) {
+          results.push({
+            name: child.name,
+            path: childPath,
+          })
+        }
+
+        queue.push(childPath)
+      }
+    }
+
+    return Promise.resolve(results)
+  }
+
   const readImageData = (filePath) => {
     const node = nodesByPath.get(filePath)
 
@@ -513,6 +555,7 @@ const createFakeFileSystem = ({ path }) => {
     getWindowsDrives: () => [rootPath],
     readDirectory,
     readImageData,
+    searchFolders,
     setFolderLastIndex,
     statPath,
   }

@@ -215,6 +215,9 @@ const Pane = ({
     goToPreviousImage,
     isEnabled: isActive && !isMenuOpen && !isGalleryOpen,
     onClose: clearPanes,
+    // `Q` opens this column's queue menu. Called with no point (no tap origin),
+    // so `openMenu` skips the reveal-spawn and just selects + opens the menu.
+    onOpenMenu: openMenu,
   })
 
   const currentImage = folder
