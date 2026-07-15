@@ -9,8 +9,9 @@ import {
   useRef,
   useState,
 } from "react"
-
+import TITLE_BAR_HEIGHT from "../convenience/titleBarHeight"
 import useKeyboardControls from "../convenience/useKeyboardControls"
+import CloseIcon from "../icons/CloseIcon"
 import PlayArrowIcon from "../icons/PlayArrowIcon"
 import ImageLoaderContext from "../imageLoader/ImageLoaderContext"
 import ImageViewerContext from "../imageViewer/ImageViewerContext"
@@ -37,13 +38,76 @@ const fileBrowserStyles = css`
 	background-color: #444;
 	color: #fafafa;
 	display: grid;
-	height: 100vh;
+	/* Sits below the custom title bar, which is a fixed strip at the top. */
+	height: calc(100vh - ${TITLE_BAR_HEIGHT}px);
+	margin-top: ${TITLE_BAR_HEIGHT}px;
 	width: 100%;
-	grid-template-rows: auto auto 1fr;
+	grid-template-rows: auto auto auto 1fr;
+`
+
+// Explicit rows (not auto-placement): FolderTabStrip renders null when the queue
+// is empty, so pinning the search bar and list to fixed rows keeps them put
+// whether or not the tab strip is there.
+const searchBarStyles = css`
+	align-items: center;
+	background-color: #3a3a3a;
+	display: flex;
+	gap: 8px;
+	grid-row: 3;
+	padding: 6px 8px;
+`
+
+const searchInputStyles = css`
+	background-color: #555;
+	border: 0;
+	border-radius: 5px;
+	color: #fafafa;
+	flex: 1 1 auto;
+	font-family: 'Source Sans Pro', sans-serif;
+	font-size: 15px;
+	min-width: 0;
+	padding: 8px 12px;
+
+	&::placeholder {
+		color: #aaa;
+	}
+
+	&:focus {
+		outline: 2px solid #3d9be0;
+	}
+`
+
+const searchClearButtonStyles = css`
+	align-items: center;
+	background: transparent;
+	border: 0;
+	border-radius: 50%;
+	color: #d6d6d6;
+	cursor: pointer;
+	display: inline-flex;
+	flex: 0 0 auto;
+	height: 32px;
+	justify-content: center;
+	padding: 0;
+	width: 32px;
+
+	&:hover {
+		background-color: rgba(255, 255, 255, 0.12);
+		color: #fafafa;
+	}
+`
+
+// Shown in place of the folder grid while a search is running or has no hits, so
+// an empty result set reads as a state rather than a blank window.
+const searchStatusStyles = css`
+	color: #aaa;
+	font-family: 'Source Sans Pro', sans-serif;
+	font-size: 16px;
+	padding: 20px;
 `
 
 const virtualizedListContainerStyles = css`
-	grid-row: 3;
+	grid-row: 4;
 	overflow: hidden;
 `
 
@@ -114,6 +178,17 @@ const FileBrowser = () => {
 
   const [numberOfColumns, setNumberOfColumns] = useState(1)
 
+  // Recursive folder-name filter over the current directory's whole subtree.
+  // `searchQuery` is what's typed; `searchResults` is the matching-folders list
+  // (folders only) resolved from the main-process walk. Empty query ⇒ the normal
+  // listing shows.
+  const [searchQuery, setSearchQuery] = useState("")
+
+  const [searchResults, setSearchResults] = useState([])
+
+  const [isSearchPending, setIsSearchPending] =
+    useState(false)
+
   const [previousFilePath, setPreviousFilePath] =
     useState("")
 
@@ -156,9 +231,87 @@ const FileBrowser = () => {
     filePath,
   )
 
+  const trimmedQuery = searchQuery.trim()
+
+  const isSearching = trimmedQuery.length > 0
+
+  // Leaving the folder abandons the search — the results belong to the old
+  // subtree, and the query box shouldn't linger over a different directory.
+  // Compared against a ref (rather than a bare `[filePath]` trigger) so the
+  // effect genuinely reads the value it keys on.
+  const searchResetPathRef = useRef(filePath)
+
+  useEffect(() => {
+    if (searchResetPathRef.current !== filePath) {
+      searchResetPathRef.current = filePath
+
+      setSearchQuery("")
+
+      setSearchResults([])
+    }
+  }, [filePath])
+
+  // Debounced recursive walk: each keystroke restarts a short timer, and a
+  // `cancelled` flag drops any in-flight result whose query has since changed,
+  // so fast typing never lets a stale, slower walk overwrite a newer one.
+  useEffect(() => {
+    if (!isSearching) {
+      setSearchResults([])
+
+      setIsSearchPending(false)
+
+      return undefined
+    }
+
+    let cancelled = false
+
+    setIsSearchPending(true)
+
+    const timeoutId = window.setTimeout(() => {
+      window.api
+        .searchFolders(filePath, trimmedQuery)
+        .then((folders) => {
+          if (cancelled) {
+            return
+          }
+
+          setSearchResults(folders)
+
+          setIsSearchPending(false)
+        })
+        .catch(() => {
+          if (cancelled) {
+            return
+          }
+
+          setSearchResults([])
+
+          setIsSearchPending(false)
+        })
+    }, 250)
+
+    return () => {
+      cancelled = true
+
+      window.clearTimeout(timeoutId)
+    }
+  }, [filePath, isSearching, trimmedQuery])
+
+  // What the list actually renders: search hits (folders only) while searching,
+  // otherwise the current directory's own listing. Everything downstream —
+  // render, multi-select "open N", the empty state — reads these.
+  const displayedDirectories = isSearching
+    ? searchResults
+    : directories
+
+  const displayedImageFiles = isSearching ? [] : imageFiles
+
   // Group into Explorer-style date buckets only when sorting by date and
   // actually inside a folder — the drive list at the root has no useful dates.
+  // Search results have no dates and are a flat cross-tree list, so never group
+  // them.
   const isGroupedView =
+    !isSearching &&
     sortOrder === sortOrders.modifiedDesc &&
     Boolean(filePath)
 
@@ -240,9 +393,25 @@ const FileBrowser = () => {
     setSelectedFolderPaths(initialSelectedFolderPaths)
   }, [])
 
+  const onSearchChange = useCallback((event) => {
+    setSearchQuery(event.target.value)
+  }, [])
+
+  const clearSearch = useCallback(() => {
+    setSearchQuery("")
+  }, [])
+
+  // Escape clears the query while the box is focused (the global browser
+  // keyboard bails on a focused input, so it can't do this for us).
+  const onSearchKeyDown = useCallback((event) => {
+    if (event.code === "Escape") {
+      setSearchQuery("")
+    }
+  }, [])
+
   const openSelectedFolders = useCallback(() => {
-    const foldersToOpen = directories.filter(({ path }) =>
-      selectedFolderPaths.has(path),
+    const foldersToOpen = displayedDirectories.filter(
+      ({ path }) => selectedFolderPaths.has(path),
     )
 
     addFoldersToQueue(foldersToOpen)
@@ -267,7 +436,7 @@ const FileBrowser = () => {
     addPane,
     assignFolderPathToPane,
     clearMultiSelect,
-    directories,
+    displayedDirectories,
     selectedFolderPaths,
   ])
 
@@ -374,6 +543,24 @@ const FileBrowser = () => {
 
   useKeyboardControls((event) => {
     if (isDeleteFileModalVisible) {
+      return
+    }
+
+    // The search box owns the keyboard while it's focused — otherwise Backspace,
+    // Enter, arrows, etc. would navigate the browser instead of editing the
+    // query. (Escape-to-clear is handled on the input itself, see `onSearchKeyDown`.)
+    if (document.activeElement?.tagName === "INPUT") {
+      return
+    }
+
+    // Search results are a flat cross-tree list shown by pointer; the flat
+    // `selectedIndex` grid nav targets the current directory's own listing, so
+    // it doesn't apply here. Keep only Escape, to leave the search.
+    if (isSearching) {
+      if (event.code === "Escape") {
+        setSearchQuery("")
+      }
+
       return
     }
 
@@ -547,12 +734,44 @@ const FileBrowser = () => {
 
         <FolderTabStrip />
 
+        <div css={searchBarStyles}>
+          <input
+            css={searchInputStyles}
+            onChange={onSearchChange}
+            onKeyDown={onSearchKeyDown}
+            placeholder="Search folders in this directory and its subfolders…"
+            type="text"
+            value={searchQuery}
+          />
+
+          {isSearching && (
+            <button
+              aria-label="Clear search"
+              css={searchClearButtonStyles}
+              onClick={clearSearch}
+              title="Clear search"
+              type="button"
+            >
+              <CloseIcon />
+            </button>
+          )}
+        </div>
+
         <div
           css={virtualizedListContainerStyles}
           ref={virtualizedListContainerRef}
         >
           {isLoading ? (
             <div css={loadingStyles} />
+          ) : isSearching &&
+            isSearchPending &&
+            displayedDirectories.length === 0 ? (
+            <div css={searchStatusStyles}>Searching…</div>
+          ) : isSearching &&
+            displayedDirectories.length === 0 ? (
+            <div css={searchStatusStyles}>
+              No folders match “{trimmedQuery}”.
+            </div>
           ) : isGroupedView ? (
             <DateGroupedGrid
               groups={dateGroups}
@@ -564,17 +783,21 @@ const FileBrowser = () => {
             <VirtualizedList
               itemPadding="2px"
               numberOfColumns={numberOfColumns}
-              selectedIndex={selectedIndex}
+              selectedIndex={
+                isSearching ? -1 : selectedIndex
+              }
             >
-              {directories.map(({ name, path }) => (
-                <Directory
-                  directoryName={name}
-                  directoryPath={path}
-                  key={path}
-                />
-              ))}
+              {displayedDirectories.map(
+                ({ name, path }) => (
+                  <Directory
+                    directoryName={name}
+                    directoryPath={path}
+                    key={path}
+                  />
+                ),
+              )}
 
-              {imageFiles.map(({ name, path }) => (
+              {displayedImageFiles.map(({ name, path }) => (
                 <ImageFile
                   fileName={name}
                   filePath={path}

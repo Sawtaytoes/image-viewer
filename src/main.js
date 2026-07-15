@@ -157,6 +157,18 @@ const createWindow = ({
   const mainWindow = new BrowserWindow({
     autoHideMenuBar: true,
     backgroundThrottling: true,
+    // Custom title bar: hide the OS one and render our own strip (see TitleBar),
+    // but keep the native window buttons via the overlay so min/max/close (and
+    // Windows Snap Layouts) still work. `height` must match TITLE_BAR_HEIGHT in
+    // the renderer so our content clears the overlay. NOTE: `titleBarOverlay`
+    // draws native controls on Windows/macOS only — on Linux the window is
+    // frameless with no controls, so a future Linux build needs custom buttons.
+    titleBarStyle: "hidden",
+    titleBarOverlay: {
+      color: "#2b2b2b",
+      height: 40,
+      symbolColor: "#fafafa",
+    },
     height: bounds.height,
     show: false,
     useContentSize: true,
@@ -273,7 +285,9 @@ ipcMain.on("createNewWindow", (event, data = {}) => {
 // this one also *broadcasts* every change so open windows stay in sync live. Ids
 // are minted by whichever renderer first queues a path (passed in on `queue:add`)
 // and kept canonical here, so a pane's `folderId` resolves the same in every
-// window. In-memory, session-only.
+// window. In-memory and session-only: the live queue itself isn't auto-saved —
+// the user explicitly saves/loads a single snapshot from the title bar (see the
+// "saved slot" handlers below), so a fresh launch starts empty until they load.
 let queuedFolders = []
 
 const broadcastQueue = () => {
@@ -284,6 +298,76 @@ const broadcastQueue = () => {
     )
   }
 }
+
+// The saved queue "slot": a single snapshot the user writes with "Save for
+// later" and brings back with "Load queue" from the title bar. Distinct from the
+// live queue above — it persists only on an explicit save and only returns on an
+// explicit load. Lives in userData (resolved lazily; app paths aren't available
+// until the app is ready).
+const savedQueueFilePath = () =>
+  path.join(app.getPath("userData"), "saved-queue.json")
+
+const hasSavedQueue = () => {
+  try {
+    return fs.existsSync(savedQueueFilePath())
+  } catch {
+    return false
+  }
+}
+
+// Tell every window whether a saved slot now exists, so each can enable/disable
+// its "Load queue" button live (a save in one window lights it up in all).
+const broadcastSavedQueueState = () => {
+  const isSaved = hasSavedQueue()
+
+  for (const browserWindow of BrowserWindow.getAllWindows()) {
+    browserWindow.webContents.send(
+      "queue:savedChanged",
+      isSaved,
+    )
+  }
+}
+
+// Write the current live queue to the slot; returns whether it stuck.
+ipcMain.handle("queue:save", () => {
+  try {
+    fs.writeFileSync(
+      savedQueueFilePath(),
+      JSON.stringify(queuedFolders),
+    )
+
+    broadcastSavedQueueState()
+
+    return true
+  } catch {
+    return false
+  }
+})
+
+// Replace the live queue with the saved slot and broadcast, so every window's
+// mirror (and its panes) reconciles to the loaded list. Returns the loaded queue
+// (or the untouched current one if there's no readable slot).
+ipcMain.handle("queue:load", () => {
+  try {
+    const raw = fs.readFileSync(
+      savedQueueFilePath(),
+      "utf8",
+    )
+    const parsed = JSON.parse(raw)
+
+    if (Array.isArray(parsed)) {
+      queuedFolders = parsed
+
+      broadcastQueue()
+    }
+  } catch {
+    // No slot yet (or unreadable/corrupt) — leave the live queue as-is.
+  }
+
+  return queuedFolders
+})
+
+ipcMain.handle("queue:hasSaved", () => hasSavedQueue())
 
 // A new window hydrates its mirror from this.
 ipcMain.handle("queue:get", () => queuedFolders)
