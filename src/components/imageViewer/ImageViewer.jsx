@@ -8,6 +8,7 @@ import {
   useState,
 } from "react"
 
+import TITLE_BAR_HEIGHT from "../convenience/titleBarHeight"
 import WorkspaceContext from "../workspace/WorkspaceContext"
 import ImageView from "./ImageView"
 import ImageViewerContext from "./ImageViewerContext"
@@ -32,11 +33,12 @@ const fadeIn = keyframes`
 const imageViewerStyles = css`
 	animation: ${fadeIn} 180ms ease;
 	background-color: #333;
-	height: 100%;
+	/* Fills the window below the fixed custom title bar. */
+	height: calc(100% - ${TITLE_BAR_HEIGHT}px);
 	left: 0;
 	overflow: hidden;
 	position: fixed;
-	top: 0;
+	top: ${TITLE_BAR_HEIGHT}px;
 	/* A fast double-tap in the viewer would otherwise select the image/empty
 	   text; nothing in here is meant to be selectable, so suppress it. */
 	user-select: none;

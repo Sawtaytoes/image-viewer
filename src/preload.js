@@ -252,6 +252,94 @@ const countFolderImages = async (folderPath) => {
   return count
 }
 
+// Caps for the recursive folder search below: bound a deep tree so a search
+// started high up can't walk forever, and keep the result set sane for the list.
+const maxSearchDirectoriesScanned = 5000
+const maxSearchResults = 500
+
+// Recursive, case-insensitive folder-name search under `rootPath`. Bounded
+// breadth-first like the thumbnail probe (names only, no per-entry stat), so a
+// large tree stays responsive; results come back nearest-first (BFS order),
+// skipping the same system trees the thumbnail hunt does. An empty/whitespace
+// query yields nothing. `rootPath` itself isn't matched — only its descendants.
+// `onBatch` (optional) is called with each level's new matches as the walk
+// descends, so results stream into the UI instead of appearing only once the
+// whole (possibly deep, possibly network-mounted) tree has been scanned. The
+// full list is also returned for callers that don't stream.
+const searchFolders = async (rootPath, query, onBatch) => {
+  const needle = query.trim().toLowerCase()
+
+  if (!needle) {
+    return []
+  }
+
+  const queue = [rootPath]
+  const results = []
+
+  let scanned = 0
+  let batch = []
+
+  const flushBatch = () => {
+    if (batch.length > 0) {
+      if (typeof onBatch === "function") {
+        onBatch(batch)
+      }
+
+      batch = []
+    }
+  }
+
+  while (
+    queue.length > 0 &&
+    scanned < maxSearchDirectoriesScanned &&
+    results.length < maxSearchResults
+  ) {
+    const currentPath = queue.shift()
+
+    scanned += 1
+
+    let entries
+
+    try {
+      entries = await fs.promises.readdir(currentPath, {
+        withFileTypes: true,
+      })
+    } catch {
+      continue
+    }
+
+    for (const entry of entries) {
+      if (
+        !entry.isDirectory() ||
+        skippedDirectories.has(entry.name.toLowerCase())
+      ) {
+        continue
+      }
+
+      const folderPath = path.join(currentPath, entry.name)
+
+      if (entry.name.toLowerCase().includes(needle)) {
+        const match = {
+          name: entry.name,
+          path: folderPath,
+        }
+
+        results.push(match)
+        batch.push(match)
+      }
+
+      // Descend regardless of whether this folder matched — a match's children
+      // can match too, and a non-match can still contain matches.
+      queue.push(folderPath)
+    }
+
+    // Emit what this directory level turned up before moving on.
+    flushBatch()
+  }
+
+  return results
+}
+
 // Reads an image off disk and hands the renderer the raw bytes (as a
 // cloneable ArrayBuffer) plus a MIME type, replacing the old custom-scheme XHR
 // fetch. `fs.promises.readFile` returns a Buffer that may be a view into a
@@ -339,6 +427,10 @@ contextBridge.exposeInMainWorld("api", {
       ipcRenderer.invoke("queue:addMany", folders),
     clear: () => ipcRenderer.send("queue:clear"),
     get: () => ipcRenderer.invoke("queue:get"),
+    // Whether a saved slot currently exists (gates the "Load queue" button).
+    hasSaved: () => ipcRenderer.invoke("queue:hasSaved"),
+    // Replace the live queue with the saved slot; main broadcasts the change.
+    load: () => ipcRenderer.invoke("queue:load"),
     onChanged: (callback) => {
       const listener = (_event, folders) =>
         callback(folders)
@@ -352,8 +444,25 @@ contextBridge.exposeInMainWorld("api", {
         )
       }
     },
+    // Fires with a boolean whenever the saved slot appears/changes, so the
+    // "Load queue" button can enable across every window when one saves.
+    onSavedChanged: (callback) => {
+      const listener = (_event, isSaved) =>
+        callback(isSaved)
+
+      ipcRenderer.on("queue:savedChanged", listener)
+
+      return () => {
+        ipcRenderer.removeListener(
+          "queue:savedChanged",
+          listener,
+        )
+      }
+    },
     remove: (folderId) =>
       ipcRenderer.send("queue:remove", folderId),
+    // Snapshot the current live queue into the saved slot.
+    save: () => ipcRenderer.invoke("queue:save"),
   },
   // In fake mode the delete is virtual (mutates the in-memory tree, never the
   // disk and never the trash); otherwise it goes to main's trash/rm handler.
@@ -364,6 +473,11 @@ contextBridge.exposeInMainWorld("api", {
   findFirstImage: fakeFileSystem
     ? fakeFileSystem.findFirstImage
     : findFirstImage,
+  // Recursive folder-name search under a directory (folders only, all depths).
+  // Touches only disk names, so it's branched onto the fake tree in fake mode.
+  searchFolders: fakeFileSystem
+    ? fakeFileSystem.searchFolders
+    : searchFolders,
   // Session-only "resume where I left off", keyed by folder path and shared
   // across windows (the store lives in main; the fake FS keeps its own renderer
   // map). `get` resolves to the stored index or null; `set` is fire-and-forget.

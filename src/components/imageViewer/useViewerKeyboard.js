@@ -11,6 +11,7 @@ const useViewerKeyboard = ({
   isEnabled,
   onClose,
   onDelete,
+  onOpenMenu,
 }) => {
   useEffect(() => {
     if (!isEnabled) {
@@ -27,6 +28,9 @@ const useViewerKeyboard = ({
       Delete: onDelete,
       Enter: onClose,
       Escape: onClose,
+      // `Q` for "queue": pop this column's folder-picker menu without needing the
+      // center-tap. Optional, like `onDelete` — a no-op when a view omits it.
+      KeyQ: onOpenMenu,
       ShiftLeft: goToPreviousImage,
     }
 
@@ -54,6 +58,7 @@ const useViewerKeyboard = ({
     isEnabled,
     onClose,
     onDelete,
+    onOpenMenu,
   ])
 }
 

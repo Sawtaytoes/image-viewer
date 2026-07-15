@@ -64,7 +64,19 @@ const breadcrumbSeparatorStyles = css`
 `
 
 const navigationStyles = css`
+	align-items: center;
+	border-radius: 5px;
+	cursor: pointer;
+	display: inline-flex;
 	padding: 4px;
+
+	&:hover {
+		background-color: rgba(255, 255, 255, 0.12);
+	}
+
+	&:active {
+		background-color: rgba(255, 255, 255, 0.2);
+	}
 `
 
 // Sort-order toggle: icon + the current order's label so the state is legible
