@@ -1,3 +1,10 @@
+# [2.3.0](https://github.com/Sawtaytoes/image-viewer/compare/v2.2.1...v2.3.0) (2026-07-15)
+
+
+### Features
+
+* custom title bar with queue save/load and recursive folder search ([#3](https://github.com/Sawtaytoes/image-viewer/issues/3)) ([0cb1e71](https://github.com/Sawtaytoes/image-viewer/commit/0cb1e7169f14ac3a2a5436f680b55b3213d2b259))
+
 ## [2.2.1](https://github.com/Sawtaytoes/image-viewer/compare/v2.2.0...v2.2.1) (2026-07-13)
 
 
