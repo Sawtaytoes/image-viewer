@@ -31,13 +31,10 @@ const titleBarStyles = css`
 
 const appNameStyles = css`
 	color: #d6d6d6;
-	flex: 1 1 auto;
+	flex: 0 0 auto;
 	font-family: 'Source Sans Pro', sans-serif;
 	font-size: 13px;
 	font-weight: 600;
-	min-width: 0;
-	overflow: hidden;
-	text-overflow: ellipsis;
 	white-space: nowrap;
 `
 
@@ -106,6 +103,16 @@ const TitleBar = () => {
 
   const hasQueue = queuedFolders.length > 0
 
+  // Only surface what's actionable: loading needs a saved slot; saving/closing
+  // need an active queue. And "Close queue" (discard) only shows once a save
+  // exists as a fallback — with nothing saved, "Save for later" is the sole way
+  // out, so a live queue can't be thrown away by accident.
+  const showLoad = hasSavedQueue
+  const showSaveForLater = hasQueue
+  const showClose = hasSavedQueue && hasQueue
+  const showAnyAction =
+    showLoad || showSaveForLater || showClose
+
   // "Save for later": snapshot the queue, then clear it once the write lands, so
   // the saved slot is guaranteed on disk before the live queue empties.
   const saveAndCloseQueue = useCallback(() => {
@@ -114,39 +121,42 @@ const TitleBar = () => {
 
   return (
     <div css={titleBarStyles}>
-      <button
-        css={buttonStyles}
-        disabled={!hasSavedQueue}
-        onClick={loadQueue}
-        title="Load the saved queue"
-        type="button"
-      >
-        Load queue
-      </button>
-
-      <div css={separatorStyles} />
-
-      <button
-        css={buttonStyles}
-        disabled={!hasQueue}
-        onClick={saveAndCloseQueue}
-        title="Save the current queue for later, then close it"
-        type="button"
-      >
-        Save for later
-      </button>
-
-      <button
-        css={buttonStyles}
-        disabled={!hasQueue}
-        onClick={clearQueue}
-        title="Close the queue without saving"
-        type="button"
-      >
-        Close queue
-      </button>
-
       <span css={appNameStyles}>Image Viewer</span>
+
+      {showAnyAction && <div css={separatorStyles} />}
+
+      {showLoad && (
+        <button
+          css={buttonStyles}
+          onClick={loadQueue}
+          title="Load the saved queue"
+          type="button"
+        >
+          Load queue
+        </button>
+      )}
+
+      {showSaveForLater && (
+        <button
+          css={buttonStyles}
+          onClick={saveAndCloseQueue}
+          title="Save the current queue for later, then close it"
+          type="button"
+        >
+          Save for later
+        </button>
+      )}
+
+      {showClose && (
+        <button
+          css={buttonStyles}
+          onClick={clearQueue}
+          title="Close the queue without saving"
+          type="button"
+        >
+          Close queue
+        </button>
+      )}
     </div>
   )
 }

@@ -11,6 +11,7 @@ import {
   useState,
 } from "react"
 
+import TITLE_BAR_HEIGHT from "../convenience/titleBarHeight"
 import AddIcon from "../icons/AddIcon"
 import ArrowBackIcon from "../icons/ArrowBackIcon"
 import NewWindowIcon from "../icons/NewWindowIcon"
@@ -34,7 +35,8 @@ const hitStripStyles = css`
 	height: 32px;
 	left: 0;
 	position: fixed;
-	top: 0;
+	/* Below the fixed custom title bar, so hover-to-reveal isn't swallowed by it. */
+	top: ${TITLE_BAR_HEIGHT}px;
 	touch-action: none;
 	width: 100%;
 	z-index: 1;
@@ -62,7 +64,8 @@ const chromeBarStyles = css`
 	left: 0;
 	padding: 6px 8px;
 	position: fixed;
-	top: 0;
+	/* Sits just under the fixed custom title bar rather than behind it. */
+	top: ${TITLE_BAR_HEIGHT}px;
 	touch-action: none;
 	transition: transform 220ms ease;
 	width: 100%;

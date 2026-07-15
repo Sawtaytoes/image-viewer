@@ -262,7 +262,11 @@ const maxSearchResults = 500
 // large tree stays responsive; results come back nearest-first (BFS order),
 // skipping the same system trees the thumbnail hunt does. An empty/whitespace
 // query yields nothing. `rootPath` itself isn't matched — only its descendants.
-const searchFolders = async (rootPath, query) => {
+// `onBatch` (optional) is called with each level's new matches as the walk
+// descends, so results stream into the UI instead of appearing only once the
+// whole (possibly deep, possibly network-mounted) tree has been scanned. The
+// full list is also returned for callers that don't stream.
+const searchFolders = async (rootPath, query, onBatch) => {
   const needle = query.trim().toLowerCase()
 
   if (!needle) {
@@ -273,6 +277,17 @@ const searchFolders = async (rootPath, query) => {
   const results = []
 
   let scanned = 0
+  let batch = []
+
+  const flushBatch = () => {
+    if (batch.length > 0) {
+      if (typeof onBatch === "function") {
+        onBatch(batch)
+      }
+
+      batch = []
+    }
+  }
 
   while (
     queue.length > 0 &&
@@ -304,16 +319,22 @@ const searchFolders = async (rootPath, query) => {
       const folderPath = path.join(currentPath, entry.name)
 
       if (entry.name.toLowerCase().includes(needle)) {
-        results.push({
+        const match = {
           name: entry.name,
           path: folderPath,
-        })
+        }
+
+        results.push(match)
+        batch.push(match)
       }
 
       // Descend regardless of whether this folder matched — a match's children
       // can match too, and a non-match can still contain matches.
       queue.push(folderPath)
     }
+
+    // Emit what this directory level turned up before moving on.
+    flushBatch()
   }
 
   return results

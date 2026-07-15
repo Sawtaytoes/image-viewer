@@ -106,6 +106,16 @@ const searchStatusStyles = css`
 	padding: 20px;
 `
 
+// Inline "still walking the tree" hint in the search bar — the instant current-
+// directory matches already show, so this just signals more may stream in.
+const searchPendingStyles = css`
+	color: #aaa;
+	flex: 0 0 auto;
+	font-family: 'Source Sans Pro', sans-serif;
+	font-size: 13px;
+	white-space: nowrap;
+`
+
 const virtualizedListContainerStyles = css`
 	grid-row: 4;
 	overflow: hidden;
@@ -178,13 +188,15 @@ const FileBrowser = () => {
 
   const [numberOfColumns, setNumberOfColumns] = useState(1)
 
-  // Recursive folder-name filter over the current directory's whole subtree.
-  // `searchQuery` is what's typed; `searchResults` is the matching-folders list
-  // (folders only) resolved from the main-process walk. Empty query ⇒ the normal
-  // listing shows.
+  // Folder-name filter over the current directory's whole subtree. Two phases:
+  // the current directory's own folders are filtered instantly in-memory (see
+  // `localDirectoryMatches`); the deeper subfolder matches stream in from the
+  // debounced disk walk (`subfolderResults`). `searchQuery` is what's typed.
   const [searchQuery, setSearchQuery] = useState("")
 
-  const [searchResults, setSearchResults] = useState([])
+  const [subfolderResults, setSubfolderResults] = useState(
+    [],
+  )
 
   const [isSearchPending, setIsSearchPending] =
     useState(false)
@@ -235,6 +247,20 @@ const FileBrowser = () => {
 
   const isSearching = trimmedQuery.length > 0
 
+  const searchNeedle = trimmedQuery.toLowerCase()
+
+  // Phase 1 — instant: the current directory's folders are already in memory, so
+  // filter them synchronously on every keystroke, no disk and no debounce.
+  const localDirectoryMatches = useMemo(() => {
+    if (!isSearching) {
+      return []
+    }
+
+    return directories.filter((directory) =>
+      directory.name.toLowerCase().includes(searchNeedle),
+    )
+  }, [directories, isSearching, searchNeedle])
+
   // Leaving the folder abandons the search — the results belong to the old
   // subtree, and the query box shouldn't linger over a different directory.
   // Compared against a ref (rather than a bare `[filePath]` trigger) so the
@@ -247,16 +273,17 @@ const FileBrowser = () => {
 
       setSearchQuery("")
 
-      setSearchResults([])
+      setSubfolderResults([])
     }
   }, [filePath])
 
-  // Debounced recursive walk: each keystroke restarts a short timer, and a
-  // `cancelled` flag drops any in-flight result whose query has since changed,
-  // so fast typing never lets a stale, slower walk overwrite a newer one.
+  // Phase 2 — debounced disk walk for the deeper matches, streamed in as each
+  // directory level is scanned (via `onBatch`) so hits appear progressively
+  // rather than all at the end. Each keystroke restarts the timer, and a
+  // `cancelled` flag drops any in-flight batch/result whose query has moved on.
   useEffect(() => {
     if (!isSearching) {
-      setSearchResults([])
+      setSubfolderResults([])
 
       setIsSearchPending(false)
 
@@ -265,17 +292,37 @@ const FileBrowser = () => {
 
     let cancelled = false
 
+    setSubfolderResults([])
+
     setIsSearchPending(true)
 
     const timeoutId = window.setTimeout(() => {
-      window.api
-        .searchFolders(filePath, trimmedQuery)
+      const onBatch = (matches) => {
+        if (cancelled) {
+          return
+        }
+
+        setSubfolderResults((previous) => [
+          ...previous,
+          ...matches,
+        ])
+      }
+
+      Promise.resolve(
+        window.api.searchFolders(
+          filePath,
+          trimmedQuery,
+          onBatch,
+        ),
+      )
         .then((folders) => {
           if (cancelled) {
             return
           }
 
-          setSearchResults(folders)
+          // Settle on the authoritative full list (covers the fake FS, which
+          // resolves at once without streaming).
+          setSubfolderResults(folders)
 
           setIsSearchPending(false)
         })
@@ -283,8 +330,6 @@ const FileBrowser = () => {
           if (cancelled) {
             return
           }
-
-          setSearchResults([])
 
           setIsSearchPending(false)
         })
@@ -297,12 +342,38 @@ const FileBrowser = () => {
     }
   }, [filePath, isSearching, trimmedQuery])
 
-  // What the list actually renders: search hits (folders only) while searching,
-  // otherwise the current directory's own listing. Everything downstream —
-  // render, multi-select "open N", the empty state — reads these.
-  const displayedDirectories = isSearching
-    ? searchResults
-    : directories
+  // What the list actually renders while searching: the instant current-dir
+  // matches first, then the streamed subfolder matches, deduped by path (the
+  // walk re-lists the current dir, so its folders can appear in both). Downstream
+  // — render, multi-select "open N", the empty state — all read these.
+  const displayedDirectories = useMemo(() => {
+    if (!isSearching) {
+      return directories
+    }
+
+    const seenPaths = new Set()
+    const merged = []
+
+    for (const directory of [
+      ...localDirectoryMatches,
+      ...subfolderResults,
+    ]) {
+      if (seenPaths.has(directory.path)) {
+        continue
+      }
+
+      seenPaths.add(directory.path)
+
+      merged.push(directory)
+    }
+
+    return merged
+  }, [
+    directories,
+    isSearching,
+    localDirectoryMatches,
+    subfolderResults,
+  ])
 
   const displayedImageFiles = isSearching ? [] : imageFiles
 
@@ -743,6 +814,12 @@ const FileBrowser = () => {
             type="text"
             value={searchQuery}
           />
+
+          {isSearching && isSearchPending && (
+            <span css={searchPendingStyles}>
+              Searching subfolders…
+            </span>
+          )}
 
           {isSearching && (
             <button
