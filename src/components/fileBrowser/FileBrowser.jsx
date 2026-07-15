@@ -55,6 +55,8 @@ const searchBarStyles = css`
 	gap: 8px;
 	grid-row: 3;
 	padding: 6px 8px;
+	/* Anchors the indeterminate progress line to the bar's bottom edge. */
+	position: relative;
 `
 
 const searchInputStyles = css`
@@ -114,6 +116,40 @@ const searchPendingStyles = css`
 	font-family: 'Source Sans Pro', sans-serif;
 	font-size: 13px;
 	white-space: nowrap;
+`
+
+const indeterminateSlide = keyframes`
+	from {
+		transform: translateX(-100%);
+	}
+	to {
+		transform: translateX(400%);
+	}
+`
+
+// Indeterminate progress line pinned under the search bar while the subfolder
+// walk runs. Indeterminate rather than a percentage: the tree's size isn't known
+// until it's been walked, so there's no honest total to divide by. Absolutely
+// positioned so showing/hiding it never nudges the layout. The travelling
+// segment is 25% wide, so it slides from fully off-left to fully off-right.
+const searchProgressStyles = css`
+	background-color: rgba(255, 255, 255, 0.08);
+	bottom: 0;
+	height: 2px;
+	left: 0;
+	overflow: hidden;
+	position: absolute;
+	right: 0;
+
+	&::after {
+		animation: ${indeterminateSlide} 1100ms ease-in-out
+			infinite;
+		background-color: #3d9be0;
+		content: '';
+		display: block;
+		height: 100%;
+		width: 25%;
+	}
 `
 
 const virtualizedListContainerStyles = css`
@@ -831,6 +867,10 @@ const FileBrowser = () => {
             >
               <CloseIcon />
             </button>
+          )}
+
+          {isSearching && isSearchPending && (
+            <div css={searchProgressStyles} />
           )}
         </div>
 
