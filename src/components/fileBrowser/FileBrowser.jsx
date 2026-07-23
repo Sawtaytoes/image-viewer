@@ -9,6 +9,7 @@ import {
   useRef,
   useState,
 } from "react"
+import FullScreenContext from "../convenience/FullScreenContext"
 import TITLE_BAR_HEIGHT from "../convenience/titleBarHeight"
 import useKeyboardControls from "../convenience/useKeyboardControls"
 import CloseIcon from "../icons/CloseIcon"
@@ -43,6 +44,13 @@ const fileBrowserStyles = css`
 	margin-top: ${TITLE_BAR_HEIGHT}px;
 	width: 100%;
 	grid-template-rows: auto auto auto 1fr;
+`
+
+// Fullscreen auto-hides the title bar, so the browser reclaims that top strip.
+// The bar reveals as an overlay above it rather than pushing this down.
+const fullBleedStyles = css`
+	height: 100vh;
+	margin-top: 0;
 `
 
 // Explicit rows (not auto-placement): FolderTabStrip renders null when the queue
@@ -273,6 +281,8 @@ const FileBrowser = () => {
   } = useContext(WorkspaceContext)
 
   const { sortOrdersByFolder } = useContext(SettingsContext)
+
+  const { isFullScreen } = useContext(FullScreenContext)
 
   const sortOrder = getFolderSortOrder(
     sortOrdersByFolder,
@@ -836,7 +846,13 @@ const FileBrowser = () => {
     <MultiSelectContext.Provider
       value={multiSelectProviderValue}
     >
-      <div css={fileBrowserStyles}>
+      <div
+        css={
+          isFullScreen
+            ? [fileBrowserStyles, fullBleedStyles]
+            : fileBrowserStyles
+        }
+      >
         <DirectoryControls />
 
         <FolderTabStrip />

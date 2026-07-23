@@ -383,6 +383,27 @@ contextBridge.exposeInMainWorld("api", {
     : countFolderImages,
   createNewWindow: (payload) =>
     ipcRenderer.send("createNewWindow", payload),
+  // OS-level fullscreen for this window. Main owns the truth (F11 flips it there
+  // too), so `get` hydrates on mount, `toggle` returns the new state, and
+  // `onChanged` tracks every enter/leave however it was triggered.
+  fullScreen: {
+    get: () => ipcRenderer.invoke("window:isFullScreen"),
+    onChanged: (callback) => {
+      const listener = (_event, isFullScreen) =>
+        callback(isFullScreen)
+
+      ipcRenderer.on("window:fullScreenChanged", listener)
+
+      return () => {
+        ipcRenderer.removeListener(
+          "window:fullScreenChanged",
+          listener,
+        )
+      }
+    },
+    toggle: () =>
+      ipcRenderer.invoke("window:toggleFullScreen"),
+  },
   // Connected displays for the "spawn window on another screen" menu. Always via
   // IPC (even in fake mode — it touches no disk), so the menu reflects the real
   // monitors and spawned windows land on them.

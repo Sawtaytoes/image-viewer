@@ -21,6 +21,11 @@ window.api = {
   createNewWindow: () => {},
   deleteFilePath: () => Promise.resolve(true),
   findFirstImage: () => Promise.resolve(null),
+  fullScreen: {
+    get: () => Promise.resolve(false),
+    onChanged: () => () => {},
+    toggle: () => Promise.resolve(false),
+  },
   getDisplays: () => Promise.resolve([]),
   getFolderLastIndex: () => Promise.resolve(null),
   getWindowsDrives: () => [],
