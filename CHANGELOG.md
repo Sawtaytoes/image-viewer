@@ -1,3 +1,10 @@
+# [2.4.0](https://github.com/Sawtaytoes/image-viewer/compare/v2.3.0...v2.4.0) (2026-07-23)
+
+
+### Features
+
+* fullscreen toggle button in the title bar ([7dea583](https://github.com/Sawtaytoes/image-viewer/commit/7dea583089a9ac6b63131bfcac10cb985441cd7e))
+
 # [2.3.0](https://github.com/Sawtaytoes/image-viewer/compare/v2.2.1...v2.3.0) (2026-07-15)
 
 
