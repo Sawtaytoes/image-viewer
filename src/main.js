@@ -234,7 +234,49 @@ const createWindow = ({
       broadcastOpenFolders()
     }
   })
+
+  // Mirror OS fullscreen state back to the renderer so the title bar's toggle
+  // icon and auto-hide follow whatever flips it — the button, F11, or the
+  // inherited state a spawned window opens with — not just our own IPC call.
+  const sendFullScreenState = () => {
+    if (!mainWindow.isDestroyed()) {
+      mainWindow.webContents.send(
+        "window:fullScreenChanged",
+        mainWindow.isFullScreen(),
+      )
+    }
+  }
+
+  mainWindow.on("enter-full-screen", sendFullScreenState)
+  mainWindow.on("leave-full-screen", sendFullScreenState)
 }
+
+// Fullscreen is owned by the OS/main so F11 and the title-bar button stay in
+// sync; the renderer toggles through here and learns the resulting state both
+// from this return value and the enter/leave events forwarded in createWindow.
+ipcMain.handle("window:toggleFullScreen", (event) => {
+  const senderWindow = BrowserWindow.fromWebContents(
+    event.sender,
+  )
+
+  if (!senderWindow) {
+    return false
+  }
+
+  const nextIsFullScreen = !senderWindow.isFullScreen()
+
+  senderWindow.setFullScreen(nextIsFullScreen)
+
+  return nextIsFullScreen
+})
+
+ipcMain.handle("window:isFullScreen", (event) =>
+  Boolean(
+    BrowserWindow.fromWebContents(
+      event.sender,
+    )?.isFullScreen(),
+  ),
+)
 
 // Synchronous bridge for the drive list (consumed at renderer module-load time).
 ipcMain.on("get-windows-drives", (event) => {

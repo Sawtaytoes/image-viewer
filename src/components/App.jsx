@@ -1,5 +1,6 @@
 import { css, Global } from "@emotion/react"
 import { Fragment } from "react"
+import FullScreenProvider from "./convenience/FullScreenProvider"
 import TitleBar from "./convenience/TitleBar"
 import useDisableScrollKeyFunctions from "./convenience/useDisableScrollKeyFunctions"
 import useWindowRefreshKeys from "./convenience/useWindowRefreshKeys"
@@ -64,9 +65,11 @@ const App = () => {
           <ImageViewerProvider>
             <FileSystemProvider>
               <ImageLoaderProvider>
-                <TitleBar />
-                <FileBrowser />
-                <ImageViewer />
+                <FullScreenProvider>
+                  <TitleBar />
+                  <FileBrowser />
+                  <ImageViewer />
+                </FullScreenProvider>
               </ImageLoaderProvider>
             </FileSystemProvider>
           </ImageViewerProvider>

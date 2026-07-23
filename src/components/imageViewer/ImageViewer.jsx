@@ -8,6 +8,7 @@ import {
   useState,
 } from "react"
 
+import FullScreenContext from "../convenience/FullScreenContext"
 import TITLE_BAR_HEIGHT from "../convenience/titleBarHeight"
 import WorkspaceContext from "../workspace/WorkspaceContext"
 import ImageView from "./ImageView"
@@ -43,6 +44,14 @@ const imageViewerStyles = css`
 	   text; nothing in here is meant to be selectable, so suppress it. */
 	user-select: none;
 	width: 100%;
+`
+
+// Fullscreen auto-hides the title bar, so the viewer reclaims that top strip to
+// fill the screen. The bar reveals as an overlay on top rather than pushing this
+// back down, so there's no reflow on every summon.
+const fullBleedStyles = css`
+	height: 100%;
+	top: 0;
 `
 
 // `gap: 2px` lets the dark viewer background show through as a hairline
@@ -158,6 +167,8 @@ const ImageViewer = () => {
     WorkspaceContext,
   )
 
+  const { isFullScreen } = useContext(FullScreenContext)
+
   const { feedback, remove, spawn } = useTapFeedback()
 
   // Lifted out of RevealableChrome so the active column can outline itself only
@@ -182,7 +193,14 @@ const ImageViewer = () => {
     panes.length === 0 && Boolean(imageFilePath)
 
   return (
-    <div css={imageViewerStyles} ref={viewerRef}>
+    <div
+      css={
+        isFullScreen
+          ? [imageViewerStyles, fullBleedStyles]
+          : imageViewerStyles
+      }
+      ref={viewerRef}
+    >
       <div css={columnsRowStyles}>
         {hasLegacyColumn && (
           <LegacyImageColumn
