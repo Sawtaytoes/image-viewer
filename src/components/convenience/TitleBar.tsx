@@ -1,10 +1,9 @@
-import { css } from "@emotion/react"
+import type { CSSProperties, PointerEvent } from "react"
 import {
   Fragment,
   useCallback,
   useContext,
   useEffect,
-  useMemo,
   useRef,
   useState,
 } from "react"
@@ -16,14 +15,13 @@ import ImageViewerContext from "../imageViewer/ImageViewerContext"
 import useEdgeSwipe from "../imageViewer/useEdgeSwipe"
 import WorkspaceContext from "../workspace/WorkspaceContext"
 import FullScreenContext from "./FullScreenContext"
-import TITLE_BAR_HEIGHT from "./titleBarHeight"
 
 const pathApi = window.api.path
 
 // Reserve room on the right for the native window controls the `titleBarOverlay`
 // paints there (Windows/macOS) so the fullscreen button can hug them without
 // sitting underneath. In fullscreen the OS hides those controls, so the button
-// reclaims the space (see `barStyles`).
+// reclaims the space (see `barStyle` below).
 const WINDOW_CONTROLS_WIDTH = 140
 
 // Brief window of visibility after entering fullscreen before the bar hides
@@ -34,104 +32,54 @@ const AUTO_HIDE_MS = 3000
 // window can still be moved; interactive children opt back out with `no-drag`.
 // The right edge is left as empty drag space for the native window controls that
 // `titleBarOverlay` paints there (Windows/macOS), so nothing sits under them.
-const titleBarStyles = css`
-	-webkit-app-region: drag;
-	align-items: center;
-	background-color: #2b2b2b;
-	color: #fafafa;
-	display: flex;
-	gap: 6px;
-	height: ${TITLE_BAR_HEIGHT}px;
-	left: 0;
-	padding: 0 10px;
-	position: fixed;
-	right: 0;
-	top: 0;
-	user-select: none;
-	z-index: 10000;
-`
+//
+// `-webkit-app-region` is Electron's property, not CSS's, and Tailwind has no
+// utility for it — so it is the arbitrary property `[-webkit-app-region:drag]`
+// everywhere in this file, rather than an inline style on some elements and a
+// class on others. It stays with the rest of the element's styling that way, and
+// the pair (`drag` on the strip, `no-drag` on every control) reads as a pair.
+//
+// The height is `h-(--title-bar-height)`, NOT `h-[40px]`: Emotion interpolated
+// the `TITLE_BAR_HEIGHT` constant into the template literal and Tailwind cannot
+// interpolate anything, so the number lives in `src/styles/tailwind.css` as a
+// custom property. `titleBarHeight.test.ts` fails if the constant, the variable
+// and `main.js`'s `titleBarOverlay.height` ever disagree — hardcoding the pixels
+// here is exactly what that test exists to catch.
+const titleBarClassName =
+  "[-webkit-app-region:drag] fixed top-0 right-0 left-0 z-[10000] flex h-(--title-bar-height) items-center gap-1.5 bg-surface-sunken px-[10px] text-content-primary select-none transition-transform duration-[220ms] ease-[ease]"
 
-const appNameStyles = css`
-	color: #d6d6d6;
-	flex: 0 0 auto;
-	font-family: 'Source Sans Pro', sans-serif;
-	font-size: 13px;
-	font-weight: 600;
-	white-space: nowrap;
-`
+const appNameClassName =
+  "flex-none text-[13px] font-semibold whitespace-nowrap text-content-secondary"
 
-const buttonStyles = css`
-	-webkit-app-region: no-drag;
-	background: transparent;
-	border: 0;
-	border-radius: 5px;
-	color: #fafafa;
-	cursor: pointer;
-	flex: 0 0 auto;
-	font-family: 'Source Sans Pro', sans-serif;
-	font-size: 13px;
-	font-weight: 400;
-	padding: 5px 10px;
-	white-space: nowrap;
+// Everything the two kinds of button share EXCEPT the horizontal padding, which
+// differs between them. Two `px-*` utilities on one element would be resolved by
+// their order in the generated stylesheet rather than in the `class` attribute,
+// so the shared part deliberately sets no `px` at all and each button adds its
+// own. `enabled:` is `:enabled`, which is what the old `:not(:disabled)` meant.
+const buttonBaseClassName =
+  "[-webkit-app-region:no-drag] flex-none cursor-pointer rounded-[5px] border-0 bg-transparent py-[5px] text-[13px] font-normal whitespace-nowrap text-content-primary enabled:hover:bg-intent-neutral-surface-hover enabled:active:bg-intent-neutral-solid-hover disabled:cursor-default disabled:text-content-disabled"
 
-	&:hover:not(:disabled) {
-		background-color: rgba(255, 255, 255, 0.12);
-	}
-
-	&:active:not(:disabled) {
-		background-color: rgba(255, 255, 255, 0.2);
-	}
-
-	&:disabled {
-		color: #777;
-		cursor: default;
-	}
-`
+const buttonClassName = `${buttonBaseClassName} px-[10px]`
 
 // Pushed to the right edge (past the queue actions) so it sits beside the native
 // window controls, matching where a maximize/restore button would be.
-const fullscreenButtonStyles = css`
-	${buttonStyles};
-	align-items: center;
-	display: inline-flex;
-	margin-left: auto;
-	padding: 5px 8px;
-`
+const fullscreenButtonClassName = `${buttonBaseClassName} ml-auto inline-flex items-center px-2`
 
 // Thin top hit-strip that reveals the auto-hidden bar on mouse hover; only
 // mounted while the bar is hidden in fullscreen. Touch reveals via the edge
 // swipe instead (see `useEdgeSwipe` below). Sits just under the bar's own
 // z-index so the bar covers it once shown.
-const hitStripStyles = css`
-	height: 32px;
-	left: 0;
-	position: fixed;
-	top: 0;
-	touch-action: none;
-	width: 100%;
-	z-index: 9999;
-`
+const hitStripClassName =
+  "fixed top-0 left-0 z-[9999] h-8 w-full touch-none"
 
 // Faint pill hinting the bar can be pulled/hovered down; shown only while it's
 // hidden so it never overlaps the revealed bar.
-const grabHandleStyles = css`
-	background-color: rgba(255, 255, 255, 0.3);
-	border-radius: 3px;
-	height: 6px;
-	left: 50%;
-	position: absolute;
-	top: 8px;
-	transform: translateX(-50%);
-	width: 64px;
-`
+const grabHandleClassName =
+  "absolute top-2 left-1/2 h-1.5 w-16 -translate-x-1/2 rounded-[3px] bg-intent-neutral-surface-hover"
 
 // A hair of separation between the load action and the two close actions.
-const separatorStyles = css`
-	background-color: #444;
-	flex: 0 0 auto;
-	height: 18px;
-	width: 1px;
-`
+const separatorClassName =
+  "h-[18px] w-px flex-none bg-border-default"
 
 const TitleBar = () => {
   const { filePath } = useContext(FileSystemContext)
@@ -153,11 +101,13 @@ const TitleBar = () => {
   // Only meaningful in fullscreen; windowed, the bar is always pinned open.
   const [isBarVisible, setIsBarVisible] = useState(true)
 
-  const autoHideTimerRef = useRef()
+  const autoHideTimerRef = useRef<number | undefined>(
+    undefined,
+  )
 
   // The whole document is the drag-down summon surface, so the reveal works in
   // the file browser and the viewer alike. Set once — it exists at render.
-  const rootRef = useRef(
+  const rootRef = useRef<HTMLElement | null>(
     typeof document === "undefined"
       ? null
       : document.documentElement,
@@ -220,7 +170,7 @@ const TitleBar = () => {
   // Mouse summon: real motion over the top hit-strip reveals the bar. Touch uses
   // the edge swipe above, never this.
   const onHitStripPointerMove = useCallback(
-    (event) => {
+    (event: PointerEvent<HTMLDivElement>) => {
       if (event.pointerType !== "mouse") {
         return
       }
@@ -254,11 +204,15 @@ const TitleBar = () => {
   // need an active queue. And "Close queue" (discard) only shows once a save
   // exists as a fallback — with nothing saved, "Save for later" is the sole way
   // out, so a live queue can't be thrown away by accident.
-  const showLoad = hasSavedQueue
-  const showSaveForLater = hasQueue
-  const showClose = hasSavedQueue && hasQueue
-  const showAnyAction =
-    showLoad || showSaveForLater || showClose
+  //
+  // Renamed from `showLoad` / `showSaveForLater` / `showClose` / `showAnyAction`:
+  // the is/has boolean rule is type-driven and runs only on `.ts`/`.tsx`, so the
+  // conversion is the first thing to see these.
+  const isLoadShown = hasSavedQueue
+  const isSaveForLaterShown = hasQueue
+  const isCloseShown = hasSavedQueue && hasQueue
+  const isAnyActionShown =
+    isLoadShown || isSaveForLaterShown || isCloseShown
 
   // "Save for later": snapshot the queue, then clear it once the write lands, so
   // the saved slot is guaranteed on disk before the live queue empties.
@@ -270,45 +224,51 @@ const TitleBar = () => {
   // slides up when hidden and drops the gutter (the OS controls are gone).
   const isBarShown = !isFullScreen || isBarVisible
 
-  const barStyles = useMemo(
-    () => css`
-			${titleBarStyles};
-			padding-right: ${
-        isFullScreen ? 10 : WINDOW_CONTROLS_WIDTH
-      }px;
-			transform: translateY(${isBarShown ? "0" : "-100%"});
-			transition: transform 220ms ease;
-		`,
-    [isBarShown, isFullScreen],
-  )
+  // Both values are computed at render, which is precisely what a Tailwind class
+  // cannot carry: `pr-[${…}px]` is scanned as source text and would generate no
+  // CSS at all. So the right padding and the slide are an inline `style` — which
+  // also resolves cleanly, since an element's own `style` beats any utility.
+  // The `transition-transform` that animates it is a class, because the
+  // transition itself never changes.
+  const barStyle: CSSProperties = {
+    paddingRight: isFullScreen ? 10 : WINDOW_CONTROLS_WIDTH,
+    transform: isBarShown
+      ? "translateY(0)"
+      : "translateY(-100%)",
+  }
 
   return (
     <Fragment>
       {isFullScreen && !isBarVisible && (
         <div
-          css={hitStripStyles}
+          className={hitStripClassName}
           onPointerMove={onHitStripPointerMove}
         >
-          <div css={grabHandleStyles} />
+          <div className={grabHandleClassName} />
         </div>
       )}
 
       <div
-        css={barStyles}
+        className={titleBarClassName}
         onPointerEnter={
           isFullScreen ? cancelAutoHide : undefined
         }
         onPointerLeave={
           isFullScreen ? scheduleAutoHide : undefined
         }
+        style={barStyle}
       >
-        <span css={appNameStyles}>Image Viewer</span>
+        <span className={appNameClassName}>
+          Image Viewer
+        </span>
 
-        {showAnyAction && <div css={separatorStyles} />}
+        {isAnyActionShown && (
+          <div className={separatorClassName} />
+        )}
 
-        {showLoad && (
+        {isLoadShown && (
           <button
-            css={buttonStyles}
+            className={buttonClassName}
             onClick={loadQueue}
             title="Load the saved queue"
             type="button"
@@ -317,9 +277,9 @@ const TitleBar = () => {
           </button>
         )}
 
-        {showSaveForLater && (
+        {isSaveForLaterShown && (
           <button
-            css={buttonStyles}
+            className={buttonClassName}
             onClick={saveAndCloseQueue}
             title="Save the current queue for later, then close it"
             type="button"
@@ -328,9 +288,9 @@ const TitleBar = () => {
           </button>
         )}
 
-        {showClose && (
+        {isCloseShown && (
           <button
-            css={buttonStyles}
+            className={buttonClassName}
             onClick={clearQueue}
             title="Close the queue without saving"
             type="button"
@@ -345,7 +305,7 @@ const TitleBar = () => {
               ? "Exit fullscreen"
               : "Enter fullscreen"
           }
-          css={fullscreenButtonStyles}
+          className={fullscreenButtonClassName}
           onClick={toggleFullScreen}
           title={
             isFullScreen
