@@ -16,6 +16,74 @@
 // the top".
 
 import { imageMimeTypesByExtension } from "./imageMimeTypes"
+import type {
+  DirectoryEntry,
+  FolderMatch,
+  ImageBytes,
+  ImageFile,
+  PathStat,
+} from "./types"
+
+// The slice of node's `path` this module needs, declared rather than imported.
+//
+// It is a parameter for a real reason (see `createFakeFileSystem`): the tree is
+// built with the HOST's path semantics, so the caller hands in the module it
+// already has. Typing it as `typeof import("node:path")` would work and would
+// also say that a caller must produce all forty of its members; three is the
+// truth, and a test can satisfy three.
+interface PathModule {
+  extname: (targetPath: string) => string
+  join: (...segments: string[]) => string
+  sep: string
+}
+
+// A colour as 0–255 red, green, blue. A tuple, not `number[]`, because
+// `createBmp` destructures three names out of it and an array of unknown length
+// would let a two-element caller through.
+type RgbColour = [number, number, number]
+
+// The fake tree's nodes, as a discriminated union on `isDirectory`.
+//
+// The `.js` version had one shape carrying every field, which is how
+// `readImageData` came to read `node.width` off a value that might have been a
+// directory. It cannot now: `width` does not exist on the directory arm, so the
+// `isFile` guard that was already there is what makes the read legal.
+interface FakeDirectoryNode {
+  children: Set<string>
+  isDirectory: true
+  isFile: false
+  modifiedTime: number
+  name: string
+  // Null on the root, and only there.
+  parent: string | null
+}
+
+interface FakeImageNode {
+  color: RgbColour
+  height: number
+  isDirectory: false
+  isFile: true
+  modifiedTime: number
+  name: string
+  parent: string
+  width: number
+}
+
+type FakeNode = FakeDirectoryNode | FakeImageNode
+
+// One folder in the declarative tree description. `subfolders` is optional and
+// recursive; `hue` is the colour family this folder's images are painted in.
+interface FakeFolderSpec {
+  hue: number
+  imageCount: number
+  name: string
+  subfolders?: FakeFolderSpec[]
+}
+
+interface FakeTreeSpec {
+  folders: FakeFolderSpec[]
+  looseImageCount: number
+}
 
 // Same image-extension set the real preload uses, so the fake tree's gallery
 // detection matches production.
@@ -24,7 +92,11 @@ const imageExtensions = new Set(
 )
 
 // Convert HSL (hue in [0,360), saturation & lightness in [0,1]) to 0–255 RGB.
-const hslToRgb = (hue, saturation, lightness) => {
+const hslToRgb = (
+  hue: number,
+  saturation: number,
+  lightness: number,
+): RgbColour => {
   const chroma =
     (1 - Math.abs(2 * lightness - 1)) * saturation
   const huePrime = hue / 60
@@ -45,9 +117,14 @@ const hslToRgb = (hue, saturation, lightness) => {
               ? [secondary, 0, chroma]
               : [chroma, 0, secondary]
 
-  return [red, green, blue].map((channel) =>
-    Math.round((channel + match) * 255),
-  )
+  // Spelled out rather than `.map()`: `Array.prototype.map` returns
+  // `number[]`, which is not a three-tuple, and the only ways to bridge that
+  // are a cast or a destructure-and-rebuild. This is the destructure.
+  return [
+    Math.round((red + match) * 255),
+    Math.round((green + match) * 255),
+    Math.round((blue + match) * 255),
+  ]
 }
 
 // Folders use a vivid saturation; the root's loose images stay near-gray.
@@ -59,7 +136,7 @@ const rootSaturation = 0.08
 const shadeLightnessMin = 0.4
 const shadeLightnessMax = 0.68
 
-const shadeLightness = (index, count) =>
+const shadeLightness = (index: number, count: number) =>
   count <= 1
     ? (shadeLightnessMin + shadeLightnessMax) / 2
     : shadeLightnessMin +
@@ -78,7 +155,11 @@ const dimensionPresets = [
 
 // Build a valid 24-bit uncompressed BMP with a gentle vertical gradient so the
 // image reads as a real picture rather than a flat block.
-const createBmp = (width, height, [red, green, blue]) => {
+const createBmp = (
+  width: number,
+  height: number,
+  [red, green, blue]: RgbColour,
+) => {
   const rowSize = Math.floor((24 * width + 31) / 32) * 4
   const pixelArraySize = rowSize * height
   const fileSize = 54 + pixelArraySize
@@ -106,11 +187,11 @@ const createBmp = (width, height, [red, green, blue]) => {
 
   let offset = 54
 
-  for (let y = 0; y < height; y += 1) {
+  for (let row = 0; row < height; row += 1) {
     const gradient =
-      0.6 + (0.4 * y) / Math.max(1, height - 1)
+      0.6 + (0.4 * row) / Math.max(1, height - 1)
 
-    for (let x = 0; x < width; x += 1) {
+    for (let column = 0; column < width; column += 1) {
       // BMP stores pixels as BGR.
       view.setUint8(offset, Math.round(blue * gradient))
       view.setUint8(
@@ -129,7 +210,8 @@ const createBmp = (width, height, [red, green, blue]) => {
 }
 
 // Two decimal digits so names sort naturally (image-01 … image-12).
-const padNumber = (value) => String(value).padStart(2, "0")
+const padNumber = (value: number) =>
+  String(value).padStart(2, "0")
 
 const millisecondsPerDay = 24 * 60 * 60 * 1000
 
@@ -144,7 +226,7 @@ const modifiedDayOffsetPresets = [
 // Declarative description of the tree. Each folder lists how many images it
 // holds, its `hue` (the color family its images are painted in), and any
 // subfolders; the root also carries a few loose images.
-const fakeTreeSpec = {
+const fakeTreeSpec: FakeTreeSpec = {
   looseImageCount: 3,
   folders: [
     {
@@ -178,11 +260,15 @@ const fakeTreeSpec = {
 
 // Builds the flat path → node map. `path` is node's path module (passed in so
 // path semantics exactly match the host OS: `\` on Windows, `/` elsewhere).
-const createFakeFileSystem = ({ path }) => {
+const createFakeFileSystem = ({
+  path,
+}: {
+  path: PathModule
+}) => {
   const rootPath = path.sep === "\\" ? "C:\\" : "/"
 
   // path → { name, isDirectory, isFile, children:Set<path>, parent, color, w, h }
-  const nodesByPath = new Map()
+  const nodesByPath = new Map<string, FakeNode>()
 
   // Cycles the aspect-ratio presets across every image so the viewer's
   // fit-to-pane math gets a mix of portrait/landscape regardless of color.
@@ -205,7 +291,26 @@ const createFakeFileSystem = ({ path }) => {
     return creationTime - dayOffset * millisecondsPerDay
   }
 
-  const addDirectory = (directoryPath, name, parent) => {
+  // Every read of `.children` goes through here.
+  //
+  // `nodesByPath.get` is `FakeNode | undefined`, and `children` lives only on
+  // the directory arm — so the union plus the map's optionality is exactly the
+  // pair of facts the `.js` version dereferenced through, nine times. Naming
+  // the lookup once means the walks below read as walks instead of as null
+  // checks.
+  const getDirectory = (
+    targetPath: string,
+  ): FakeDirectoryNode | undefined => {
+    const node = nodesByPath.get(targetPath)
+
+    return node?.isDirectory ? node : undefined
+  }
+
+  const addDirectory = (
+    directoryPath: string,
+    name: string,
+    parent: string | null,
+  ) => {
     nodesByPath.set(directoryPath, {
       children: new Set(),
       isDirectory: true,
@@ -216,11 +321,15 @@ const createFakeFileSystem = ({ path }) => {
     })
 
     if (parent) {
-      nodesByPath.get(parent).children.add(directoryPath)
+      getDirectory(parent)?.children.add(directoryPath)
     }
   }
 
-  const addImage = (parentPath, fileName, color) => {
+  const addImage = (
+    parentPath: string,
+    fileName: string,
+    color: RgbColour,
+  ) => {
     const filePath = path.join(parentPath, fileName)
 
     const [width, height] =
@@ -241,16 +350,19 @@ const createFakeFileSystem = ({ path }) => {
 
     dimensionSeed += 1
 
-    nodesByPath.get(parentPath).children.add(filePath)
+    getDirectory(parentPath)?.children.add(filePath)
   }
 
   // `hue`/`saturation` define this folder's color family; each image fans
   // across the shared lightness band so they're distinct shades of it.
   const fillFolder = (
-    folderPath,
-    spec,
-    prefix,
-    { hue, saturation },
+    folderPath: string,
+    spec: FakeFolderSpec,
+    prefix: string,
+    {
+      hue,
+      saturation,
+    }: { hue: number; saturation: number },
   ) => {
     for (
       let index = 1;
@@ -323,7 +435,7 @@ const createFakeFileSystem = ({ path }) => {
     )
   }
 
-  const statPath = (targetPath) => {
+  const statPath = (targetPath: string): PathStat => {
     const node = nodesByPath.get(targetPath)
 
     return node
@@ -338,20 +450,25 @@ const createFakeFileSystem = ({ path }) => {
   // Mirror of main's session-only "resume where I left off" store, keyed by
   // folder path. A single renderer map is enough here — the fake FS runs one
   // window's worth of in-memory state for manual testing.
-  const lastIndexByPath = new Map()
+  const lastIndexByPath = new Map<string, number>()
 
-  const getFolderLastIndex = (folderPath) =>
+  const getFolderLastIndex = (folderPath: string) =>
     Promise.resolve(
       lastIndexByPath.has(folderPath)
         ? lastIndexByPath.get(folderPath)
         : null,
     )
 
-  const setFolderLastIndex = (folderPath, index) => {
+  const setFolderLastIndex = (
+    folderPath: string,
+    index: number,
+  ) => {
     lastIndexByPath.set(folderPath, index)
   }
 
-  const readDirectory = (directoryPath) => {
+  const readDirectory = (
+    directoryPath: string,
+  ): Promise<DirectoryEntry[]> => {
     const node = nodesByPath.get(directoryPath)
 
     if (!node?.isDirectory) {
@@ -359,16 +476,24 @@ const createFakeFileSystem = ({ path }) => {
     }
 
     return Promise.resolve(
-      [...node.children].map((childPath) => {
+      [...node.children].flatMap((childPath) => {
         const child = nodesByPath.get(childPath)
 
-        return {
-          fileName: child.name,
-          filePath: childPath,
-          isDirectory: child.isDirectory,
-          isFile: child.isFile,
-          modifiedTime: child.modifiedTime,
-        }
+        // `flatMap` + `[]` rather than `.map()` + a non-null
+        // assertion: a path in a parent's `children` that is not in
+        // `nodesByPath` is a torn tree, and listing it as an entry
+        // with an undefined name is the worse of the two failures.
+        return child
+          ? [
+              {
+                fileName: child.name,
+                filePath: childPath,
+                isDirectory: child.isDirectory,
+                isFile: child.isFile,
+                modifiedTime: child.modifiedTime,
+              },
+            ]
+          : []
       }),
     )
   }
@@ -376,43 +501,50 @@ const createFakeFileSystem = ({ path }) => {
   // Mirror of the real preload's `findFirstImage`: breadth-first hunt for the
   // first image anywhere under `folderPath` (null ⇒ not a gallery), walking the
   // in-memory tree instead of disk.
-  const findFirstImage = (folderPath) => {
+  const findFirstImage = (
+    folderPath: string,
+  ): Promise<ImageFile | null> => {
     const queue = [folderPath]
 
-    while (queue.length > 0) {
-      const currentPath = queue.shift()
-      const node = nodesByPath.get(currentPath)
+    for (
+      let currentPath = queue.shift();
+      currentPath !== undefined;
+      currentPath = queue.shift()
+    ) {
+      const node = getDirectory(currentPath)
 
-      if (!node?.isDirectory) {
+      if (!node) {
         continue
       }
 
-      const imageNames = []
-      const subdirectories = []
+      const imageNames: string[] = []
+      const subdirectories: string[] = []
 
       for (const childPath of node.children) {
         const child = nodesByPath.get(childPath)
 
         if (
-          child.isFile &&
+          child?.isFile &&
           imageExtensions.has(
             path.extname(child.name).toLowerCase(),
           )
         ) {
           imageNames.push(child.name)
-        } else if (child.isDirectory) {
+        } else if (child?.isDirectory) {
           subdirectories.push(childPath)
         }
       }
 
-      if (imageNames.length > 0) {
-        imageNames.sort((left, right) =>
-          left.localeCompare(right),
-        )
+      imageNames.sort((left, right) =>
+        left.localeCompare(right),
+      )
 
+      const [firstImageName] = imageNames
+
+      if (firstImageName !== undefined) {
         return Promise.resolve({
-          name: imageNames[0],
-          path: path.join(currentPath, imageNames[0]),
+          name: firstImageName,
+          path: path.join(currentPath, firstImageName),
         })
       }
 
@@ -424,16 +556,21 @@ const createFakeFileSystem = ({ path }) => {
 
   // Mirror of the real preload's `countFolderImages`: total images anywhere
   // under `folderPath`, walking the in-memory tree instead of disk.
-  const countFolderImages = (folderPath) => {
+  const countFolderImages = (
+    folderPath: string,
+  ): Promise<number> => {
     const queue = [folderPath]
 
     let count = 0
 
-    while (queue.length > 0) {
-      const currentPath = queue.shift()
-      const node = nodesByPath.get(currentPath)
+    for (
+      let currentPath = queue.shift();
+      currentPath !== undefined;
+      currentPath = queue.shift()
+    ) {
+      const node = getDirectory(currentPath)
 
-      if (!node?.isDirectory) {
+      if (!node) {
         continue
       }
 
@@ -441,13 +578,13 @@ const createFakeFileSystem = ({ path }) => {
         const child = nodesByPath.get(childPath)
 
         if (
-          child.isFile &&
+          child?.isFile &&
           imageExtensions.has(
             path.extname(child.name).toLowerCase(),
           )
         ) {
           count += 1
-        } else if (child.isDirectory) {
+        } else if (child?.isDirectory) {
           queue.push(childPath)
         }
       }
@@ -457,30 +594,44 @@ const createFakeFileSystem = ({ path }) => {
   }
 
   // Mirror of the real preload's `searchFolders`: recursive, case-insensitive
-  // folder-name search under `rootPath`, walking the in-memory tree. Descendants
-  // only (never `rootPath` itself), nearest-first like the disk version.
-  const searchFolders = (rootPath, query) => {
+  // folder-name search under the given root, walking the in-memory tree.
+  // Descendants only (never the root itself), nearest-first like the disk
+  // version.
+  //
+  // The parameter is `searchRootPath`, not `rootPath`. It WAS `rootPath`, which
+  // shadowed the tree's own `rootPath` twenty lines up — the behaviour was
+  // right and utterly dependent on the shadow, so renaming the parameter
+  // without repointing the queue would have silently changed "search under what
+  // you asked for" into "search the whole drive". Two identical names, one
+  // scope apart, is not worth the four characters it saves.
+  const searchFolders = (
+    searchRootPath: string,
+    query: string,
+  ): Promise<FolderMatch[]> => {
     const needle = query.trim().toLowerCase()
 
     if (!needle) {
       return Promise.resolve([])
     }
 
-    const queue = [rootPath]
-    const results = []
+    const queue = [searchRootPath]
+    const results: FolderMatch[] = []
 
-    while (queue.length > 0) {
-      const currentPath = queue.shift()
-      const node = nodesByPath.get(currentPath)
+    for (
+      let currentPath = queue.shift();
+      currentPath !== undefined;
+      currentPath = queue.shift()
+    ) {
+      const node = getDirectory(currentPath)
 
-      if (!node?.isDirectory) {
+      if (!node) {
         continue
       }
 
       for (const childPath of node.children) {
         const child = nodesByPath.get(childPath)
 
-        if (!child.isDirectory) {
+        if (!child?.isDirectory) {
           continue
         }
 
@@ -498,7 +649,9 @@ const createFakeFileSystem = ({ path }) => {
     return Promise.resolve(results)
   }
 
-  const readImageData = (filePath) => {
+  const readImageData = (
+    filePath: string,
+  ): Promise<ImageBytes> => {
     const node = nodesByPath.get(filePath)
 
     if (!node?.isFile) {
@@ -515,14 +668,19 @@ const createFakeFileSystem = ({ path }) => {
 
   // Virtual delete: drop the node and its whole subtree, and unlink it from its
   // parent. Mutates the in-memory map only — never disk.
-  const deleteFilePath = ({ filePath }) => {
+  const deleteFilePath = ({
+    filePath,
+  }: {
+    filePath: string
+    isDirectory?: boolean
+  }): Promise<boolean> => {
     const node = nodesByPath.get(filePath)
 
     if (!node) {
       return Promise.resolve(false)
     }
 
-    const removeSubtree = (targetPath) => {
+    const removeSubtree = (targetPath: string) => {
       const targetNode = nodesByPath.get(targetPath)
 
       if (targetNode?.isDirectory) {
@@ -535,9 +693,7 @@ const createFakeFileSystem = ({ path }) => {
     }
 
     if (node.parent) {
-      nodesByPath
-        .get(node.parent)
-        ?.children.delete(filePath)
+      getDirectory(node.parent)?.children.delete(filePath)
     }
 
     removeSubtree(filePath)
