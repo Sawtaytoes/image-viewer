@@ -79,6 +79,24 @@ Three cases, in order of preference:
    in `src/styles/tailwind.css`. Keep this list short; it is the part of the app Tailwind
    cannot see.
 
+### Two utilities that set the same property do not resolve in `className` order
+
+Tailwind resolves competing utilities by their order **in the generated stylesheet**, not by the
+order they appear in the attribute. Emotion's `css={[base, isThing && override]}` composition
+relied on the override winning, and porting that shape directly produces a rule that works by
+luck.
+
+The fix is not `!important`. It is to make the two strings disjoint: pull the contested property
+out of the base and give each branch a complete pair. `PaneGalleryFolderTile`'s base carries no
+`bg-*`, `TitleBar`'s button base carries no `px-*`, and `FolderTab`'s states each carry their own
+background *and* foreground.
+
+### Animations live in `@theme`, and that is the swap's real cost
+
+`@keyframes` is a top-level at-rule, so an animation cannot sit beside the component that plays
+it the way Emotion's `keyframes()` did. All thirteen are in one `@theme` block in
+`src/styles/tailwind.css`, grouped by comment. Nothing fails if one goes unused.
+
 ### Colours come from tokens, never a hex
 
 `src/styles/tailwind.css` imports `@charcuterie/tokens/theme.css`, which publishes the
@@ -95,16 +113,43 @@ drifted one:
 | `#d6d6d6`, `#cfcfcf` | `text-content-secondary` | |
 | `#aaa`, `#999`, `#888` | `text-content-muted` | |
 | `#777`, `#666` (disabled text) | `text-content-disabled` | |
-| `#2b2b2b`, `#222` (page/base chrome) | `bg-surface-sunken` | |
-| `#333`, `#3a3a3a`, `#3d3d3d` (raised chrome) | `bg-surface-raised` | |
+| `#2b2b2b`, `#222`, `#555` — **a surface** | `bg-surface-sunken` | |
+| `#333`, `#3a3a3a`, `#3d3d3d`, `#666` — **a surface** | `bg-surface-raised` | **Luminance flips** — see below. |
+| `#444` — **the page** | `bg-surface-base` | The file browser and the in-pane gallery both. |
 | `rgba(34,34,34,.95)`, `rgba(51,51,51,.9…)` (bars, menus) | `bg-surface-overlay` | Opaque now — see the milestone doc. |
-| `#444`, `#555` (borders/rules) | `border-border-default` / `border-border-strong` | |
+| `#444`, `#555` — **a rule or an edge** | `border-border-default` / `border-border-strong` | |
+| `#555` — **a chip's fill** | `bg-intent-neutral-solid` | Neither a surface nor a rule; the grey that means "a control". |
 | `rgba(255,255,255,0.08…0.15)` (hover wash) | `hover:bg-intent-neutral-surface-hover` | |
 | `#2a6f97`, `#3d9be0`, `#61a5c2` (selected/active) | `bg-intent-accent-solid` etc. | **Hue changes.** [Decision](decisions/2026-07-31-selection-blue-becomes-the-accent-intent.md). |
 | `red` (destructive button) | `bg-intent-danger-solid` | |
 | `green` (confirm button) | `bg-intent-success-solid` | |
 | `#ff8a80`, `rgba(255,138,128,.15)` (error text/wash) | `text-intent-danger-content` / `bg-intent-danger-surface` | |
 | `rgba(0,0,0,0.4…0.72)` (modal scrim) | `bg-scrim` | The scrim is its own token role. |
+| `rgba(255,255,255,0.2…0.25)` (pressed/active wash) | `active:bg-intent-neutral-solid` | A step stronger than the hover wash. |
+| `rgba(255,255,255,0.3)` (the chrome grab handle) | `bg-border-strong` | **Not** the neutral wash — see below. |
+| `0 8px 24px rgba(0,0,0,…)` | `shadow-[0_8px_24px_var(--color-scrim)]` | Geometry kept, the black-alpha swapped for the token. |
+| `lightgray` (dotted keyboard-selection border) | `border-border-strong` | |
+
+### Three places the map could not be followed literally
+
+Recorded because a later reader will otherwise read them as drift:
+
+1. **`bg-surface-raised` is *lighter* than `bg-surface-base` in the dark palette**, and the
+   greys it replaces were the other way round. The file browser's search bar was `#3a3a3a` on a
+   `#444` page — darker than its page; it is now lighter, and its input reads as a sunken well
+   inside it. The semantic role was chosen over the literal luminance because there is no token
+   above `raised`. **Worth a look on the tablet.**
+2. **The chrome grab handle is `bg-border-strong`, not the neutral hover wash.** In these tokens
+   the neutral wash is an opaque near-black, which would have made a deliberately-enlarged touch
+   affordance invisible
+   ([queue-is-summonable-by-touch](decisions/2026-06-30-queue-is-summonable-by-touch.md)).
+3. **The multi-select check badge is `bg-intent-accent-content`, not `-solid`.** Taking the
+   accent row literally put the badge on a tile of the same colour and it disappeared — the
+   original was a *lighter* blue chip on a mid-blue tile, and `content` is where "lighter than
+   solid" lives in this ramp. The selected tile's outline moved for the same reason
+   (`intent-accent-border` is *darker* than `-solid`). Measured: the chip now reads at 2.71:1
+   against the tile where the original managed 2.01, and the ✓ at 7.81:1 where the original
+   white-on-light-blue managed 2.74.
 
 `'Source Sans Pro', sans-serif` on a control becomes **nothing**: `<body>` sets
 `font-family: var(--font-sans)` and every control inherits it. The reason twelve
@@ -164,6 +209,12 @@ is locked: generics and correct DOM types, **not** `as` / `any` / `unknown`.
   does, and would silently swap this repo's `lineWidth: 60` and its `useKeyWithClickEvents`
   / `noStaticElementInteractions` exemptions — which exist because this is a
   touch-first app whose surfaces are deliberately not buttons.
+- **Comments in `biome.json`.** Biome reads `.json` strictly: a `//` comment there does not
+  error, it makes the **whole config silently fall back to defaults** — which reformats the repo
+  with tabs and semicolons and re-enables the rules `biome.json` turns off. That happened once
+  during M6c and rewrote two `function` expressions into arrows, breaking five tests via
+  `.prototype`. Explanations for a Biome setting go in this file; `biome.json` stays plain JSON.
+  (Relatedly: do not run `biome --write` while anyone may be editing `biome.json`.)
 - **Logical properties (`ps-`/`pe-`, `start-`/`end-`).** Charcuterie enforces them and
   `@charcuterie/ui` is written in them, so the components arriving in phase 2 are already
   correct. Rewriting this app's own `left`/`right` in the same pass as the Emotion swap

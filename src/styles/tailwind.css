@@ -67,6 +67,208 @@
   --title-bar-height: 40px;
 }
 
+/* Every animation in the app, in one block, because there is nowhere else.
+
+   Emotion's `keyframes` helper let each component declare its own `@keyframes`
+   beside the rule that used it and auto-namespaced the generated name. Tailwind
+   has no equivalent: `@keyframes` is a top-level at-rule, so all thirteen have
+   to live in one place, and `@theme` is that place — a `--animate-*` entry
+   there publishes a real `animate-<name>` utility, which is what the components
+   use.
+
+   This is the largest single thing the swap made worse, and it is worth naming:
+   an animation is now further from the component that plays it than it was
+   under Emotion, and nothing here fails if one goes unused. Three sections
+   below — the viewer's, the file browser's, the modal's — kept apart by comment
+   rather than by structure, because CSS gives no structure to keep them apart
+   with.
+
+   The durations are baked into the token rather than set per call site
+   deliberately: `duration-*` is `transition-duration` only, so a second utility
+   could not override `animation-duration` reliably (both land in the same
+   layer and source order, not class order, decides). Three entries share the
+   `fade-in` keyframes at the three durations the old components used —
+   140ms for a popover backdrop, 160ms for the in-pane gallery, 180ms for the
+   viewer itself.
+
+   `spinner` is here rather than Tailwind's built-in `animate-spin` because the
+   gallery's loading ring turns at 700ms, not the built-in 1s, and it is painted
+   by an `::after` (`after:animate-spinner`), which no inline style can reach. */
+@theme {
+  --animate-backdrop-in: fade-in 140ms ease;
+  --animate-fade-in: fade-in 160ms ease;
+  --animate-viewer-in: fade-in 180ms ease;
+  --animate-pop-in: pop-in 160ms ease;
+  --animate-pane-in: pane-in 220ms ease;
+  --animate-action-bar-in: action-bar-in 200ms ease;
+  --animate-tap-ripple: tap-ripple 250ms ease-out forwards;
+  --animate-tap-pulse: tap-pulse 250ms ease forwards;
+  --animate-spinner: spinner 700ms linear infinite;
+  /* The file browser's search bar, not the viewer: an indeterminate progress
+     line under the bar while the subfolder walk runs. The travelling segment is
+     25% wide, so -100% → 400% carries it fully off one edge to fully off the
+     other. Painted by an `::after`, which no inline style can reach. */
+  --animate-indeterminate-slide: indeterminate-slide 1100ms
+    ease-in-out infinite;
+
+  @keyframes indeterminate-slide {
+    from {
+      transform: translateX(-100%);
+    }
+
+    to {
+      transform: translateX(400%);
+    }
+  }
+
+  @keyframes fade-in {
+    from {
+      opacity: 0;
+    }
+
+    to {
+      opacity: 1;
+    }
+  }
+
+  @keyframes pop-in {
+    from {
+      opacity: 0;
+      transform: scale(0.92);
+    }
+
+    to {
+      opacity: 1;
+      transform: scale(1);
+    }
+  }
+
+  @keyframes pane-in {
+    from {
+      opacity: 0;
+      transform: translateY(10px) scale(0.985);
+    }
+
+    to {
+      opacity: 1;
+      transform: none;
+    }
+  }
+
+  /* Keeps the `-50%` horizontal centering the action bar's static
+     `-translate-x-1/2` also applies, so the slide-up does not shove it
+     rightward for its 200ms. */
+  @keyframes action-bar-in {
+    from {
+      opacity: 0;
+      transform: translate(-50%, 20px);
+    }
+
+    to {
+      opacity: 1;
+      transform: translate(-50%, 0);
+    }
+  }
+
+  @keyframes tap-ripple {
+    from {
+      opacity: 0.5;
+      transform: scale(0);
+    }
+
+    to {
+      opacity: 0;
+      transform: scale(3);
+    }
+  }
+
+  @keyframes tap-pulse {
+    0% {
+      opacity: 0;
+      transform: scale(0.6);
+    }
+
+    40% {
+      opacity: 1;
+      transform: scale(1.1);
+    }
+
+    100% {
+      opacity: 0;
+      transform: scale(1);
+    }
+  }
+
+  @keyframes spinner {
+    to {
+      transform: rotate(360deg);
+    }
+  }
+
+  /* The confirmation modal's open/close animation.
+
+     Emotion's `keyframes` helper minted these next to the component and
+     interpolated an `ANIMATION_DURATION_MS` constant into the shorthand. Tailwind
+     has no runtime to mint anything, so the keyframes are theme values here and
+     the component names them with `animate-*`. The duration moved in with them —
+     the JS constant existed only to be interpolated (the modal unmounts on
+     `animationend`, not on a timer), so keeping it would have been a second copy
+     of a number nothing reads.
+
+     The modal must stay mounted through the close animation and the delete
+     confirm is a locked decision
+     (`docs/decisions/2026-06-03-delete-needs-confirmation-and-guards-stray-delete-key.md`),
+     which is why every one of these ends in `forwards`. */
+  --animate-backdrop-fade-in: backdrop-fade-in 200ms ease
+    forwards;
+  --animate-backdrop-fade-out: backdrop-fade-out 200ms ease
+    forwards;
+  --animate-modal-scale-in: modal-scale-in 200ms ease
+    forwards;
+  --animate-modal-scale-out: modal-scale-out 200ms ease
+    forwards;
+
+  @keyframes backdrop-fade-in {
+    from {
+      opacity: 0;
+    }
+    to {
+      opacity: 1;
+    }
+  }
+
+  @keyframes backdrop-fade-out {
+    from {
+      opacity: 1;
+    }
+    to {
+      opacity: 0;
+    }
+  }
+
+  @keyframes modal-scale-in {
+    from {
+      opacity: 0;
+      transform: scale(0.9);
+    }
+    to {
+      opacity: 1;
+      transform: scale(1);
+    }
+  }
+
+  @keyframes modal-scale-out {
+    from {
+      opacity: 1;
+      transform: scale(1);
+    }
+    to {
+      opacity: 0;
+      transform: scale(0.9);
+    }
+  }
+}
+
 /* Was `App.jsx`'s `<Global>` block. `box-sizing` is Tailwind Preflight's job
    now, so only the parts Preflight does not do survive. */
 body {
