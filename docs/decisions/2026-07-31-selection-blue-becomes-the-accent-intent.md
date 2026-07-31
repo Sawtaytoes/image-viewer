@@ -61,6 +61,29 @@ It goes ahead because the alternative is worse in a way that lasts longer: the a
 > "fix: brighter selection blue, visible menu X icons, and fill target monitor" — commit
 > b8d84ae, the owner tuning this exact colour
 
+### Correction, 2026-07-31 — the b8d84ae evidence above is wrong
+
+Kevin read this record and said he did not hand-tune that colour. He is right, and the
+citation fails on both halves:
+
+1. **It is not "the owner tuning by hand."** `b8d84ae` is authored under Kevin's git
+   identity like every commit in this repo, and carries
+   `Co-Authored-By: Claude Opus 4.8` — an agent session, not a hand edit.
+2. **It does not endorse `#2A6F97`. It deletes it.** The commit body reads *"Bump the
+   'selected item' highlight … from the dull `#2a6f97` to a brighter `#3d9be0`"*, and the
+   diff changes exactly two sites (`FolderPickerPopover` active row, `FolderTabStrip`
+   active tab) in that direction. Citing it to protect `#2A6F97` inverts it.
+
+So the "counter-argument" this record weighed against itself never existed. Nothing was
+smuggled past a taste Kevin had set. What the repo's own history actually asks for is
+**more brightness**, which the token accent `#5A54E8` delivers — it is brighter and more
+saturated than `#2A6F97`, and closer in luminance to `#3D9BE0`.
+
+The decision (selection = `accent` intent) is therefore **better supported than when it
+was written**, not worse. It stands unchanged pending Kevin's look at
+[`docs/previews/2026-07-31-selection-blue-comparison.html`](../previews/2026-07-31-selection-blue-comparison.html),
+which shows both sites under `#5A54E8`, `#2A6F97`, and `#3D9BE0` in the real app.
+
 M5's precedent for the general move: rip-deck's `LoadedDiscsBanner` "was hardcoded slate, which
 said *this is information* by accident. `info` says it on purpose."
 
