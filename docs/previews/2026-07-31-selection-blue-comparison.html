@@ -1,0 +1,178 @@
+<!doctype html>
+<!-- Side-by-side of the image-viewer selection colour, captured from the REAL
+     Electron app (fake-FS fixtures) under three accent ramps. Not swatches —
+     the same view, same state, three colours.
+
+     Regenerate: __screenshots__/shot.mjs in this repo (see the M6c handoff).  -->
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta content="width=device-width, initial-scale=1" name="viewport" />
+    <title>Image Viewer — selection blue, three candidates</title>
+    <style>
+      :root {
+        --bg: #0e1117;
+        --panel: #161b24;
+        --line: #262d3a;
+        --text: #e6e9ef;
+        --muted: #9aa4b6;
+      }
+      * { box-sizing: border-box; }
+      body {
+        background: var(--bg);
+        color: var(--text);
+        font: 15px/1.55 "Segoe UI", system-ui, sans-serif;
+        margin: 0;
+        padding: 32px 28px 64px;
+      }
+      h1 { font-size: 25px; margin: 0 0 6px; }
+      h2 {
+        border-bottom: 1px solid var(--line);
+        font-size: 19px;
+        margin: 44px 0 4px;
+        padding-bottom: 8px;
+      }
+      .sub { color: var(--muted); margin: 0 0 8px; max-width: 96ch; }
+      .row {
+        border: 1px solid var(--line);
+        border-radius: 10px;
+        margin-top: 18px;
+        overflow: hidden;
+      }
+      .cap {
+        align-items: center;
+        background: var(--panel);
+        border-bottom: 1px solid var(--line);
+        display: flex;
+        gap: 12px;
+        padding: 9px 14px;
+      }
+      .chip {
+        border: 1px solid rgba(255, 255, 255, 0.28);
+        border-radius: 4px;
+        height: 17px;
+        width: 30px;
+      }
+      .name { font-weight: 600; }
+      .hex {
+        color: var(--muted);
+        font-family: "Cascadia Mono", Consolas, monospace;
+        font-size: 13px;
+      }
+      .note { color: var(--muted); font-size: 13px; margin-left: auto; }
+      .row img { display: block; width: 100%; }
+      /* The viewer shots are clipped to the tab strip at capture time. */
+      .crop img { display: block; width: 100%; }
+      .legend {
+        background: var(--panel);
+        border: 1px solid var(--line);
+        border-radius: 10px;
+        margin-top: 10px;
+        padding: 14px 18px;
+      }
+      .legend b { color: #fff; }
+      code {
+        background: #1d2430;
+        border-radius: 4px;
+        font-size: 13px;
+        padding: 1px 5px;
+      }
+    </style>
+  </head>
+  <body>
+    <h1>Image Viewer — the selection colour, three candidates</h1>
+    <p class="sub">
+      Captured from the real Electron app running the fake-filesystem fixtures,
+      driven by Playwright. Each pair is the <em>same view in the same state</em>
+      — only the <code>intent-accent-*</code> ramp differs.
+    </p>
+
+    <div class="legend">
+      <p style="margin: 0 0 8px">
+        <b>Why a full ramp and not one hex:</b> the selected tile paints
+        <code>bg-intent-accent-solid</code>, its outline paints
+        <code>outline-intent-accent-content</code>, and the check badge is
+        <code>bg-intent-accent-content</code> over
+        <code>text-intent-accent-surface</code>. Overriding only
+        <code>--color-intent-accent-solid</code> would leave a violet badge on a
+        cyan tile.
+      </p>
+      <p style="margin: 0">
+        <b>The check glyph renders as a box</b> in these shots. That is the
+        sandbox: exactly one font here (D050000L) carries U+2713. On Windows it
+        is a real ✓. The badge's shape and colour are accurate.
+      </p>
+    </div>
+
+    <h2>Site 1 — file browser, multi-select (three folders held)</h2>
+    <p class="sub">
+      Tile fill, 4px inset outline, and the top-right check badge. Fixture
+      folders are colour-coded by a locked decision (Abstract=purple, Cats=red,
+      Dogs=blue, Landscapes=green), so this view deliberately puts the selection
+      colour next to four different image hues at once.
+    </p>
+
+    <div class="row">
+      <div class="cap">
+        <span class="chip" style="background: #5a54e8"></span>
+        <span class="name">Ships today — token <code>accent</code></span>
+        <span class="hex">#5A54E8 blue-violet</span>
+        <span class="note">@charcuterie/tokens, daylight/dark</span>
+      </div>
+      <img alt="file browser multi-select, violet" src="filebrowser-VIOLET.png" />
+    </div>
+
+    <div class="row">
+      <div class="cap">
+        <span class="chip" style="background: #2a6f97"></span>
+        <span class="name">The M6c record's "app's own selection blue"</span>
+        <span class="hex">#2A6F97 cyan</span>
+        <span class="note">the hex b8d84ae called "dull" and removed</span>
+      </div>
+      <img alt="file browser multi-select, cyan" src="filebrowser-CYAN_2A6F97.png" />
+    </div>
+
+    <div class="row">
+      <div class="cap">
+        <span class="chip" style="background: #3d9be0"></span>
+        <span class="name">What b8d84ae actually landed</span>
+        <span class="hex">#3D9BE0 brighter blue</span>
+        <span class="note">the real "last word" on this colour</span>
+      </div>
+      <img alt="file browser multi-select, bright blue" src="filebrowser-BLUE_3D9BE0.png" />
+    </div>
+
+    <h2>Site 2 — viewer, folder tab strip (active tab)</h2>
+    <p class="sub">
+      One of the two sites <code>b8d84ae</code> actually edited. The active tab
+      sits directly above the image being viewed.
+    </p>
+
+    <div class="row">
+      <div class="cap">
+        <span class="chip" style="background: #5a54e8"></span>
+        <span class="name">Ships today</span>
+        <span class="hex">#5A54E8</span>
+      </div>
+      <div class="crop"><img alt="tab strip, violet" src="viewer-VIOLET.png" /></div>
+    </div>
+
+    <div class="row">
+      <div class="cap">
+        <span class="chip" style="background: #2a6f97"></span>
+        <span class="name">#2A6F97 cyan</span>
+        <span class="hex">#2A6F97</span>
+      </div>
+      <div class="crop"><img alt="tab strip, cyan" src="viewer-CYAN_2A6F97.png" /></div>
+    </div>
+
+    <div class="row">
+      <div class="cap">
+        <span class="chip" style="background: #3d9be0"></span>
+        <span class="name">#3D9BE0 — b8d84ae's actual value</span>
+        <span class="hex">#3D9BE0</span>
+      </div>
+      <div class="crop"><img alt="tab strip, bright blue" src="viewer-BLUE_3D9BE0.png" /></div>
+    </div>
+  </body>
+</html>
