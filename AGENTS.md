@@ -14,9 +14,15 @@ Slim guide for working in this repo without breaking it. Deeper rationale lives 
 
 ## What this is
 
-A touch-friendly **Electron** image browser (used on a Surface tablet). Renderer is **React 19** +
-**Emotion** (`css` prop), state via **RxJS** + a small custom redux-observable. Built with **Electron
-Forge 7 + the Vite plugin**. Package manager is **Yarn 4** (Corepack).
+A touch-friendly **Electron** image browser (used on a Surface tablet). Renderer is **React 19 +
+TypeScript**, styled with **Tailwind v4 on `@charcuterie/tokens`**, state via **RxJS** + a small
+custom redux-observable. Built with **Electron Forge 7 + the Vite plugin**. Package manager is
+**Yarn 4** (Corepack).
+
+**There is no Emotion.** It was removed in M6c (2026-07-31) so the app could consume
+`@charcuterie/ui`, the fleet's shared component library. If you are about to write a `css` prop,
+read [`docs/typescript-and-tailwind-conventions.md`](docs/typescript-and-tailwind-conventions.md)
+first — it is the specification for renderer code and it has the hex→token map.
 
 ## Commands
 
@@ -25,11 +31,22 @@ corepack enable          # once per machine (Yarn 4 is Corepack-managed)
 yarn                     # install
 yarn start               # dev (electron-forge start; Vite HMR)
 yarn test                # vitest (watch)   |  yarn test:run for one-shot
-yarn typecheck           # tsc --noEmit (TS config files only for now)
-yarn lint                # biome check --write --unsafe  +  eslint . --fix
+yarn typecheck           # tsc --noEmit — covers all of src/ now, not just the configs
+yarn lint                # biome check --write  +  eslint . --fix
+yarn build:renderer      # vite build of the renderer alone — the gate that can see Tailwind
 yarn package             # build main/preload/renderer + package the app (no installer)
 yarn make                # build + Windows Squirrel installer (and zip/deb/rpm)
 ```
+
+`yarn build:renderer` matters more than it looks. jsdom does not compute styles from a
+stylesheet, so **no test can tell a real utility from a class name Tailwind never generated** —
+a `className` assertion passes either way. The Vite build runs the real Tailwind pass and is
+the only gate that can.
+
+There is no working global `yarn` on the sandbox host; `corepack enable --install-directory
+/tmp/bin yarn` then `export PATH=/tmp/bin:$PATH`, or call the binaries directly
+(`node_modules/.bin/tsc`, `node_modules/.bin/vitest`, …), which is what a subagent scoped to one
+directory should do anyway.
 
 ## The one rule that matters: the renderer has no Node access
 
@@ -74,14 +91,31 @@ everything crossing `contextBridge` **plain/serializable** (map `Dirent`/`Stats`
 
 ## Conventions
 
-- **File extensions:** JSX → **`.jsx`**, pure logic → **`.js`** (Vite 8/oxc rejects JSX in `.js`).
-  Source is still JavaScript; the `.js → .ts`/`.tsx` conversion is a later phase
-  ([`typescript-tooling-now-convert-later`](docs/decisions/2026-06-02-typescript-tooling-now-convert-later.md)).
-  Imports are extensionless.
+Full version, with the colour map and the traps:
+[`docs/typescript-and-tailwind-conventions.md`](docs/typescript-and-tailwind-conventions.md).
+The short version:
+
+- **File extensions:** JSX → **`.tsx`**, pure logic → **`.ts`**. `tsconfig.json` sets
+  `allowJs: false`, so a `.js` under `src/` is a module `tsc` **cannot resolve** — not one it
+  silently skips. The only survivors are `src/main.js` and `src/preload.js`, excluded by name.
+  Imports are extensionless, so renaming a file never touches its callers.
+- **Props are types, not `prop-types`.** Write the type inline on the parameter; do not use
+  `FC<Props>` (its implicit `children` is how a component that forgot to render them passed).
+- **Styling is Tailwind utilities on `className`**, with colours from `@charcuterie/tokens`.
+  A hex literal in a component is a bug. **A runtime-computed value never goes in a class** —
+  Tailwind scans source *text*, so `` className={`w-[${size}px]`} `` generates no CSS and the
+  element has no width, with no error and no failing test. Computed values go in an inline
+  `style`, or in a CSS custom property a utility reads.
 - **Formatting/linting:** Biome is primary (`biome.json`); a minimal ESLint flat config
-  (`eslint.config.mjs`) adds a few `.ts/.tsx`-only rules. Run `yarn lint` before committing.
+  (`eslint.config.mjs`) adds four rules Biome cannot express, all scoped to `.ts`/`.tsx`:
+  `id-length` (min 2 — no `(e) =>`), the `is`/`has` boolean-name rule, `react/no-multi-comp`
+  (one component per file), and the react-hooks pair. Run `yarn lint` before committing.
 - **Entry points** referenced by `forge.config.ts`: `src/main.js`, `src/preload.js`, and the root
-  `index.html` → `/src/renderer.jsx`. Don't move these without updating the config.
+  `index.html` → `/src/renderer.tsx`. Don't move these without updating the config.
+- **`window.api` is fully typed** by [`src/preload.d.ts`](src/preload.d.ts), with the payload
+  shapes in [`src/types.ts`](src/types.ts). If a call site needs a cast, **the declaration is
+  wrong** — fix the declaration. It has been wrong before: it had never been told about
+  `fullScreen`, `searchFolders` or the four saved-queue members.
 
 ## Don't break these
 
@@ -92,9 +126,27 @@ everything crossing `contextBridge` **plain/serializable** (map `Dirent`/`Stats`
    removed (see [`no-custom-protocol-read-image-bytes-in-preload`](docs/decisions/2026-06-03-no-custom-protocol-read-image-bytes-in-preload.md)).
 4. Passing the launch path via `additionalArguments` / reading `cliFilePath` in preload.
 5. `nodeLinker: node-modules` in `.yarnrc.yml` (PnP breaks Electron Forge packaging).
+6. The **self-hosted** fonts. `src/styles/tailwind.css` imports `src/fonts/SourceSansPro.css`;
+   do not put a Google Fonts `<link>` back in `index.html`. That import existed and was wired to
+   nothing until M6c, which is why the CDN link survived a decision that had already banned it.
+7. **`@charcuterie/tokens/fonts.css` is not imported**, deliberately — it ships Baloo 2 / Outfit /
+   Victor Mono, and Source Sans Pro is a locked decision. `--font-sans` is overridden in
+   `src/styles/tailwind.css`, **unlayered and matching `[data-variant]`**, because a `:root` or
+   `@layer base` override loses to the tokens' own selector and the app quietly renders in Outfit.
 
 ## Tests
 
-Vitest + jsdom + Testing Library. `vitest.setup.js` stubs `window.api` so renderer modules import
-cleanly. Pure logic (reducers, natural sort, image filtering) is the easiest to cover — add tests
-there when changing behavior.
+Vitest + jsdom + Testing Library. `vitest.setup.ts` stubs `window.api` — typed as the real
+`Window["api"]`, so a member the bridge exposes and the stub forgets is a typecheck failure
+rather than an `undefined is not a function` in whichever test reaches it first. Pure logic
+(reducers, natural sort, image filtering) is the easiest to cover — add tests there when
+changing behavior.
+
+Two tests exist only to stop a copied constant drifting, because nothing else can see it:
+
+- `src/styles/firstPaintColour.test.ts` — `index.html`'s inline anti-flash hex against
+  `surface.base` from `@charcuterie/tokens`. That rule paints before any stylesheet parses, so
+  it cannot read a custom property; the hex has to be a copy. It failed on its first run.
+- `src/components/convenience/titleBarHeight.test.ts` — the title bar's height across its three
+  homes: the TS constant, `--title-bar-height` in the stylesheet, and `titleBarOverlay.height`
+  in the main process. Drift puts the native window controls off our strip and throws nothing.
