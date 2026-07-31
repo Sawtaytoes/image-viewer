@@ -95,11 +95,17 @@ describe("createFakeFileSystem", () => {
       (folder) => folder.name === "Cats",
     )
 
+    // Asserted, not `!`-ed: if the spec ever stops describing a
+    // "Cats" folder, the failure should say so here rather than
+    // land as `toHaveLength(undefined)` two lines down, which
+    // passes for an empty listing.
+    expect(cats).toBeDefined()
+
     const entries = await fakeFileSystem.readDirectory(
       path.join(rootPath, "Cats"),
     )
 
-    expect(entries).toHaveLength(cats.imageCount)
+    expect(entries).toHaveLength(cats?.imageCount ?? -1)
     expect(entries.every((entry) => entry.isFile)).toBe(
       true,
     )
@@ -188,14 +194,14 @@ describe("createFakeFileSystem", () => {
     const before =
       await fakeFileSystem.readDirectory(catsPath)
 
-    const wasDeleted = await fakeFileSystem.deleteFilePath({
+    const isDeleted = await fakeFileSystem.deleteFilePath({
       filePath: before[0].filePath,
     })
 
     const after =
       await fakeFileSystem.readDirectory(catsPath)
 
-    expect(wasDeleted).toBe(true)
+    expect(isDeleted).toBe(true)
     expect(after).toHaveLength(before.length - 1)
     expect(
       fakeFileSystem.statPath(before[0].filePath).exists,
