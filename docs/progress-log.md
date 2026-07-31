@@ -123,3 +123,33 @@ otherwise untouched. Full brief + rationale: [workers/feature-heic-support.md](w
   portrait shot. **Follow-up:** thumbnail decode is ~1.3 s/image on the main thread — fine per-image,
   slow for a big HEIC folder on first browse (cached after); future work = embedded-preview extraction
   and/or moving the decode to a `utilityProcess`/worker.
+
+## 2026-07-31 — TypeScript + Tailwind (branch `feat/m6c-typescript-tailwind`)
+
+Charcuterie milestone **M6c phase 1**: the renderer becomes TypeScript and Tailwind v4 on
+`@charcuterie/tokens`, so the app can consume `@charcuterie/ui` in phase 2. Full write-up:
+[2026-07-31-m6c-typescript-and-tailwind.md](2026-07-31-m6c-typescript-and-tailwind.md); the house
+rules it establishes are in
+[typescript-and-tailwind-conventions.md](typescript-and-tailwind-conventions.md).
+
+- **132 files** converted `.js`/`.jsx` → `.ts`/`.tsx`. `allowJs` is now **false**, so a `.js`
+  under `src/` is a module `tsc` cannot resolve rather than one it silently skips. `main.js` and
+  `preload.js` are excluded by name and remain the open work.
+- **Emotion is gone** — 26 files, 125 `css` props, 24 `propTypes` blocks, and **119 colour
+  literals → 0**. `@emotion/react` and `prop-types` are out of `package.json`.
+- **Typecheck went from 16 files to 152.** It was green on `master` while 132 source files were
+  not in the program at all.
+- Four things found that no gate could see: the self-hosted fonts had **never been switched on**
+  (the CSS was imported by nothing, its `url()`s pointed at a `public/` dir that does not exist,
+  and `index.html` still hit the Google CDN); `preload.d.ts` had never heard of `fullScreen`,
+  `searchFolders` or the four saved-queue members; two contexts were `createContext()` with no
+  argument; and `fakeFileSystem`'s `searchFolders` depended on a variable shadow that a rename
+  would have silently turned into "search the whole drive".
+- **Verified:** `yarn typecheck` / `yarn lint:biome` (162 files) / `yarn lint:eslint` /
+  `yarn test:run` (**114 pass**, was 108) / `yarn build:renderer` — all green. `build:renderer`
+  is new and is in CI, because it is the only gate that can see a Tailwind class which generates
+  no CSS.
+- **Owed (human/GUI):** the selection blue changes hue (cyan → the accent intent's blue-violet)
+  and the file browser's search bar flips luminance. Both are deliberate, both are recorded, and
+  both want a look on the tablet. `yarn package` was not run — this sandbox cannot build for
+  Windows.
