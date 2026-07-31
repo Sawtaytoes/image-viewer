@@ -1,9 +1,17 @@
 import "@testing-library/jest-dom/vitest"
 
-// Minimal stub of the preload bridge (window.api). Renderer modules read
-// window.api at import time, so it must exist before any test imports them.
+import type { ImageFile, QueuedFolder } from "./src/types"
+
+// Minimal stub of the preload bridge (`window.api`). Renderer modules read
+// `window.api` at import time, so it must exist before any test imports them.
 // Individual tests can override fields as needed.
-const extname = (filePath) => {
+//
+// It is typed as the real `Window["api"]` rather than left inferred, which is
+// the one thing the `.js` version could not do — and that immediately found two
+// holes: `readImageData` was absent from the stub entirely, and `preload.d.ts`
+// had never been told about `fullScreen`, `searchFolders` or the four
+// saved-queue members that `preload.js` has exposed for weeks.
+const extname = (filePath: string) => {
   const base = filePath.slice(
     Math.max(
       filePath.lastIndexOf("/"),
@@ -15,12 +23,13 @@ const extname = (filePath) => {
   return dotIndex > 0 ? base.slice(dotIndex) : ""
 }
 
-window.api = {
+const api: Window["api"] = {
   cliFilePath: "",
   countFolderImages: () => Promise.resolve(0),
   createNewWindow: () => {},
   deleteFilePath: () => Promise.resolve(true),
-  findFirstImage: () => Promise.resolve(null),
+  findFirstImage: () =>
+    Promise.resolve<ImageFile | null>(null),
   fullScreen: {
     get: () => Promise.resolve(false),
     onChanged: () => () => {},
@@ -37,7 +46,7 @@ window.api = {
     set: () => {},
   },
   queue: {
-    add: (folder) => Promise.resolve(folder),
+    add: (folder: QueuedFolder) => Promise.resolve(folder),
     addMany: () => Promise.resolve([]),
     clear: () => {},
     get: () => Promise.resolve([]),
@@ -49,6 +58,14 @@ window.api = {
     save: () => Promise.resolve(true),
   },
   readDirectory: () => Promise.resolve([]),
+  // An empty PNG-shaped payload rather than a rejection: the loader turns this
+  // into a `Blob`, and a test that renders an image should exercise that path
+  // rather than the error branch.
+  readImageData: () =>
+    Promise.resolve({
+      data: new ArrayBuffer(0),
+      mimeType: "image/png",
+    }),
   searchFolders: () => Promise.resolve([]),
   setFolderLastIndex: () => {},
   stopIdentifyDisplay: () => {},
@@ -58,14 +75,14 @@ window.api = {
     isFile: false,
   }),
   path: {
-    basename: (filePath) =>
+    basename: (filePath: string) =>
       filePath.slice(
         Math.max(
           filePath.lastIndexOf("/"),
           filePath.lastIndexOf("\\"),
         ) + 1,
       ),
-    dirname: (filePath) =>
+    dirname: (filePath: string) =>
       filePath.slice(
         0,
         Math.max(
@@ -74,11 +91,13 @@ window.api = {
         ),
       ) || ".",
     extname,
-    join: (...segments) => segments.join("/"),
-    resolve: (...segments) => segments.join("/"),
+    join: (...segments: string[]) => segments.join("/"),
+    resolve: (...segments: string[]) => segments.join("/"),
     sep: "/",
   },
 }
+
+window.api = api
 
 // jsdom lacks ResizeObserver, which FileBrowser instantiates.
 if (!globalThis.ResizeObserver) {
@@ -92,9 +111,18 @@ if (!globalThis.ResizeObserver) {
 // jsdom lacks IntersectionObserver, which Image uses for lazy loading. The stub
 // never reports visibility, so test-rendered images simply don't start loading.
 if (!globalThis.IntersectionObserver) {
-  globalThis.IntersectionObserver = class {
+  globalThis.IntersectionObserver = class FakeIntersectionObserver
+    implements IntersectionObserver
+  {
+    readonly root = null
+    readonly rootMargin = ""
+    readonly scrollMargin = ""
+    readonly thresholds: readonly number[] = []
     observe() {}
     unobserve() {}
     disconnect() {}
+    takeRecords(): IntersectionObserverEntry[] {
+      return []
+    }
   }
 }

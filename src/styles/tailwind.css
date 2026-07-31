@@ -1,0 +1,105 @@
+/* The renderer's ONE stylesheet. Imported by `src/renderer.tsx`, which is the
+   only place it may be imported from — Vite injects it into `index.html`.
+
+   This replaces Emotion. Every rule that used to live in a `css` template
+   literal beside a component is either a Tailwind utility on that component's
+   `className` now, or — for the handful of things a utility cannot express
+   (`::-webkit-scrollbar`, `@font-face`) — a rule down below. */
+
+@import "tailwindcss";
+
+/* Colours, the type ramp, radii, motion, and the three axes.
+   `theme.css` publishes `--color-*`, `--text-*`, `--radius-*` and friends into
+   Tailwind's own namespaces, so `bg-surface-raised` and `text-sm` are OURS and
+   answer to `[data-scheme]` / `[data-variant]` / `[data-density]` on `<html>`
+   (see `index.html`). */
+@import "@charcuterie/tokens/theme.css";
+
+/* Source Sans Pro, self-hosted from `src/fonts/`.
+   `@charcuterie/tokens/fonts.css` is deliberately NOT imported: it ships
+   Baloo 2 / Outfit / Victor Mono, and this app's typeface is a locked decision
+   (`docs/decisions/2026-06-20-app-font-is-source-sans-pro-everywhere.md`).
+   Self-hosting is also locked
+   (`docs/decisions/2026-06-30-self-host-fonts-locally.md`) — this import is
+   what finally puts that decision into effect. Until now `SourceSansPro.css`
+   existed and was imported by nothing, while `index.html` still fetched the
+   Google CDN on every window open. */
+@import "../fonts/SourceSansPro.css";
+
+/* PHASE 2 will add these two lines when `@charcuterie/ui@0.2.0` publishes:
+
+     @import "@charcuterie/ui/styles.css";
+     @source "../../node_modules/@charcuterie/ui/dist";
+
+   The `@source` is NOT optional and fails **silently** without it — Tailwind v4
+   scans source text for complete class strings and does not scan dependencies,
+   so every shared component renders unstyled with no error and no failing
+   test. rip-deck's `packages/web/src/styles/tailwind.css` is the reference. */
+
+/* Unlayered on purpose, and it has to be.
+
+   `variables.css` (pulled in by `theme.css` above) sets `--font-sans` on
+   `[data-variant="…"]`, which is specificity 0,1,0 — so a `:root` override, or
+   anything inside `@layer base`, loses to it and the app renders in Outfit.
+   Matching the selector and coming later in source order is what wins.
+
+   `--font-display` is set to the same family for the same reason: the locked
+   decision is Source Sans Pro *everywhere*, and a display cut the app never
+   downloads would resolve to Segoe UI on the Surface. */
+:root,
+[data-variant] {
+  --font-sans:
+    "Source Sans Pro", ui-sans-serif, system-ui,
+    -apple-system, "Segoe UI", Roboto, "Helvetica Neue",
+    Arial, sans-serif;
+  --font-display: var(--font-sans);
+}
+
+/* The height of the custom title bar, as a custom property.
+
+   It is ALSO `TITLE_BAR_HEIGHT` in `src/components/convenience/titleBarHeight.ts`
+   and `titleBarOverlay.height` in `src/main.js`, and all three must agree or the
+   native window controls stop lining up with our strip. The TypeScript constant
+   stays because two call sites do arithmetic with it; this variable exists so a
+   Tailwind class can say `top-(--title-bar-height)` without an arbitrary
+   pixel literal in the markup. `titleBarHeight.test.ts` fails if they drift. */
+:root {
+  --title-bar-height: 40px;
+}
+
+/* Was `App.jsx`'s `<Global>` block. `box-sizing` is Tailwind Preflight's job
+   now, so only the parts Preflight does not do survive. */
+body {
+  -moz-osx-font-smoothing: grayscale;
+  -webkit-font-smoothing: antialiased;
+  font-family: var(--font-sans);
+}
+
+/* Dark scrollbars, app-wide. Electron is Chromium, so `-webkit-` reaches every
+   scroll container — the gallery, the popovers, the file browser — which is
+   why this is a global rule and not a utility on one element.
+
+   The four hardcoded greys are tokens now, which is the whole point of the
+   swap: this block used to be the reason a light scheme was impossible. */
+::-webkit-scrollbar {
+  height: 12px;
+  width: 12px;
+}
+
+::-webkit-scrollbar-track {
+  background-color: var(--color-surface-sunken);
+}
+
+::-webkit-scrollbar-thumb {
+  background-color: var(--color-border-strong);
+  border: 2px solid var(--color-surface-sunken);
+  border-radius: 6px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background-color: var(--color-content-muted);
+}
+
+::-webkit-scrollbar-corner {
+  background-color: var(--color-surface-sunken);
+}
