@@ -7,12 +7,14 @@ import {
 } from "@testing-library/react"
 import { beforeAll, describe, expect, it, vi } from "vitest"
 
-import FileSystemContext from "./FileSystemContext"
+import FileSystemContext, {
+  type FileSystemContextValue,
+} from "./FileSystemContext"
 
 // DirectoryControls captures `window.api.path` at module-load, so swap in real
 // Windows path semantics (drive roots like `C:\` are exactly the fiddly case
 // the breadcrumb has to get right) before importing it.
-let DirectoryControls
+let DirectoryControls: typeof import("./DirectoryControls").default
 
 beforeAll(async () => {
   window.api = { ...window.api, path: path.win32 }
@@ -22,13 +24,18 @@ beforeAll(async () => {
   ))
 })
 
-const renderControls = ({ filePath }) => {
+const renderControls = ({
+  filePath,
+}: {
+  filePath: string
+}) => {
   const setFilePath = vi.fn()
 
-  const contextValue = {
+  const contextValue: FileSystemContextValue = {
     directories: [],
     filePath,
     imageFiles: [],
+    isLoading: false,
     isRootFilePath: !filePath,
     navigateUpFolderTree: vi.fn(),
     setFilePath,

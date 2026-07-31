@@ -1,13 +1,16 @@
-import PropTypes from "prop-types"
 import {
   memo,
+  type ReactNode,
   useCallback,
   useEffect,
   useMemo,
   useState,
 } from "react"
 
-import FileSystemContext from "./FileSystemContext"
+import type { ImageFile } from "../../types"
+import FileSystemContext, {
+  type FileSystemContextValue,
+} from "./FileSystemContext"
 import useFolderListing from "./useFolderListing"
 
 // All Node/Electron access goes through the preload bridge. See
@@ -16,7 +19,7 @@ const pathApi = window.api.path
 
 // The drive list shown at the root (empty filePath). Mirrors what
 // `useDirectories` would produce for drive entries, minus a folder to list.
-const driveDirectories = window.api
+const driveDirectories: ImageFile[] = window.api
   .getWindowsDrives()
   .map((driveLetter) => ({
     name: driveLetter,
@@ -39,11 +42,13 @@ const initialFilePath =
     )) ||
   ""
 
-const propTypes = {
-  children: PropTypes.node.isRequired,
+interface FileSystemProviderProps {
+  children: ReactNode
 }
 
-const FileSystemProvider = ({ children }) => {
+const FileSystemProvider = ({
+  children,
+}: FileSystemProviderProps) => {
   const [filePath, setFilePath] = useState(initialFilePath)
 
   useEffect(() => {
@@ -92,25 +97,26 @@ const FileSystemProvider = ({ children }) => {
     ? listedDirectories
     : driveDirectories
 
-  const filePathProviderValue = useMemo(
-    () => ({
-      directories,
-      filePath,
-      imageFiles,
-      isLoading,
-      isRootFilePath,
-      navigateUpFolderTree,
-      setFilePath,
-    }),
-    [
-      directories,
-      filePath,
-      imageFiles,
-      isLoading,
-      isRootFilePath,
-      navigateUpFolderTree,
-    ],
-  )
+  const filePathProviderValue =
+    useMemo<FileSystemContextValue>(
+      () => ({
+        directories,
+        filePath,
+        imageFiles,
+        isLoading,
+        isRootFilePath,
+        navigateUpFolderTree,
+        setFilePath,
+      }),
+      [
+        directories,
+        filePath,
+        imageFiles,
+        isLoading,
+        isRootFilePath,
+        navigateUpFolderTree,
+      ],
+    )
 
   return (
     <FileSystemContext.Provider
@@ -120,8 +126,6 @@ const FileSystemProvider = ({ children }) => {
     </FileSystemContext.Provider>
   )
 }
-
-FileSystemProvider.propTypes = propTypes
 
 const MemoizedFileSystemProvider = memo(FileSystemProvider)
 

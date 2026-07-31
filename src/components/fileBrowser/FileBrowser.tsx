@@ -1,6 +1,8 @@
-import { css, keyframes } from "@emotion/react"
 import {
+  type ChangeEventHandler,
+  type KeyboardEventHandler,
   memo,
+  type ReactNode,
   useCallback,
   useContext,
   useEffect,
@@ -9,8 +11,12 @@ import {
   useRef,
   useState,
 } from "react"
+
+import type {
+  FolderMatch,
+  ImageFile as ImageFileEntry,
+} from "../../types"
 import FullScreenContext from "../convenience/FullScreenContext"
-import TITLE_BAR_HEIGHT from "../convenience/titleBarHeight"
 import useKeyboardControls from "../convenience/useKeyboardControls"
 import CloseIcon from "../icons/CloseIcon"
 import PlayArrowIcon from "../icons/PlayArrowIcon"
@@ -25,202 +31,44 @@ import Button from "../toolkit/Button"
 import DeleteFileModal from "../toolkit/DeleteFileModal"
 import FolderTabStrip from "../workspace/FolderTabStrip"
 import WorkspaceContext from "../workspace/WorkspaceContext"
-import DateGroupedGrid from "./DateGroupedGrid"
+import DateGroupedGrid, {
+  type DateGroupedEntry,
+} from "./DateGroupedGrid"
 import Directory from "./Directory"
 import DirectoryControls from "./DirectoryControls"
 import groupEntriesByDate from "./dateGroups"
 import FileSystemContext from "./FileSystemContext"
 import ImageFile from "./ImageFile"
-import MultiSelectContext from "./MultiSelectContext"
+import MultiSelectContext, {
+  type MultiSelectContextValue,
+} from "./MultiSelectContext"
 import sortDirectoryEntries from "./sortDirectoryEntries"
 import VirtualizedList from "./VirtualizedList"
 
-const fileBrowserStyles = css`
-	background-color: #444;
-	color: #fafafa;
-	display: grid;
-	/* Sits below the custom title bar, which is a fixed strip at the top. */
-	height: calc(100vh - ${TITLE_BAR_HEIGHT}px);
-	margin-top: ${TITLE_BAR_HEIGHT}px;
-	width: 100%;
-	grid-template-rows: auto auto auto 1fr;
-`
+// The title-bar strip is `--title-bar-height` in `src/styles/tailwind.css`, the
+// same value `titleBarHeight.ts` and `main.js` carry — reading the custom
+// property here is what lets the browser sit below the bar without an arbitrary
+// pixel literal in the markup.
+const fileBrowserClassName =
+  "grid w-full grid-rows-[auto_auto_auto_1fr] bg-surface-base text-content-primary"
+
+const insetFileBrowserClassName = `${fileBrowserClassName} mt-(--title-bar-height) h-[calc(100vh-var(--title-bar-height))]`
 
 // Fullscreen auto-hides the title bar, so the browser reclaims that top strip.
 // The bar reveals as an overlay above it rather than pushing this down.
-const fullBleedStyles = css`
-	height: 100vh;
-	margin-top: 0;
-`
-
-// Explicit rows (not auto-placement): FolderTabStrip renders null when the queue
-// is empty, so pinning the search bar and list to fixed rows keeps them put
-// whether or not the tab strip is there.
-const searchBarStyles = css`
-	align-items: center;
-	background-color: #3a3a3a;
-	display: flex;
-	gap: 8px;
-	grid-row: 3;
-	padding: 6px 8px;
-	/* Anchors the indeterminate progress line to the bar's bottom edge. */
-	position: relative;
-`
-
-const searchInputStyles = css`
-	background-color: #555;
-	border: 0;
-	border-radius: 5px;
-	color: #fafafa;
-	flex: 1 1 auto;
-	font-family: 'Source Sans Pro', sans-serif;
-	font-size: 15px;
-	min-width: 0;
-	padding: 8px 12px;
-
-	&::placeholder {
-		color: #aaa;
-	}
-
-	&:focus {
-		outline: 2px solid #3d9be0;
-	}
-`
-
-const searchClearButtonStyles = css`
-	align-items: center;
-	background: transparent;
-	border: 0;
-	border-radius: 50%;
-	color: #d6d6d6;
-	cursor: pointer;
-	display: inline-flex;
-	flex: 0 0 auto;
-	height: 32px;
-	justify-content: center;
-	padding: 0;
-	width: 32px;
-
-	&:hover {
-		background-color: rgba(255, 255, 255, 0.12);
-		color: #fafafa;
-	}
-`
-
-// Shown in place of the folder grid while a search is running or has no hits, so
-// an empty result set reads as a state rather than a blank window.
-const searchStatusStyles = css`
-	color: #aaa;
-	font-family: 'Source Sans Pro', sans-serif;
-	font-size: 16px;
-	padding: 20px;
-`
-
-// Inline "still walking the tree" hint in the search bar — the instant current-
-// directory matches already show, so this just signals more may stream in.
-const searchPendingStyles = css`
-	color: #aaa;
-	flex: 0 0 auto;
-	font-family: 'Source Sans Pro', sans-serif;
-	font-size: 13px;
-	white-space: nowrap;
-`
-
-const indeterminateSlide = keyframes`
-	from {
-		transform: translateX(-100%);
-	}
-	to {
-		transform: translateX(400%);
-	}
-`
-
-// Indeterminate progress line pinned under the search bar while the subfolder
-// walk runs. Indeterminate rather than a percentage: the tree's size isn't known
-// until it's been walked, so there's no honest total to divide by. Absolutely
-// positioned so showing/hiding it never nudges the layout. The travelling
-// segment is 25% wide, so it slides from fully off-left to fully off-right.
-const searchProgressStyles = css`
-	background-color: rgba(255, 255, 255, 0.08);
-	bottom: 0;
-	height: 2px;
-	left: 0;
-	overflow: hidden;
-	position: absolute;
-	right: 0;
-
-	&::after {
-		animation: ${indeterminateSlide} 1100ms ease-in-out
-			infinite;
-		background-color: #3d9be0;
-		content: '';
-		display: block;
-		height: 100%;
-		width: 25%;
-	}
-`
-
-const virtualizedListContainerStyles = css`
-	grid-row: 4;
-	overflow: hidden;
-`
-
-const spin = keyframes`
-	to {
-		transform: rotate(360deg);
-	}
-`
-
-// Centered spinner shown while a folder's listing is still being read, so a
-// large folder (especially one sorted by date, which stats every file) reads as
-// "loading" rather than a blank window.
-const loadingStyles = css`
-	align-items: center;
-	display: flex;
-	height: 100%;
-	justify-content: center;
-	width: 100%;
-
-	&::after {
-		animation: ${spin} 700ms linear infinite;
-		border: 4px solid #555;
-		border-radius: 50%;
-		border-top-color: #fafafa;
-		content: '';
-		height: 36px;
-		width: 36px;
-	}
-`
-
-const multiSelectActionBarStyles = css`
-	align-items: center;
-	background-color: rgba(51, 51, 51, 0.95);
-	border-radius: 12px;
-	bottom: 24px;
-	box-shadow: 0 4px 16px rgba(0, 0, 0, 0.4);
-	display: flex;
-	gap: 16px;
-	left: 50%;
-	padding: 12px 20px;
-	position: fixed;
-	transform: translateX(-50%);
-	z-index: 9999;
-`
-
-const actionButtonContentStyles = css`
-	align-items: center;
-	display: inline-flex;
-	gap: 4px;
-	justify-content: center;
-`
+const fullBleedFileBrowserClassName = `${fileBrowserClassName} mt-0 h-screen`
 
 // Reused as both the initial value and the cleared value — toggling always
 // builds a fresh Set, so this is never mutated.
-const initialSelectedFolderPaths = new Set()
+const initialSelectedFolderPaths: ReadonlySet<string> =
+  new Set()
+
+const initialSubfolderResults: FolderMatch[] = []
 
 const FileBrowser = () => {
-  const animationFrameIdRef = useRef()
-  const virtualizedListContainerRef = useRef()
+  const animationFrameIdRef = useRef<number | null>(null)
+  const virtualizedListContainerRef =
+    useRef<HTMLDivElement>(null)
 
   const [
     isDeleteFileModalVisible,
@@ -238,9 +86,9 @@ const FileBrowser = () => {
   // debounced disk walk (`subfolderResults`). `searchQuery` is what's typed.
   const [searchQuery, setSearchQuery] = useState("")
 
-  const [subfolderResults, setSubfolderResults] = useState(
-    [],
-  )
+  const [subfolderResults, setSubfolderResults] = useState<
+    FolderMatch[]
+  >(initialSubfolderResults)
 
   const [isSearchPending, setIsSearchPending] =
     useState(false)
@@ -252,7 +100,9 @@ const FileBrowser = () => {
     useState("")
 
   const [selectedFolderPaths, setSelectedFolderPaths] =
-    useState(initialSelectedFolderPaths)
+    useState<ReadonlySet<string>>(
+      initialSelectedFolderPaths,
+    )
 
   const [selectedIndex, setSelectedIndex] = useState(0)
 
@@ -319,32 +169,32 @@ const FileBrowser = () => {
 
       setSearchQuery("")
 
-      setSubfolderResults([])
+      setSubfolderResults(initialSubfolderResults)
     }
   }, [filePath])
 
   // Phase 2 — debounced disk walk for the deeper matches, streamed in as each
   // directory level is scanned (via `onBatch`) so hits appear progressively
-  // rather than all at the end. Each keystroke restarts the timer, and a
-  // `cancelled` flag drops any in-flight batch/result whose query has moved on.
+  // rather than all at the end. Each keystroke restarts the timer, and an
+  // `isCancelled` flag drops any in-flight batch/result whose query has moved on.
   useEffect(() => {
     if (!isSearching) {
-      setSubfolderResults([])
+      setSubfolderResults(initialSubfolderResults)
 
       setIsSearchPending(false)
 
       return undefined
     }
 
-    let cancelled = false
+    let isCancelled = false
 
-    setSubfolderResults([])
+    setSubfolderResults(initialSubfolderResults)
 
     setIsSearchPending(true)
 
     const timeoutId = window.setTimeout(() => {
-      const onBatch = (matches) => {
-        if (cancelled) {
+      const onBatch = (matches: FolderMatch[]) => {
+        if (isCancelled) {
           return
         }
 
@@ -362,7 +212,7 @@ const FileBrowser = () => {
         ),
       )
         .then((folders) => {
-          if (cancelled) {
+          if (isCancelled) {
             return
           }
 
@@ -373,7 +223,7 @@ const FileBrowser = () => {
           setIsSearchPending(false)
         })
         .catch(() => {
-          if (cancelled) {
+          if (isCancelled) {
             return
           }
 
@@ -382,7 +232,7 @@ const FileBrowser = () => {
     }, 250)
 
     return () => {
-      cancelled = true
+      isCancelled = true
 
       window.clearTimeout(timeoutId)
     }
@@ -397,8 +247,8 @@ const FileBrowser = () => {
       return directories
     }
 
-    const seenPaths = new Set()
-    const merged = []
+    const seenPaths = new Set<string>()
+    const merged: ImageFileEntry[] = []
 
     for (const directory of [
       ...localDirectoryMatches,
@@ -439,16 +289,23 @@ const FileBrowser = () => {
       return []
     }
 
+    // The explicit type argument on `map` is what keeps `kind` a literal:
+    // without it the callback infers `string` and the entry stops being the
+    // discriminated union `renderGroupedEntry` switches on.
     const combinedEntries = sortDirectoryEntries(
       [
-        ...directories.map((directory) => ({
-          ...directory,
-          kind: "directory",
-        })),
-        ...imageFiles.map((imageFile) => ({
-          ...imageFile,
-          kind: "image",
-        })),
+        ...directories.map<DateGroupedEntry>(
+          (directory) => ({
+            ...directory,
+            kind: "directory",
+          }),
+        ),
+        ...imageFiles.map<DateGroupedEntry>(
+          (imageFile) => ({
+            ...imageFile,
+            kind: "image",
+          }),
+        ),
       ],
       sortOrders.modifiedDesc,
     )
@@ -457,7 +314,7 @@ const FileBrowser = () => {
   }, [directories, imageFiles, isGroupedView])
 
   const renderGroupedEntry = useCallback(
-    (entry) =>
+    (entry: DateGroupedEntry): ReactNode =>
       entry.kind === "directory" ? (
         <Directory
           directoryName={entry.name}
@@ -484,7 +341,7 @@ const FileBrowser = () => {
     setIsMultiSelectMode(true)
   }, [])
 
-  const toggleFolder = useCallback((folderPath) => {
+  const toggleFolder = useCallback((folderPath: string) => {
     setSelectedFolderPaths((previousPaths) => {
       const nextPaths = new Set(previousPaths)
 
@@ -494,8 +351,8 @@ const FileBrowser = () => {
         nextPaths.add(folderPath)
       }
 
-      // Unchecking the last folder leaves no "Cancel" button to escape with, so
-      // drop out of multi-select automatically once nothing's selected.
+      // Unchecking the last folder leaves no "Cancel" button to escape with,
+      // so drop out of multi-select automatically once nothing's selected.
       if (nextPaths.size === 0) {
         setIsMultiSelectMode(false)
       }
@@ -510,7 +367,9 @@ const FileBrowser = () => {
     setSelectedFolderPaths(initialSelectedFolderPaths)
   }, [])
 
-  const onSearchChange = useCallback((event) => {
+  const onSearchChange = useCallback<
+    ChangeEventHandler<HTMLInputElement>
+  >((event) => {
     setSearchQuery(event.target.value)
   }, [])
 
@@ -520,7 +379,9 @@ const FileBrowser = () => {
 
   // Escape clears the query while the box is focused (the global browser
   // keyboard bails on a focused input, so it can't do this for us).
-  const onSearchKeyDown = useCallback((event) => {
+  const onSearchKeyDown = useCallback<
+    KeyboardEventHandler<HTMLInputElement>
+  >((event) => {
     if (event.code === "Escape") {
       setSearchQuery("")
     }
@@ -611,13 +472,13 @@ const FileBrowser = () => {
       ? retainedPathsKey.split("\n")
       : []
 
-    paths.forEach((filePath) => {
-      retainImage({ filePath })
+    paths.forEach((retainedFilePath) => {
+      retainImage({ filePath: retainedFilePath })
     })
 
     return () => {
-      paths.forEach((filePath) => {
-        releaseImage({ filePath })
+      paths.forEach((retainedFilePath) => {
+        releaseImage({ filePath: retainedFilePath })
       })
     }
   }, [retainedPathsKey, releaseImage, retainImage])
@@ -626,12 +487,17 @@ const FileBrowser = () => {
     () => () => {
       setPreviousFilePath(filePath)
 
-      setPreviousImageFilePath(imageFilePath)
+      // `imageFilePath` is `undefined` whenever no single image is open; both
+      // that and "" are falsy to the index lookup below, so normalising here
+      // keeps this state a plain string.
+      setPreviousImageFilePath(imageFilePath ?? "")
     },
     [filePath, imageFilePath],
   )
 
-  const imageFilePathRef = useRef()
+  const imageFilePathRef = useRef<string | undefined>(
+    undefined,
+  )
 
   imageFilePathRef.current = imageFilePath
 
@@ -717,25 +583,34 @@ const FileBrowser = () => {
       shiftKey: isShiftKeyHeld,
     } = event
 
-    const keyCodeIndexValues = {
-      ArrowDown: () => numberOfColumns,
-      ArrowLeft: () => keyCodeIndexValues.ArrowRight() * -1,
-      ArrowRight: () => 1,
-      ArrowUp: () => keyCodeIndexValues.ArrowDown() * -1,
-      PageDown: () => {
-        const viewHeight =
-          virtualizedListContainerRef.current.clientHeight
+    const keyCodeIndexValues: Record<string, () => number> =
+      {
+        ArrowDown: () => numberOfColumns,
+        ArrowLeft: () =>
+          keyCodeIndexValues.ArrowRight() * -1,
+        ArrowRight: () => 1,
+        ArrowUp: () => keyCodeIndexValues.ArrowDown() * -1,
+        PageDown: () => {
+          const container =
+            virtualizedListContainerRef.current
 
-        const itemSize =
-          virtualizedListContainerRef.current.clientWidth /
-          numberOfColumns
+          if (!container) {
+            return 0
+          }
 
-        const rowsInView = Math.floor(viewHeight / itemSize)
+          const viewHeight = container.clientHeight
 
-        return rowsInView * numberOfColumns
-      },
-      PageUp: () => keyCodeIndexValues.PageDown() * -1,
-    }
+          const itemSize =
+            container.clientWidth / numberOfColumns
+
+          const rowsInView = Math.floor(
+            viewHeight / itemSize,
+          )
+
+          return rowsInView * numberOfColumns
+        },
+        PageUp: () => keyCodeIndexValues.PageDown() * -1,
+      }
 
     if (code === "Delete") {
       openDeleteFileModal()
@@ -782,9 +657,14 @@ const FileBrowser = () => {
   })
 
   useLayoutEffect(() => {
+    const container = virtualizedListContainerRef.current
+
+    if (!container) {
+      return undefined
+    }
+
     const calculateNumberOfColumns = () => {
-      const viewWidth =
-        virtualizedListContainerRef.current.clientWidth
+      const viewWidth = container.clientWidth
 
       const nextNumberOfColumns = Math.floor(
         viewWidth / 300,
@@ -810,14 +690,14 @@ const FileBrowser = () => {
       throttleColumnCountCalculation,
     )
 
-    resizeObserver.observe(
-      virtualizedListContainerRef.current,
-    )
+    resizeObserver.observe(container)
 
     return () => {
-      window.cancelAnimationFrame(
-        animationFrameIdRef.current,
-      )
+      if (animationFrameIdRef.current !== null) {
+        window.cancelAnimationFrame(
+          animationFrameIdRef.current,
+        )
+      }
 
       animationFrameIdRef.current = null
 
@@ -825,20 +705,21 @@ const FileBrowser = () => {
     }
   }, [])
 
-  const multiSelectProviderValue = useMemo(
-    () => ({
-      enterMultiSelect,
-      isMultiSelectMode,
-      selectedFolderPaths,
-      toggleFolder,
-    }),
-    [
-      enterMultiSelect,
-      isMultiSelectMode,
-      selectedFolderPaths,
-      toggleFolder,
-    ],
-  )
+  const multiSelectProviderValue =
+    useMemo<MultiSelectContextValue>(
+      () => ({
+        enterMultiSelect,
+        isMultiSelectMode,
+        selectedFolderPaths,
+        toggleFolder,
+      }),
+      [
+        enterMultiSelect,
+        isMultiSelectMode,
+        selectedFolderPaths,
+        toggleFolder,
+      ],
+    )
 
   const selectedCount = selectedFolderPaths.size
 
@@ -847,19 +728,23 @@ const FileBrowser = () => {
       value={multiSelectProviderValue}
     >
       <div
-        css={
+        className={
           isFullScreen
-            ? [fileBrowserStyles, fullBleedStyles]
-            : fileBrowserStyles
+            ? fullBleedFileBrowserClassName
+            : insetFileBrowserClassName
         }
       >
         <DirectoryControls />
 
         <FolderTabStrip />
 
-        <div css={searchBarStyles}>
+        {/* Explicit rows (not auto-placement): FolderTabStrip renders null when
+            the queue is empty, so pinning the search bar and list to fixed rows
+            keeps them put whether or not the tab strip is there. `relative`
+            anchors the indeterminate progress line to the bar's bottom edge. */}
+        <div className="relative row-start-3 flex items-center gap-2 bg-surface-raised px-2 py-1.5">
           <input
-            css={searchInputStyles}
+            className="min-w-0 flex-auto rounded-[5px] border-0 bg-surface-sunken px-3 py-2 text-[15px] text-content-primary placeholder:text-content-muted focus:outline-2 focus:outline-intent-accent-solid"
             onChange={onSearchChange}
             onKeyDown={onSearchKeyDown}
             placeholder="Search folders in this directory and its subfolders…"
@@ -868,7 +753,10 @@ const FileBrowser = () => {
           />
 
           {isSearching && isSearchPending && (
-            <span css={searchPendingStyles}>
+            // Inline "still walking the tree" hint — the instant current-
+            // directory matches already show, so this just signals more may
+            // stream in.
+            <span className="flex-none whitespace-nowrap text-[13px] text-content-muted">
               Searching subfolders…
             </span>
           )}
@@ -876,7 +764,7 @@ const FileBrowser = () => {
           {isSearching && (
             <button
               aria-label="Clear search"
-              css={searchClearButtonStyles}
+              className="inline-flex h-8 w-8 flex-none cursor-pointer items-center justify-center rounded-full border-0 bg-transparent p-0 text-content-secondary hover:bg-intent-neutral-surface-hover hover:text-content-primary"
               onClick={clearSearch}
               title="Clear search"
               type="button"
@@ -886,23 +774,37 @@ const FileBrowser = () => {
           )}
 
           {isSearching && isSearchPending && (
-            <div css={searchProgressStyles} />
+            // Indeterminate progress line pinned under the search bar while the
+            // subfolder walk runs. Indeterminate rather than a percentage: the
+            // tree's size isn't known until it's been walked, so there's no
+            // honest total to divide by. Absolutely positioned so showing/hiding
+            // it never nudges the layout. The travelling segment is 25% wide, so
+            // it slides from fully off-left to fully off-right.
+            <div className="absolute right-0 bottom-0 left-0 h-0.5 overflow-hidden bg-intent-neutral-surface-hover after:block after:h-full after:w-1/4 after:animate-indeterminate-slide after:bg-intent-accent-solid after:content-['']" />
           )}
         </div>
 
         <div
-          css={virtualizedListContainerStyles}
+          className="row-start-4 overflow-hidden"
           ref={virtualizedListContainerRef}
         >
           {isLoading ? (
-            <div css={loadingStyles} />
+            // Centered spinner shown while a folder's listing is still being
+            // read, so a large folder (especially one sorted by date, which
+            // stats every file) reads as "loading" rather than a blank window.
+            <div className="flex h-full w-full items-center justify-center after:h-9 after:w-9 after:animate-spinner after:rounded-full after:border-4 after:border-border-default after:border-t-content-primary after:content-['']" />
           ) : isSearching &&
             isSearchPending &&
             displayedDirectories.length === 0 ? (
-            <div css={searchStatusStyles}>Searching…</div>
+            // Shown in place of the folder grid while a search is running or has
+            // no hits, so an empty result set reads as a state rather than a
+            // blank window.
+            <div className="p-5 text-[16px] text-content-muted">
+              Searching…
+            </div>
           ) : isSearching &&
             displayedDirectories.length === 0 ? (
-            <div css={searchStatusStyles}>
+            <div className="p-5 text-[16px] text-content-muted">
               No folders match “{trimmedQuery}”.
             </div>
           ) : isGroupedView ? (
@@ -949,12 +851,12 @@ const FileBrowser = () => {
       </div>
 
       {isMultiSelectMode && selectedCount > 0 && (
-        <div css={multiSelectActionBarStyles}>
+        <div className="fixed bottom-6 left-1/2 z-[9999] flex -translate-x-1/2 items-center gap-4 rounded-[12px] bg-surface-overlay px-5 py-3 shadow-[0_4px_16px_var(--color-scrim)]">
           <Button
             onClick={openSelectedFolders}
             type="positive"
           >
-            <span css={actionButtonContentStyles}>
+            <span className="inline-flex items-center justify-center gap-1">
               <PlayArrowIcon />
               Open {selectedCount} folders
             </span>

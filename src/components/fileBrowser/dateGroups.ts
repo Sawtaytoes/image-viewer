@@ -17,8 +17,12 @@ const dateGroupLabels = {
   yesterday: "Yesterday",
 }
 
+// One of the eight Explorer buckets, derived from the label map so a new bucket
+// cannot be added in one place and forgotten in the other.
+export type DateGroupKey = keyof typeof dateGroupLabels
+
 // Most-recent-first display order.
-const orderedDateGroupKeys = [
+const orderedDateGroupKeys: readonly DateGroupKey[] = [
   "today",
   "yesterday",
   "earlierThisWeek",
@@ -29,9 +33,30 @@ const orderedDateGroupKeys = [
   "longAgo",
 ]
 
+// The epoch-ms thresholds a mtime is compared against. Not one per bucket:
+// `earlierThisWeek` is bounded by `weekStart` and `longAgo` is the fallthrough,
+// so those two have no threshold of their own.
+export interface DateGroupBoundaries {
+  earlierThisMonth: number
+  earlierThisYear: number
+  lastMonth: number
+  lastWeek: number
+  today: number
+  weekStart: number
+  yesterday: number
+}
+
+// One rendered bucket. Generic over the entry so the caller's own shape (which
+// carries a `kind`, a `path`, …) survives the grouping.
+export interface DateGroup<EntryType> {
+  items: EntryType[]
+  key: DateGroupKey
+  label: string
+}
+
 const millisecondsPerDay = 24 * 60 * 60 * 1000
 
-const startOfDay = (date) =>
+const startOfDay = (date: Date): number =>
   new Date(
     date.getFullYear(),
     date.getMonth(),
@@ -40,7 +65,9 @@ const startOfDay = (date) =>
 
 // All thresholds (epoch ms) derived from a single "now" so the buckets line up
 // with one consistent moment.
-const getDateGroupBoundaries = (now) => {
+const getDateGroupBoundaries = (
+  now: number,
+): DateGroupBoundaries => {
   const nowDate = new Date(now)
 
   const todayStart = startOfDay(nowDate)
@@ -71,7 +98,10 @@ const getDateGroupBoundaries = (now) => {
   }
 }
 
-const getDateGroupKey = (modifiedTime, boundaries) => {
+const getDateGroupKey = (
+  modifiedTime: number | undefined,
+  boundaries: DateGroupBoundaries,
+): DateGroupKey => {
   const time = modifiedTime ?? 0
 
   if (time >= boundaries.today) {
@@ -107,10 +137,15 @@ const getDateGroupKey = (modifiedTime, boundaries) => {
 
 // Group already-sorted (newest-first) entries into the non-empty buckets, in
 // Explorer's display order. Each group is `{ key, label, items }`.
-const groupEntriesByDate = (entries, now = Date.now()) => {
+const groupEntriesByDate = <
+  EntryType extends { modifiedTime?: number },
+>(
+  entries: readonly EntryType[],
+  now: number = Date.now(),
+): DateGroup<EntryType>[] => {
   const boundaries = getDateGroupBoundaries(now)
 
-  const itemsByKey = new Map()
+  const itemsByKey = new Map<DateGroupKey, EntryType[]>()
 
   entries.forEach((entry) => {
     const key = getDateGroupKey(
@@ -118,17 +153,19 @@ const groupEntriesByDate = (entries, now = Date.now()) => {
       boundaries,
     )
 
-    if (!itemsByKey.has(key)) {
-      itemsByKey.set(key, [])
-    }
+    const items = itemsByKey.get(key)
 
-    itemsByKey.get(key).push(entry)
+    if (items) {
+      items.push(entry)
+    } else {
+      itemsByKey.set(key, [entry])
+    }
   })
 
   return orderedDateGroupKeys
     .filter((key) => itemsByKey.has(key))
     .map((key) => ({
-      items: itemsByKey.get(key),
+      items: itemsByKey.get(key) ?? [],
       key,
       label: dateGroupLabels[key],
     }))

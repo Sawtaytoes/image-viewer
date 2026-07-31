@@ -1,5 +1,3 @@
-import { css } from "@emotion/react"
-import PropTypes from "prop-types"
 import {
   memo,
   useCallback,
@@ -18,92 +16,33 @@ import useFolderImageCount from "./useFolderImageCount"
 import useFolderThumbnail from "./useFolderThumbnail"
 import useInView from "./useInView"
 
-// `pan-y` keeps the list scrollable on touch — `useLongPress` cancels itself on
-// movement, so `touch-action: none` isn't needed to detect the hold.
-const directoryStyles = css`
-	background-color: #666;
-	color: #fafafa;
-	cursor: pointer;
-	font-family: 'Source Sans Pro', sans-serif;
-	font-weight: 300;
-	padding-bottom: 100%;
-	position: relative;
-	touch-action: pan-y;
-	width: 100%;
-`
+// `touch-pan-y` keeps the list scrollable on touch — `useLongPress` cancels
+// itself on movement, so `touch-action: none` isn't needed to detect the hold.
+//
+// The background is deliberately NOT part of this string: the selected variant
+// sets its own, and two `bg-*` utilities on one element resolve by stylesheet
+// order rather than by the order they appear here.
+const tileClassName =
+  "relative w-full cursor-pointer touch-pan-y pb-[100%] font-light text-content-primary"
 
-const selectedDirectoryStyles = css`
-	background-color: #2a6f97;
-	outline: 4px solid #61a5c2;
-	outline-offset: -4px;
-`
+const unselectedTileClassName = `${tileClassName} bg-surface-raised`
 
-const directoryContentStyles = css`
-	bottom: 0;
-	display: flex;
-	flex-direction: column;
-	left: 0;
-	padding: 6px 10px;
-	position: absolute;
-	right: 0;
-	top: 0;
-`
+const selectedTileClassName = `${tileClassName} bg-intent-accent-solid outline-4 -outline-offset-4 outline-intent-accent-content`
 
-const imageStyles = css`
-	flex: 1 1 auto;
-`
-
-const textStyles = css`
-	padding-bottom: 6px;
-	word-wrap: break-word;
-`
-
-const checkBadgeStyles = css`
-	align-items: center;
-	background-color: #61a5c2;
-	border-radius: 50%;
-	color: #fff;
-	display: flex;
-	font-size: 18px;
-	font-weight: 600;
-	height: 26px;
-	justify-content: center;
-	position: absolute;
-	right: 8px;
-	top: 8px;
-	width: 26px;
-`
-
-// Image count, pinned bottom-right over the thumbnail. Sits opposite the
-// top-right check badge so the two never overlap, and only shows for a gallery
-// with a known, non-zero count.
-const countBadgeStyles = css`
-	align-items: center;
-	background-color: rgba(0, 0, 0, 0.6);
-	border-radius: 11px;
-	bottom: 8px;
-	color: #fafafa;
-	display: flex;
-	font-size: 13px;
-	font-weight: 600;
-	justify-content: center;
-	min-width: 22px;
-	padding: 2px 7px;
-	position: absolute;
-	right: 8px;
-`
-
-const propTypes = {
-  directoryName: PropTypes.string.isRequired,
-  directoryPath: PropTypes.string.isRequired,
+interface DirectoryProps {
+  directoryName: string
+  directoryPath: string
 }
 
-const Directory = ({ directoryName, directoryPath }) => {
+const Directory = ({
+  directoryName,
+  directoryPath,
+}: DirectoryProps) => {
   const isCtrlKeyHeldRef = useRef(false)
-  const tileRef = useRef()
+  const tileRef = useRef<HTMLDivElement>(null)
   // A completed hold is still followed by a `click`; swallow that one click so
   // it doesn't immediately toggle the selection back off.
-  const suppressNextClickRef = useRef(false)
+  const hasSuppressedClickRef = useRef(false)
 
   const { setFilePath } = useContext(FileSystemContext)
 
@@ -153,8 +92,8 @@ const Directory = ({ directoryName, directoryPath }) => {
   }, [directoryPath, setFilePath])
 
   const onClick = useCallback(() => {
-    if (suppressNextClickRef.current) {
-      suppressNextClickRef.current = false
+    if (hasSuppressedClickRef.current) {
+      hasSuppressedClickRef.current = false
 
       return
     }
@@ -177,7 +116,7 @@ const Directory = ({ directoryName, directoryPath }) => {
   ])
 
   const onLongPressProgress = useCallback(
-    (fraction) => {
+    (fraction: number) => {
       // Don't tease the fill ring on a folder that can't be selected.
       setLongPressProgress(isKnownNonGallery ? 0 : fraction)
     },
@@ -193,7 +132,7 @@ const Directory = ({ directoryName, directoryPath }) => {
       return
     }
 
-    suppressNextClickRef.current = true
+    hasSuppressedClickRef.current = true
 
     enterMultiSelect()
 
@@ -219,19 +158,21 @@ const Directory = ({ directoryName, directoryPath }) => {
 
   return (
     <div
-      css={
+      className={
         isSelected
-          ? [directoryStyles, selectedDirectoryStyles]
-          : directoryStyles
+          ? selectedTileClassName
+          : unselectedTileClassName
       }
       onClick={onClick}
       ref={tileRef}
     >
-      <div css={directoryContentStyles}>
-        <div css={textStyles}>{directoryName}</div>
+      <div className="absolute inset-0 flex flex-col px-[10px] py-1.5">
+        <div className="break-words pb-1.5">
+          {directoryName}
+        </div>
 
         {image && (
-          <div css={imageStyles}>
+          <div className="flex-auto">
             <Image
               fileName={image.name}
               filePath={image.path}
@@ -245,16 +186,23 @@ const Directory = ({ directoryName, directoryPath }) => {
         <FillRing progress={longPressProgress} />
       )}
 
+      {/* Image count, pinned bottom-right over the thumbnail. Sits opposite the
+          top-right check badge so the two never overlap, and only shows for a
+          gallery with a known, non-zero count. */}
       {Boolean(imageCount) && (
-        <div css={countBadgeStyles}>{imageCount}</div>
+        <div className="absolute right-2 bottom-2 flex min-w-[22px] items-center justify-center rounded-[11px] bg-scrim px-[7px] py-0.5 text-[13px] font-semibold text-content-primary">
+          {imageCount}
+        </div>
       )}
 
-      {isSelected && <div css={checkBadgeStyles}>✓</div>}
+      {isSelected && (
+        <div className="absolute top-2 right-2 flex h-[26px] w-[26px] items-center justify-center rounded-full bg-intent-accent-content text-[18px] font-semibold text-intent-accent-surface">
+          ✓
+        </div>
+      )}
     </div>
   )
 }
-
-Directory.propTypes = propTypes
 
 const MemoizedDirectory = memo(Directory)
 

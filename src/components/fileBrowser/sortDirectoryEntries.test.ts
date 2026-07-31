@@ -29,8 +29,8 @@ describe("sortDirectoryEntries", () => {
 
   it("breaks modified-time ties by natural name", () => {
     const sameTime = [
-      { modifiedTime: 500, name: "b.jpg" },
-      { modifiedTime: 500, name: "a.jpg" },
+      { modifiedTime: 500, name: "bravo.jpg" },
+      { modifiedTime: 500, name: "alpha.jpg" },
     ]
 
     expect(
@@ -38,7 +38,7 @@ describe("sortDirectoryEntries", () => {
         sameTime,
         sortOrders.modifiedDesc,
       ).map((entry) => entry.name),
-    ).toEqual(["a.jpg", "b.jpg"])
+    ).toEqual(["alpha.jpg", "bravo.jpg"])
   })
 
   it("does not mutate the input array", () => {

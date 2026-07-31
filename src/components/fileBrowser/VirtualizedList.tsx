@@ -1,8 +1,7 @@
-import { css } from "@emotion/react"
-import PropTypes from "prop-types"
 import {
   Children,
   memo,
+  type ReactNode,
   useEffect,
   useLayoutEffect,
   useMemo,
@@ -10,35 +9,33 @@ import {
   useState,
 } from "react"
 
-const virtualizedListStyles = css`
-	height: auto;
-	position: relative;
-	width: 100%;
-`
+// Every one of these is a measured, runtime number — item size, column count,
+// scroll offset — so the per-item box goes in an inline `style`. A Tailwind
+// class built from a template literal generates no CSS at all (Tailwind scans
+// source text), which in a virtualized list means every tile silently collapses
+// to zero width.
+const itemClassName =
+  "absolute drop-shadow-[3px_3px_4px_var(--color-surface-sunken)]"
 
-const selectedListItemStyles = css`
-	border: 4px dotted lightgray;
-`
+const selectedItemClassName = `${itemClassName} border-4 border-dotted border-border-strong`
 
-const scrollContainerStyles = css`
-	height: 100%;
-	overflow-x: hidden;
-	overflow-y: auto;
-	scrollbar-gutter: stable;
-	width: 100%;
-`
+interface ViewData {
+  itemSize: number
+  numberOfChildren: number
+  numberOfItemsInView: number
+}
 
-const initialViewData = {
+const initialViewData: ViewData = {
   itemSize: 1,
   numberOfChildren: 0,
   numberOfItemsInView: 0,
 }
 
-const propTypes = {
-  children: PropTypes.node.isRequired,
-  itemPadding: PropTypes.string,
-  numberOfColumns: PropTypes.number,
-  selectedIndex: PropTypes.number,
+interface VirtualizedListProps {
+  children: ReactNode
+  itemPadding?: string
+  numberOfColumns?: number
+  selectedIndex?: number
 }
 
 const VirtualizedList = ({
@@ -46,22 +43,28 @@ const VirtualizedList = ({
   itemPadding = "0",
   numberOfColumns = 1,
   selectedIndex = 0,
-}) => {
-  const animationFrameIdRef = useRef()
-  const scrollContainerRef = useRef()
-  const virtualizedListRef = useRef()
+}: VirtualizedListProps) => {
+  const animationFrameIdRef = useRef<number | null>(null)
+  const scrollContainerRef = useRef<HTMLDivElement>(null)
+  const virtualizedListRef = useRef<HTMLDivElement>(null)
 
   const [scrollYPosition, setScrollYPosition] = useState(0)
 
-  const [viewData, setViewData] = useState(initialViewData)
+  const [viewData, setViewData] =
+    useState<ViewData>(initialViewData)
 
   useLayoutEffect(() => {
-    const calculateViewData = () => {
-      const viewWidth =
-        scrollContainerRef.current.clientWidth
+    const scrollContainer = scrollContainerRef.current
+    const virtualizedList = virtualizedListRef.current
 
-      const viewHeight =
-        scrollContainerRef.current.clientHeight
+    if (!scrollContainer || !virtualizedList) {
+      return undefined
+    }
+
+    const calculateViewData = () => {
+      const viewWidth = scrollContainer.clientWidth
+
+      const viewHeight = scrollContainer.clientHeight
 
       const itemSize = Math.ceil(
         viewWidth / numberOfColumns,
@@ -80,7 +83,7 @@ const VirtualizedList = ({
 
       const containerHeight = itemSize * numberOfRows
 
-      virtualizedListRef.current.style.setProperty(
+      virtualizedList.style.setProperty(
         "height",
         `${containerHeight}px`,
       )
@@ -109,12 +112,14 @@ const VirtualizedList = ({
       throttleViewDataCalculation,
     )
 
-    resizeObserver.observe(scrollContainerRef.current)
+    resizeObserver.observe(scrollContainer)
 
     return () => {
-      window.cancelAnimationFrame(
-        animationFrameIdRef.current,
-      )
+      if (animationFrameIdRef.current !== null) {
+        window.cancelAnimationFrame(
+          animationFrameIdRef.current,
+        )
+      }
 
       animationFrameIdRef.current = null
 
@@ -123,6 +128,12 @@ const VirtualizedList = ({
   }, [children, numberOfColumns])
 
   useLayoutEffect(() => {
+    const scrollContainer = scrollContainerRef.current
+
+    if (!scrollContainer) {
+      return
+    }
+
     const { itemSize, numberOfChildren } = viewData
 
     const clampedIndex = Math.min(
@@ -135,29 +146,20 @@ const VirtualizedList = ({
 
     const itemBottomPosition = itemTopPosition + itemSize
 
-    const viewTop = scrollContainerRef.current.scrollTop
+    const viewTop = scrollContainer.scrollTop
 
-    const viewHeight =
-      scrollContainerRef.current.clientHeight
+    const viewHeight = scrollContainer.clientHeight
 
     const viewBottom = viewTop + viewHeight
 
     if (itemTopPosition < viewTop) {
-      const scrollYPosition = itemTopPosition
-
-      scrollContainerRef.current.scrollTo(
-        0,
-        scrollYPosition,
-      )
+      scrollContainer.scrollTo(0, itemTopPosition)
     }
 
     if (itemBottomPosition > viewBottom) {
-      const scrollYPosition =
-        viewTop + (itemBottomPosition - viewBottom)
-
-      scrollContainerRef.current.scrollTo(
+      scrollContainer.scrollTo(
         0,
-        scrollYPosition,
+        viewTop + (itemBottomPosition - viewBottom),
       )
     }
   }, [numberOfColumns, selectedIndex, viewData])
@@ -167,6 +169,10 @@ const VirtualizedList = ({
     // time this cleanup runs, so reading `scrollContainerRef.current` there
     // would throw (it does when toggling sort swaps this list out).
     const scrollContainer = scrollContainerRef.current
+
+    if (!scrollContainer) {
+      return undefined
+    }
 
     const updateScrollPosition = () => {
       setScrollYPosition(scrollContainer.scrollTop)
@@ -197,16 +203,6 @@ const VirtualizedList = ({
       )
     }
   }, [])
-
-  const virtualizedListItemStyles = useMemo(
-    () => css`
-					filter: drop-shadow(3px 3px 4px #222);
-					padding: ${itemPadding};
-					position: absolute;
-					width: calc((1 / ${numberOfColumns}) * 100%);
-				`,
-    [itemPadding, numberOfColumns],
-  )
 
   const virtualizedChildren = useMemo(() => {
     const {
@@ -253,45 +249,44 @@ const VirtualizedList = ({
 
     return Children.toArray(children)
       .slice(startingIndex, endingIndex)
-      .map((childElement, index) => ({
-        childElement,
-        shiftedIndex: index + startingIndex,
-      }))
-      .map(({ childElement, shiftedIndex }) => ({
-        childElement,
-        id: shiftedIndex,
-        styles: css`
-								${virtualizedListItemStyles}
-								left: ${(shiftedIndex % numberOfColumns) * itemSize}px;
-								top: ${Math.floor(shiftedIndex / numberOfColumns) * itemSize}px;
+      .map((childElement, index) => {
+        const shiftedIndex = index + startingIndex
 
-								${
-                  shiftedIndex === selectedIndex &&
-                  selectedListItemStyles
-                }
-							`,
-      }))
-      .map(({ childElement, id, styles }) => (
-        <div css={styles} key={id}>
-          {childElement}
-        </div>
-      ))
+        return (
+          <div
+            className={
+              shiftedIndex === selectedIndex
+                ? selectedItemClassName
+                : itemClassName
+            }
+            key={shiftedIndex}
+            style={{
+              left: `${(shiftedIndex % numberOfColumns) * itemSize}px`,
+              padding: itemPadding,
+              top: `${Math.floor(shiftedIndex / numberOfColumns) * itemSize}px`,
+              width: `calc((1 / ${numberOfColumns}) * 100%)`,
+            }}
+          >
+            {childElement}
+          </div>
+        )
+      })
   }, [
     children,
+    itemPadding,
     numberOfColumns,
     scrollYPosition,
     selectedIndex,
     viewData,
-    virtualizedListItemStyles,
   ])
 
   return (
     <div
-      css={scrollContainerStyles}
+      className="h-full w-full overflow-x-hidden overflow-y-auto [scrollbar-gutter:stable]"
       ref={scrollContainerRef}
     >
       <div
-        css={virtualizedListStyles}
+        className="relative h-auto w-full"
         ref={virtualizedListRef}
       >
         {virtualizedChildren}
@@ -299,8 +294,6 @@ const VirtualizedList = ({
     </div>
   )
 }
-
-VirtualizedList.propTypes = propTypes
 
 const MemoizedVirtualizedList = memo(VirtualizedList)
 
