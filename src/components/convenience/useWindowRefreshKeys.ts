@@ -2,7 +2,7 @@ import { useEffect } from "react"
 
 const useWindowRefreshKeys = () => {
   useEffect(() => {
-    const onKeyDown = (event) => {
+    const onKeyDown = (event: KeyboardEvent) => {
       if (event.code === "F5") {
         window.location.reload()
       }

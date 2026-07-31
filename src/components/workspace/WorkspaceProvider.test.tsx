@@ -1,12 +1,17 @@
 import { act, renderHook } from "@testing-library/react"
+import type { ReactNode } from "react"
 import { useContext } from "react"
 import { afterEach, describe, expect, it, vi } from "vitest"
 
 import WorkspaceContext from "./WorkspaceContext"
 import WorkspaceProvider from "./WorkspaceProvider"
 
+interface WrapperProps {
+  children: ReactNode
+}
+
 const renderWorkspace = () => {
-  const wrapper = ({ children }) => (
+  const wrapper = ({ children }: WrapperProps) => (
     <WorkspaceProvider>{children}</WorkspaceProvider>
   )
 
@@ -57,8 +62,8 @@ describe("WorkspaceProvider", () => {
 
     const folderId = result.current.queuedFolders[0].id
 
-    let firstPaneId
-    let secondPaneId
+    let firstPaneId = ""
+    let secondPaneId = ""
 
     act(() => {
       firstPaneId = result.current.addPane().id
@@ -110,7 +115,7 @@ describe("WorkspaceProvider", () => {
 
     const [firstFolder] = result.current.queuedFolders
 
-    let paneId
+    let paneId = ""
 
     act(() => {
       paneId = result.current.addPane().id
@@ -144,7 +149,7 @@ describe("WorkspaceProvider", () => {
       ])
     })
 
-    let paneId
+    let paneId = ""
 
     act(() => {
       paneId = result.current.addPane().id
@@ -167,7 +172,7 @@ describe("WorkspaceProvider", () => {
     expect(
       result.current.panes.find(
         (pane) => pane.id === paneId,
-      ).currentIndex,
+      )?.currentIndex,
     ).toBe(5)
 
     act(() => {
@@ -181,8 +186,8 @@ describe("WorkspaceProvider", () => {
       (currentPane) => currentPane.id === paneId,
     )
 
-    expect(pane.folderId).toBe(secondFolder.id)
-    expect(pane.currentIndex).toBe(0)
+    expect(pane?.folderId).toBe(secondFolder.id)
+    expect(pane?.currentIndex).toBe(0)
   })
 
   it("clearPanes drops every pane back to the gallery", () => {
@@ -206,8 +211,8 @@ describe("WorkspaceProvider", () => {
   it("assignFolderPathToPane queues a new folder and fills the named pane", () => {
     const { result } = renderWorkspace()
 
-    let firstPaneId
-    let secondPaneId
+    let firstPaneId = ""
+    let secondPaneId = ""
 
     act(() => {
       firstPaneId = result.current.addPane().id
@@ -236,11 +241,11 @@ describe("WorkspaceProvider", () => {
     // It fills the pane it was given, not a new one, and makes it active.
     expect(result.current.panes).toHaveLength(2)
     expect(result.current.queuedFolders).toHaveLength(1)
-    expect(secondPane.folderId).toBe(folder.id)
-    expect(secondPane.currentIndex).toBe(0)
+    expect(secondPane?.folderId).toBe(folder?.id)
+    expect(secondPane?.currentIndex).toBe(0)
     expect(result.current.activePaneId).toBe(secondPaneId)
     // The other pane is untouched.
-    expect(firstPane.folderId).toBe(null)
+    expect(firstPane?.folderId).toBe(null)
   })
 
   it("assignFolderPathToPane reuses an already-queued folder instead of duplicating it", () => {
@@ -255,7 +260,7 @@ describe("WorkspaceProvider", () => {
     const existingFolderId =
       result.current.queuedFolders[0].id
 
-    let paneId
+    let paneId = ""
 
     act(() => {
       paneId = result.current.addPane().id
@@ -273,14 +278,14 @@ describe("WorkspaceProvider", () => {
     expect(
       result.current.panes.find(
         (pane) => pane.id === paneId,
-      ).folderId,
+      )?.folderId,
     ).toBe(existingFolderId)
   })
 
   it("assignFolderPathToPane opens at a given image index when provided", () => {
     const { result } = renderWorkspace()
 
-    let paneId
+    let paneId = ""
 
     act(() => {
       paneId = result.current.addPane().id
@@ -298,7 +303,7 @@ describe("WorkspaceProvider", () => {
       (currentPane) => currentPane.id === paneId,
     )
 
-    expect(pane.currentIndex).toBe(4)
+    expect(pane?.currentIndex).toBe(4)
   })
 
   it("auto-loads the next not-already-open queued folder into an emptied pane", () => {
@@ -315,8 +320,8 @@ describe("WorkspaceProvider", () => {
     const [folderA, folderB, folderC] =
       result.current.queuedFolders
 
-    let firstPaneId
-    let secondPaneId
+    let firstPaneId = ""
+    let secondPaneId = ""
 
     act(() => {
       firstPaneId = result.current.addPane().id
@@ -345,8 +350,8 @@ describe("WorkspaceProvider", () => {
       (pane) => pane.id === firstPaneId,
     )
 
-    expect(firstPane.folderId).toBe(folderC.id)
-    expect(firstPane.currentIndex).toBe(0)
+    expect(firstPane?.folderId).toBe(folderC.id)
+    expect(firstPane?.currentIndex).toBe(0)
   })
 
   it("leaves an emptied pane empty when no other queued folder is free", () => {
@@ -360,7 +365,7 @@ describe("WorkspaceProvider", () => {
 
     const [folderA] = result.current.queuedFolders
 
-    let paneId
+    let paneId = ""
 
     act(() => {
       paneId = result.current.addPane().id
@@ -377,7 +382,7 @@ describe("WorkspaceProvider", () => {
     expect(
       result.current.panes.find(
         (pane) => pane.id === paneId,
-      ).folderId,
+      )?.folderId,
     ).toBe(null)
   })
 
@@ -404,7 +409,7 @@ describe("WorkspaceProvider", () => {
 
       const [folderA] = result.current.queuedFolders
 
-      let paneId
+      let paneId = ""
 
       act(() => {
         paneId = result.current.addPane().id
@@ -434,7 +439,7 @@ describe("WorkspaceProvider", () => {
 
       const { result } = renderWorkspace()
 
-      let paneId
+      let paneId = ""
 
       act(() => {
         paneId = result.current.addPane().id
@@ -462,7 +467,7 @@ describe("WorkspaceProvider", () => {
 
       const [folderA] = result.current.queuedFolders
 
-      let paneId
+      let paneId = ""
 
       act(() => {
         paneId = result.current.addPane().id
@@ -485,7 +490,7 @@ describe("WorkspaceProvider", () => {
       expect(
         result.current.panes.find(
           (pane) => pane.id === paneId,
-        ).currentIndex,
+        )?.currentIndex,
       ).toBe(6)
     })
   })
@@ -509,7 +514,7 @@ describe("WorkspaceProvider", () => {
         result.current.addPaneAndFill()
       })
 
-      expect(result.current.panes.at(-1).folderId).toBe(
+      expect(result.current.panes.at(-1)?.folderId).toBe(
         folderA.id,
       )
 
@@ -517,7 +522,7 @@ describe("WorkspaceProvider", () => {
         result.current.addPaneAndFill()
       })
 
-      expect(result.current.panes.at(-1).folderId).toBe(
+      expect(result.current.panes.at(-1)?.folderId).toBe(
         folderB.id,
       )
     })
@@ -569,7 +574,7 @@ describe("WorkspaceProvider", () => {
 
       const [folderA] = result.current.queuedFolders
 
-      let paneId
+      let paneId = ""
 
       act(() => {
         paneId = result.current.addPane().id
@@ -594,7 +599,7 @@ describe("WorkspaceProvider", () => {
       expect(
         result.current.panes.find(
           (pane) => pane.id === paneId,
-        ).folderId,
+        )?.folderId,
       ).toBe(null)
     })
 

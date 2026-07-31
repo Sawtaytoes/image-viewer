@@ -1,4 +1,4 @@
-import PropTypes from "prop-types"
+import type { ReactNode } from "react"
 import {
   memo,
   useCallback,
@@ -8,7 +8,28 @@ import {
   useState,
 } from "react"
 
+import type { QueuedFolder } from "../../types"
+import type {
+  Pane,
+  UnqueuedFolder,
+  WorkspaceContextValue,
+} from "./WorkspaceContext"
 import WorkspaceContext from "./WorkspaceContext"
+
+// This window's slice of the workspace. `queuedFolders` mirrors main's shared
+// queue; the other two are local to this window.
+interface Workspace {
+  activePaneId: string | null
+  panes: Pane[]
+  queuedFolders: QueuedFolder[]
+}
+
+// A pane an auto-fill just populated, paired with the folder that landed in it
+// so the caller can resume it to that folder's remembered index.
+interface FilledPane {
+  folder: QueuedFolder
+  paneId: string
+}
 
 // How long the chrome ignores hover-reveal after a pane's gallery/menu closes.
 // Long enough to swallow the synthetic pointer event Chromium fires when the
@@ -20,7 +41,7 @@ const CHROME_REVEAL_SUPPRESSION_MS = 400
 // collision-free and the queue/panes remain serializable.
 const createId = () => crypto.randomUUID()
 
-const createPane = () => ({
+const createPane = (): Pane => ({
   currentIndex: 0,
   folderId: null,
   id: createId(),
@@ -35,14 +56,17 @@ const createPane = () => ({
 // empty pane with nothing left to load, are returned untouched. Returns the new
 // pane list plus the `(paneId, folder)` pairs filled, so the caller can resume
 // each to its remembered index (an async lookup the reducer can't do inline).
-const fillEmptyPanes = (panes, queuedFolders) => {
+const fillEmptyPanes = (
+  panes: Pane[],
+  queuedFolders: QueuedFolder[],
+): { filled: FilledPane[]; panes: Pane[] } => {
   const takenFolderIds = new Set(
     panes
       .map((pane) => pane.folderId)
       .filter((folderId) => folderId != null),
   )
 
-  const filled = []
+  const filled: FilledPane[] = []
 
   const nextPanes = panes.map((pane) => {
     if (pane.folderId != null) {
@@ -74,18 +98,20 @@ const fillEmptyPanes = (panes, queuedFolders) => {
 // Panes are ephemeral: there are none until the user opens a folder into a
 // column, and closing the last one drops back to the gallery. The queue
 // (queuedFolders / tabs) is the persistent thing.
-const createInitialWorkspace = () => ({
+const createInitialWorkspace = (): Workspace => ({
   activePaneId: null,
   panes: [],
   queuedFolders: [],
 })
 
-const propTypes = {
-  children: PropTypes.node.isRequired,
+interface WorkspaceProviderProps {
+  children: ReactNode
 }
 
-const WorkspaceProvider = ({ children }) => {
-  const [workspace, setWorkspace] = useState(
+const WorkspaceProvider = ({
+  children,
+}: WorkspaceProviderProps) => {
+  const [workspace, setWorkspace] = useState<Workspace>(
     createInitialWorkspace,
   )
 
@@ -122,13 +148,15 @@ const WorkspaceProvider = ({ children }) => {
   // it only gates which folder an auto-fill *chooses* — it never severs an
   // existing pane (the same folder open in two windows is fine) — so it doesn't
   // need to trigger a re-render. Kept fresh by the mount effect below.
-  const foldersOpenElsewhereRef = useRef(new Set())
+  const foldersOpenElsewhereRef = useRef<Set<string>>(
+    new Set(),
+  )
 
   // Queued folders not already open in another window — the candidates a fresh
   // column/window auto-fills from, so opening one lands on the next *unopened*
   // gallery instead of repeating what another monitor already shows.
   const availableQueuedFolders = useCallback(
-    (queuedFolders) =>
+    (queuedFolders: QueuedFolder[]) =>
       queuedFolders.filter(
         (folder) =>
           !foldersOpenElsewhereRef.current.has(folder.path),
@@ -146,7 +174,11 @@ const WorkspaceProvider = ({ children }) => {
     setIsChromeRevealSuppressed,
   ] = useState(false)
 
-  const chromeRevealSuppressionTimerRef = useRef()
+  // `window.setTimeout` (not the Node overload) returns a number; the ref starts
+  // empty, and `clearTimeout(undefined)` is a documented no-op.
+  const chromeRevealSuppressionTimerRef = useRef<
+    number | undefined
+  >(undefined)
 
   const suppressChromeReveal = useCallback(() => {
     window.clearTimeout(
@@ -173,110 +205,124 @@ const WorkspaceProvider = ({ children }) => {
   // Identity only — no derived `imageFiles`. Dedupe by path so the same folder
   // can't queue twice. Optimistically mirror the add locally, then notify main so
   // the shared queue (and every other window) picks it up.
-  const addFolderToQueue = useCallback(({ name, path }) => {
-    let addedFolder = null
+  const addFolderToQueue = useCallback(
+    ({ name, path }: UnqueuedFolder) => {
+      let addedFolder: QueuedFolder | null = null
 
-    setWorkspace((previousWorkspace) => {
-      const isAlreadyQueued =
-        previousWorkspace.queuedFolders.some(
-          (folder) => folder.path === path,
-        )
+      setWorkspace((previousWorkspace) => {
+        const isAlreadyQueued =
+          previousWorkspace.queuedFolders.some(
+            (folder) => folder.path === path,
+          )
 
-      if (isAlreadyQueued) {
-        return previousWorkspace
-      }
-
-      addedFolder = { id: createId(), name, path }
-
-      return {
-        ...previousWorkspace,
-        queuedFolders: [
-          ...previousWorkspace.queuedFolders,
-          addedFolder,
-        ],
-      }
-    })
-
-    if (addedFolder) {
-      window.api.queue.add(addedFolder)
-    }
-  }, [])
-
-  const addFoldersToQueue = useCallback((folders) => {
-    let newFolders = []
-
-    setWorkspace((previousWorkspace) => {
-      const queuedPaths = new Set(
-        previousWorkspace.queuedFolders.map(
-          (folder) => folder.path,
-        ),
-      )
-
-      newFolders = []
-
-      folders.forEach(({ name, path }) => {
-        if (queuedPaths.has(path)) {
-          return
+        if (isAlreadyQueued) {
+          return previousWorkspace
         }
 
-        queuedPaths.add(path)
+        addedFolder = { id: createId(), name, path }
 
-        newFolders.push({ id: createId(), name, path })
+        return {
+          ...previousWorkspace,
+          queuedFolders: [
+            ...previousWorkspace.queuedFolders,
+            addedFolder,
+          ],
+        }
       })
 
-      if (newFolders.length === 0) {
-        return previousWorkspace
+      if (addedFolder) {
+        window.api.queue.add(addedFolder)
       }
+    },
+    [],
+  )
 
-      return {
-        ...previousWorkspace,
-        queuedFolders: [
-          ...previousWorkspace.queuedFolders,
-          ...newFolders,
-        ],
-      }
-    })
+  const addFoldersToQueue = useCallback(
+    (folders: UnqueuedFolder[]) => {
+      let newFolders: QueuedFolder[] = []
 
-    if (newFolders.length > 0) {
-      window.api.queue.addMany(newFolders)
-    }
-  }, [])
-
-  const setPaneIndex = useCallback((paneId, index) => {
-    setWorkspace((previousWorkspace) => {
-      const pane = previousWorkspace.panes.find(
-        (candidate) => candidate.id === paneId,
-      )
-
-      // Record the new spot in the cross-window "resume where I left off" store,
-      // keyed by the pane's folder path. Only on a real change to a folder-backed
-      // pane, so rapid arrow-stepping that re-lands the same index — or a pane
-      // with no folder — doesn't spam the bridge. Last write wins across windows.
-      if (
-        pane &&
-        pane.currentIndex !== index &&
-        pane.folderId != null
-      ) {
-        const folder = previousWorkspace.queuedFolders.find(
-          (queuedFolder) =>
-            queuedFolder.id === pane.folderId,
+      setWorkspace((previousWorkspace) => {
+        const queuedPaths = new Set(
+          previousWorkspace.queuedFolders.map(
+            (folder) => folder.path,
+          ),
         )
 
-        if (folder) {
-          window.api.setFolderLastIndex(folder.path, index)
-        }
-      }
+        newFolders = []
 
-      return {
-        ...previousWorkspace,
-        panes: previousWorkspace.panes.map((currentPane) =>
-          currentPane.id === paneId
-            ? { ...currentPane, currentIndex: index }
-            : currentPane,
-        ),
+        folders.forEach(({ name, path }) => {
+          if (queuedPaths.has(path)) {
+            return
+          }
+
+          queuedPaths.add(path)
+
+          newFolders.push({ id: createId(), name, path })
+        })
+
+        if (newFolders.length === 0) {
+          return previousWorkspace
+        }
+
+        return {
+          ...previousWorkspace,
+          queuedFolders: [
+            ...previousWorkspace.queuedFolders,
+            ...newFolders,
+          ],
+        }
+      })
+
+      if (newFolders.length > 0) {
+        window.api.queue.addMany(newFolders)
       }
-    })
-  }, [])
+    },
+    [],
+  )
+
+  const setPaneIndex = useCallback(
+    (paneId: string, index: number) => {
+      setWorkspace((previousWorkspace) => {
+        const pane = previousWorkspace.panes.find(
+          (candidate) => candidate.id === paneId,
+        )
+
+        // Record the new spot in the cross-window "resume where I left off" store,
+        // keyed by the pane's folder path. Only on a real change to a folder-backed
+        // pane, so rapid arrow-stepping that re-lands the same index — or a pane
+        // with no folder — doesn't spam the bridge. Last write wins across windows.
+        if (
+          pane &&
+          pane.currentIndex !== index &&
+          pane.folderId != null
+        ) {
+          const folder =
+            previousWorkspace.queuedFolders.find(
+              (queuedFolder) =>
+                queuedFolder.id === pane.folderId,
+            )
+
+          if (folder) {
+            window.api.setFolderLastIndex(
+              folder.path,
+              index,
+            )
+          }
+        }
+
+        return {
+          ...previousWorkspace,
+          panes: previousWorkspace.panes.map(
+            (currentPane) =>
+              currentPane.id === paneId
+                ? { ...currentPane, currentIndex: index }
+                : currentPane,
+          ),
+        }
+      })
+    },
+    [],
+  )
 
   // Resume a pane to a folder's remembered index. The lookup lives in main (async
   // IPC), so this runs after the assignment lands the folder at index 0; on a
@@ -284,7 +330,7 @@ const WorkspaceProvider = ({ children }) => {
   // listing). Every "a folder opened into a column" path routes through here, so
   // the tab strip, the modal pick, and an auto-loaded column all resume alike.
   const resumePaneToFolderIndex = useCallback(
-    (paneId, folderPath) => {
+    (paneId: string, folderPath: string) => {
       Promise.resolve(
         window.api.getFolderLastIndex(folderPath),
       ).then((lastIndex) => {
@@ -298,7 +344,7 @@ const WorkspaceProvider = ({ children }) => {
 
   // Resume each pane an auto-fill just populated to its remembered index.
   const resumeFilledPanes = useCallback(
-    (filled) => {
+    (filled: FilledPane[]) => {
       filled.forEach(({ folder, paneId }) => {
         resumePaneToFolderIndex(paneId, folder.path)
       })
@@ -408,7 +454,7 @@ const WorkspaceProvider = ({ children }) => {
     )
 
     setWorkspace((previousWorkspace) => {
-      let changed = false
+      let hasChanged = false
 
       const severedPanes = previousWorkspace.panes.map(
         (pane) => {
@@ -416,7 +462,7 @@ const WorkspaceProvider = ({ children }) => {
             pane.folderId != null &&
             !validFolderIds.has(pane.folderId)
           ) {
-            changed = true
+            hasChanged = true
 
             return {
               ...pane,
@@ -435,14 +481,14 @@ const WorkspaceProvider = ({ children }) => {
       )
 
       if (filled.length > 0) {
-        changed = true
+        hasChanged = true
 
         queueMicrotask(() => {
           resumeFilledPanes(filled)
         })
       }
 
-      if (!changed) {
+      if (!hasChanged) {
         return previousWorkspace
       }
 
@@ -458,7 +504,7 @@ const WorkspaceProvider = ({ children }) => {
   // queue backing their names) change, so other windows can skip them when
   // auto-filling. Derived from panes → folderId → queued path, deduped.
   useEffect(() => {
-    const openPaths = new Set()
+    const openPaths = new Set<string>()
 
     for (const pane of workspace.panes) {
       if (pane.folderId == null) {
@@ -482,7 +528,7 @@ const WorkspaceProvider = ({ children }) => {
   // effect below reacts to `queuedFolders` shrinking — in *every* window — and
   // severs panes that referenced the removed folder (they revert to the empty `+`
   // state), then auto-loads the next ready queued folder into any emptied pane.
-  const removeFolder = useCallback((folderId) => {
+  const removeFolder = useCallback((folderId: string) => {
     setWorkspace((previousWorkspace) => {
       if (
         !previousWorkspace.queuedFolders.some(
@@ -510,7 +556,7 @@ const WorkspaceProvider = ({ children }) => {
   // failed delete leaves the queue untouched. Distinct from `removeFolder` (the
   // ✕), which only touches renderer state.
   const deleteFolder = useCallback(
-    (folderId) => {
+    (folderId: string): Promise<boolean> => {
       const folder = workspace.queuedFolders.find(
         (queuedFolder) => queuedFolder.id === folderId,
       )
@@ -524,12 +570,12 @@ const WorkspaceProvider = ({ children }) => {
           filePath: folder.path,
           isDirectory: true,
         })
-        .then((didDelete) => {
-          if (didDelete) {
+        .then((isDeleted) => {
+          if (isDeleted) {
             removeFolder(folderId)
           }
 
-          return didDelete
+          return isDeleted
         })
     },
     [removeFolder, workspace.queuedFolders],
@@ -606,7 +652,7 @@ const WorkspaceProvider = ({ children }) => {
     })
   }, [availableQueuedFolders, resumeFilledPanes])
 
-  const removePane = useCallback((paneId) => {
+  const removePane = useCallback((paneId: string) => {
     setWorkspace((previousWorkspace) => {
       const panes = previousWorkspace.panes.filter(
         (pane) => pane.id !== paneId,
@@ -629,7 +675,7 @@ const WorkspaceProvider = ({ children }) => {
   // column" entry point — the tab strip and the center-click modal — routes
   // through here, so they all resume alike.
   const assignFolderToPane = useCallback(
-    (paneId, folderId) => {
+    (paneId: string, folderId: string) => {
       setWorkspace((previousWorkspace) => {
         const folder = previousWorkspace.queuedFolders.find(
           (queuedFolder) => queuedFolder.id === folderId,
@@ -659,8 +705,12 @@ const WorkspaceProvider = ({ children }) => {
   // (defaults to the first image; the gallery passes the tapped image's index),
   // and make it active — all in one update so the pane and queue never disagree.
   const assignFolderPathToPane = useCallback(
-    (paneId, { name, path }, imageIndex = 0) => {
-      let addedFolder = null
+    (
+      paneId: string,
+      { name, path }: UnqueuedFolder,
+      imageIndex = 0,
+    ) => {
+      let addedFolder: QueuedFolder | null = null
 
       setWorkspace((previousWorkspace) => {
         const existingFolder =
@@ -705,12 +755,15 @@ const WorkspaceProvider = ({ children }) => {
     [],
   )
 
-  const setActivePaneId = useCallback((paneId) => {
-    setWorkspace((previousWorkspace) => ({
-      ...previousWorkspace,
-      activePaneId: paneId,
-    }))
-  }, [])
+  const setActivePaneId = useCallback(
+    (paneId: string | null) => {
+      setWorkspace((previousWorkspace) => ({
+        ...previousWorkspace,
+        activePaneId: paneId,
+      }))
+    },
+    [],
+  )
 
   // Drop all columns — leaves the immersive viewer back to the gallery.
   const clearPanes = useCallback(() => {
@@ -721,52 +774,53 @@ const WorkspaceProvider = ({ children }) => {
     }))
   }, [])
 
-  const workspaceProviderValue = useMemo(
-    () => ({
-      activePaneId: workspace.activePaneId,
-      addFolderToQueue,
-      addFoldersToQueue,
-      addPane,
-      addPaneAndFill,
-      assignFolderPathToPane,
-      assignFolderToPane,
-      clearPanes,
-      clearQueue,
-      deleteFolder,
-      hasSavedQueue,
-      isChromeRevealSuppressed,
-      loadQueue,
-      panes: workspace.panes,
-      queuedFolders: workspace.queuedFolders,
-      removeFolder,
-      removePane,
-      saveQueue,
-      setActivePaneId,
-      setPaneIndex,
-      suppressChromeReveal,
-    }),
-    [
-      addFolderToQueue,
-      addFoldersToQueue,
-      addPane,
-      addPaneAndFill,
-      assignFolderPathToPane,
-      assignFolderToPane,
-      clearPanes,
-      clearQueue,
-      deleteFolder,
-      hasSavedQueue,
-      isChromeRevealSuppressed,
-      loadQueue,
-      removeFolder,
-      removePane,
-      saveQueue,
-      setActivePaneId,
-      setPaneIndex,
-      suppressChromeReveal,
-      workspace,
-    ],
-  )
+  const workspaceProviderValue =
+    useMemo<WorkspaceContextValue>(
+      () => ({
+        activePaneId: workspace.activePaneId,
+        addFolderToQueue,
+        addFoldersToQueue,
+        addPane,
+        addPaneAndFill,
+        assignFolderPathToPane,
+        assignFolderToPane,
+        clearPanes,
+        clearQueue,
+        deleteFolder,
+        hasSavedQueue,
+        isChromeRevealSuppressed,
+        loadQueue,
+        panes: workspace.panes,
+        queuedFolders: workspace.queuedFolders,
+        removeFolder,
+        removePane,
+        saveQueue,
+        setActivePaneId,
+        setPaneIndex,
+        suppressChromeReveal,
+      }),
+      [
+        addFolderToQueue,
+        addFoldersToQueue,
+        addPane,
+        addPaneAndFill,
+        assignFolderPathToPane,
+        assignFolderToPane,
+        clearPanes,
+        clearQueue,
+        deleteFolder,
+        hasSavedQueue,
+        isChromeRevealSuppressed,
+        loadQueue,
+        removeFolder,
+        removePane,
+        saveQueue,
+        setActivePaneId,
+        setPaneIndex,
+        suppressChromeReveal,
+        workspace,
+      ],
+    )
 
   return (
     <WorkspaceContext.Provider
@@ -776,8 +830,6 @@ const WorkspaceProvider = ({ children }) => {
     </WorkspaceContext.Provider>
   )
 }
-
-WorkspaceProvider.propTypes = propTypes
 
 const MemoizedWorkspaceProvider = memo(WorkspaceProvider)
 
