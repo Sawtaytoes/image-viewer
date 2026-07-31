@@ -13,7 +13,8 @@ const millisecondsPerDay = 24 * 60 * 60 * 1000
 // representative entry.
 const now = new Date(2026, 5, 17, 12, 0, 0).getTime()
 
-const daysAgo = (days) => now - days * millisecondsPerDay
+const daysAgo = (days: number): number =>
+  now - days * millisecondsPerDay
 
 describe("getDateGroupKey", () => {
   const boundaries = getDateGroupBoundaries(now)
@@ -62,9 +63,9 @@ describe("getDateGroupKey", () => {
 describe("groupEntriesByDate", () => {
   it("returns only non-empty buckets in Explorer's display order", () => {
     const entries = [
-      { modifiedTime: daysAgo(0), name: "a" },
-      { modifiedTime: daysAgo(4), name: "b" },
-      { modifiedTime: daysAgo(500), name: "c" },
+      { modifiedTime: daysAgo(0), name: "alpha" },
+      { modifiedTime: daysAgo(4), name: "bravo" },
+      { modifiedTime: daysAgo(500), name: "charlie" },
     ]
 
     const groups = groupEntriesByDate(entries, now)
@@ -83,9 +84,9 @@ describe("groupEntriesByDate", () => {
 
   it("collects every entry that falls in the same bucket", () => {
     const entries = [
-      { modifiedTime: daysAgo(0), name: "a" },
-      { modifiedTime: daysAgo(0), name: "b" },
-      { modifiedTime: daysAgo(40), name: "c" },
+      { modifiedTime: daysAgo(0), name: "alpha" },
+      { modifiedTime: daysAgo(0), name: "bravo" },
+      { modifiedTime: daysAgo(40), name: "charlie" },
     ]
 
     const groups = groupEntriesByDate(entries, now)
@@ -93,7 +94,7 @@ describe("groupEntriesByDate", () => {
     expect(groups).toHaveLength(2)
     expect(
       groups[0].items.map((item) => item.name),
-    ).toEqual(["a", "b"])
+    ).toEqual(["alpha", "bravo"])
     expect(groups[1].key).toBe("lastMonth")
   })
 })

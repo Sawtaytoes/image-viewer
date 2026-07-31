@@ -1,13 +1,15 @@
-import { css } from "@emotion/react"
-import PropTypes from "prop-types"
 import {
   memo,
+  type ReactNode,
   useEffect,
   useLayoutEffect,
   useMemo,
   useRef,
   useState,
 } from "react"
+
+import type { ImageFile } from "../../types"
+import type { DateGroup } from "./dateGroups"
 
 // Windowed grid that lays each date group out as a full-width header followed
 // by its items in an N-column grid. Unlike `VirtualizedList` (a single uniform
@@ -20,56 +22,56 @@ const HEADER_HEIGHT = 40
 
 const ROWS_TO_PAD = 4
 
-const scrollContainerStyles = css`
-	height: 100%;
-	overflow-x: hidden;
-	overflow-y: auto;
-	scrollbar-gutter: stable;
-	width: 100%;
-`
+// A folder and an image share the tile shape; `kind` is what tells the caller's
+// `renderItem` which of the two tiles to build. Declared here because this is
+// the component that traffics in them, and `FileBrowser` builds them for it.
+export interface DateGroupedEntry extends ImageFile {
+  kind: "directory" | "image"
+}
 
-const headerStyles = css`
-	align-items: center;
-	color: #cfcfcf;
-	display: flex;
-	font-family: 'Source Sans Pro', sans-serif;
-	font-size: 18px;
-	font-weight: 600;
-	height: ${HEADER_HEIGHT}px;
-	padding: 0 8px;
-	position: absolute;
-	width: 100%;
+interface HeaderPlacement {
+  height: number
+  key: string
+  label: string
+  top: number
+  type: "header"
+}
 
-	&::after {
-		border-bottom: 1px solid #555;
-		bottom: 6px;
-		content: '';
-		left: 8px;
-		position: absolute;
-		right: 8px;
-	}
-`
+interface ItemPlacement {
+  item: DateGroupedEntry
+  key: string
+  left: number
+  size: number
+  top: number
+  type: "item"
+}
 
-const itemStyles = css`
-	filter: drop-shadow(3px 3px 4px #222);
-	position: absolute;
-`
+type Placement = HeaderPlacement | ItemPlacement
 
-const propTypes = {
-  groups: PropTypes.arrayOf(
-    PropTypes.shape({
-      items: PropTypes.arrayOf(
-        PropTypes.shape({
-          path: PropTypes.string.isRequired,
-        }),
-      ).isRequired,
-      key: PropTypes.string.isRequired,
-      label: PropTypes.string.isRequired,
-    }),
-  ).isRequired,
-  itemPadding: PropTypes.string,
-  numberOfColumns: PropTypes.number,
-  renderItem: PropTypes.func.isRequired,
+interface Viewport {
+  itemSize: number
+  viewHeight: number
+}
+
+const initialViewport: Viewport = {
+  itemSize: 1,
+  viewHeight: 0,
+}
+
+// Every box in this grid is sized from a measured viewport, so all of it lives
+// in inline `style` — a `top-[${n}px]` class compiles and generates no CSS,
+// which here would stack every tile at the origin.
+const itemClassName =
+  "absolute drop-shadow-[3px_3px_4px_var(--color-surface-sunken)]"
+
+const headerClassName =
+  "absolute flex w-full items-center px-2 text-[18px] font-semibold text-content-secondary after:absolute after:right-2 after:bottom-1.5 after:left-2 after:border-b after:border-border-default after:content-['']"
+
+interface DateGroupedGridProps {
+  groups: DateGroup<DateGroupedEntry>[]
+  itemPadding?: string
+  numberOfColumns?: number
+  renderItem: (item: DateGroupedEntry) => ReactNode
 }
 
 const DateGroupedGrid = ({
@@ -77,25 +79,28 @@ const DateGroupedGrid = ({
   itemPadding = "0",
   numberOfColumns = 1,
   renderItem,
-}) => {
-  const animationFrameIdRef = useRef()
-  const scrollContainerRef = useRef()
+}: DateGroupedGridProps) => {
+  const animationFrameIdRef = useRef<number | null>(null)
+  const scrollContainerRef = useRef<HTMLDivElement>(null)
 
   const [scrollTop, setScrollTop] = useState(0)
 
-  const [viewport, setViewport] = useState({
-    itemSize: 1,
-    viewHeight: 0,
-  })
+  const [viewport, setViewport] =
+    useState<Viewport>(initialViewport)
 
   useLayoutEffect(() => {
+    const scrollContainer = scrollContainerRef.current
+
+    if (!scrollContainer) {
+      return undefined
+    }
+
     const calculateViewport = () => {
-      const viewWidth =
-        scrollContainerRef.current.clientWidth
+      const viewWidth = scrollContainer.clientWidth
 
       setViewport({
         itemSize: Math.ceil(viewWidth / numberOfColumns),
-        viewHeight: scrollContainerRef.current.clientHeight,
+        viewHeight: scrollContainer.clientHeight,
       })
     }
 
@@ -116,12 +121,14 @@ const DateGroupedGrid = ({
       throttleViewportCalculation,
     )
 
-    resizeObserver.observe(scrollContainerRef.current)
+    resizeObserver.observe(scrollContainer)
 
     return () => {
-      window.cancelAnimationFrame(
-        animationFrameIdRef.current,
-      )
+      if (animationFrameIdRef.current !== null) {
+        window.cancelAnimationFrame(
+          animationFrameIdRef.current,
+        )
+      }
 
       animationFrameIdRef.current = null
 
@@ -131,6 +138,10 @@ const DateGroupedGrid = ({
 
   useEffect(() => {
     const scrollContainer = scrollContainerRef.current
+
+    if (!scrollContainer) {
+      return undefined
+    }
 
     const updateScrollTop = () => {
       setScrollTop(scrollContainer.scrollTop)
@@ -167,7 +178,7 @@ const DateGroupedGrid = ({
   const { placements, totalHeight } = useMemo(() => {
     const { itemSize } = viewport
 
-    const nextPlacements = []
+    const nextPlacements: Placement[] = []
 
     let top = 0
 
@@ -230,47 +241,38 @@ const DateGroupedGrid = ({
     })
   }, [placements, scrollTop, viewport])
 
-  const itemWrapperStyles = useMemo(
-    () => css`
-			${itemStyles}
-			padding: ${itemPadding};
-		`,
-    [itemPadding],
-  )
-
   return (
     <div
-      css={scrollContainerStyles}
+      className="h-full w-full overflow-x-hidden overflow-y-auto [scrollbar-gutter:stable]"
       ref={scrollContainerRef}
     >
       <div
-        css={css`
-					height: ${totalHeight}px;
-					position: relative;
-					width: 100%;
-				`}
+        className="relative w-full"
+        style={{ height: `${totalHeight}px` }}
       >
         {visiblePlacements.map((placement) =>
           placement.type === "header" ? (
             <div
-              css={css`
-								${headerStyles}
-								top: ${placement.top}px;
-							`}
+              className={headerClassName}
               key={placement.key}
+              style={{
+                height: `${placement.height}px`,
+                top: `${placement.top}px`,
+              }}
             >
               {placement.label}
             </div>
           ) : (
             <div
-              css={css`
-								${itemWrapperStyles}
-								height: ${placement.size}px;
-								left: ${placement.left}px;
-								top: ${placement.top}px;
-								width: ${placement.size}px;
-							`}
+              className={itemClassName}
               key={placement.key}
+              style={{
+                height: `${placement.size}px`,
+                left: `${placement.left}px`,
+                padding: itemPadding,
+                top: `${placement.top}px`,
+                width: `${placement.size}px`,
+              }}
             >
               {renderItem(placement.item)}
             </div>
@@ -280,8 +282,6 @@ const DateGroupedGrid = ({
     </div>
   )
 }
-
-DateGroupedGrid.propTypes = propTypes
 
 const MemoizedDateGroupedGrid = memo(DateGroupedGrid)
 

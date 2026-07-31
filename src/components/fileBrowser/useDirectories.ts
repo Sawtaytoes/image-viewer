@@ -2,6 +2,7 @@ import { useContext, useEffect, useState } from "react"
 import { from } from "rxjs"
 import { filter, map, toArray } from "rxjs/operators"
 
+import type { DirectoryEntry, ImageFile } from "../../types"
 import SettingsContext from "../settings/SettingsContext"
 import { getFolderSortOrder } from "../settings/sortOrders"
 import sortDirectoryEntries from "./sortDirectoryEntries"
@@ -16,7 +17,12 @@ const systemDirectories = [
   "windows",
 ]
 
-const useDirectories = (directoryContents, folderPath) => {
+const initialDirectories: ImageFile[] = []
+
+const useDirectories = (
+  directoryContents: readonly DirectoryEntry[],
+  folderPath = "",
+): ImageFile[] => {
   const { sortOrdersByFolder } = useContext(SettingsContext)
 
   const sortOrder = getFolderSortOrder(
@@ -24,7 +30,9 @@ const useDirectories = (directoryContents, folderPath) => {
     folderPath,
   )
 
-  const [directories, setDirectories] = useState([])
+  const [directories, setDirectories] = useState<
+    ImageFile[]
+  >(initialDirectories)
 
   useEffect(() => {
     const subscriber = from(directoryContents)

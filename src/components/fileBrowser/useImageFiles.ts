@@ -2,6 +2,7 @@ import { useContext, useEffect, useState } from "react"
 import { from } from "rxjs"
 import { filter, map, toArray } from "rxjs/operators"
 
+import type { DirectoryEntry, ImageFile } from "../../types"
 import SettingsContext from "../settings/SettingsContext"
 import { getFolderSortOrder } from "../settings/sortOrders"
 import sortDirectoryEntries from "./sortDirectoryEntries"
@@ -27,7 +28,12 @@ const validImageExtensions = [
   ".webp",
 ]
 
-const useImageFiles = (directoryContents, folderPath) => {
+const initialImageFiles: ImageFile[] = []
+
+const useImageFiles = (
+  directoryContents: readonly DirectoryEntry[],
+  folderPath = "",
+): ImageFile[] => {
   const { sortOrdersByFolder } = useContext(SettingsContext)
 
   const sortOrder = getFolderSortOrder(
@@ -35,7 +41,9 @@ const useImageFiles = (directoryContents, folderPath) => {
     folderPath,
   )
 
-  const [imageFiles, setImageFiles] = useState([])
+  const [imageFiles, setImageFiles] = useState<ImageFile[]>(
+    initialImageFiles,
+  )
 
   useEffect(() => {
     const subscription = from(directoryContents)

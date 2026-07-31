@@ -1,9 +1,11 @@
-import { useEffect, useState } from "react"
+import { type RefObject, useEffect, useState } from "react"
 
 // Reports whether `elementRef`'s node has scrolled into view. Latches `true` on
 // the first intersection and stops observing — a folder tile's thumbnail/gallery
 // probe should run once, not re-fire every time the tile scrolls off and back.
-const useInView = (elementRef) => {
+const useInView = (
+  elementRef: RefObject<Element | null>,
+): boolean => {
   const [isInView, setIsInView] = useState(false)
 
   useEffect(() => {

@@ -15,7 +15,11 @@ afterEach(() => {
 
 describe("useFolderListing", () => {
   it("reads the folder on mount and again on refresh()", async () => {
-    const readDirectory = vi.fn(() => Promise.resolve([]))
+    // Typed with the bridge's own signature so the call assertions below check
+    // the arguments the real `readDirectory` takes, not a bare `() => …`.
+    const readDirectory = vi.fn<
+      Window["api"]["readDirectory"]
+    >(() => Promise.resolve([]))
     window.api.readDirectory = readDirectory
 
     const { result } = renderHook(() =>
@@ -44,7 +48,9 @@ describe("useFolderListing", () => {
   })
 
   it("does not read when there is no folder path", () => {
-    const readDirectory = vi.fn(() => Promise.resolve([]))
+    const readDirectory = vi.fn<
+      Window["api"]["readDirectory"]
+    >(() => Promise.resolve([]))
     window.api.readDirectory = readDirectory
 
     renderHook(() => useFolderListing(undefined))

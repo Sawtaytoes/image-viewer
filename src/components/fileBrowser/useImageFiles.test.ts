@@ -1,13 +1,21 @@
 import { renderHook } from "@testing-library/react"
 import { describe, expect, it } from "vitest"
 
+import type { DirectoryEntry } from "../../types"
 import useImageFiles from "./useImageFiles"
 
-const entry = (fileName, isFile) => ({
+// `readDirectory` stamps `modifiedTime: 0` whenever it skips the per-entry stat
+// — which the default name sort always does — so 0 is the honest fixture value
+// rather than an omission.
+const entry = (
+  fileName: string,
+  isFile: boolean,
+): DirectoryEntry => ({
   fileName,
   filePath: `/pics/${fileName}`,
   isDirectory: !isFile,
   isFile,
+  modifiedTime: 0,
 })
 
 describe("useImageFiles", () => {
@@ -29,6 +37,7 @@ describe("useImageFiles", () => {
     ).toEqual(["a2.jpg", "a10.jpg", "b.png"])
 
     expect(result.current[0]).toEqual({
+      modifiedTime: 0,
       name: "a2.jpg",
       path: "/pics/a2.jpg",
     })
