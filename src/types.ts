@@ -23,6 +23,15 @@ export interface ImageFile {
   path: string
 }
 
+// One hit from `window.api.searchFolders` — a folder, by name and path, with
+// no listing behind it yet. Deliberately its own name rather than reusing
+// `ImageFile`: a search result is not an image, and the day one of them gains a
+// match score or a depth it must not become a field every image carries.
+export interface FolderMatch {
+  name: string
+  path: string
+}
+
 // Result of the synchronous `window.api.statPath` probe.
 export interface PathStat {
   // `exists` mirrors the preload's `statPath` return shape (and `fs` naming);

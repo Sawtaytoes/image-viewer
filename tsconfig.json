@@ -5,9 +5,20 @@
     "moduleResolution": "bundler",
     "lib": ["DOM", "DOM.Iterable", "ESNext"],
     "jsx": "react-jsx",
-    "jsxImportSource": "@emotion/react",
-    "allowJs": true,
-    "checkJs": false,
+    // No "jsxImportSource". It pointed at "@emotion/react" so the `css` prop
+    // typechecked; there is no `css` prop any more, and leaving it would route
+    // every JSX element in the app through a runtime the bundle no longer
+    // ships.
+    //
+    // `allowJs` is false, which is the real gate this milestone moved. It was
+    // `true` with `checkJs: false` so `.js` and `.ts` could coexist while the
+    // conversion waited
+    // (`docs/decisions/2026-06-02-typescript-tooling-now-convert-later.md`).
+    // With it false, a stray `.js` under `src/` is not "unchecked", it is a
+    // module `tsc` cannot resolve — so the conversion cannot silently
+    // half-finish. The two survivors, `src/main.js` and `src/preload.js`, are
+    // the Node-side programs and are excluded below by name.
+    "allowJs": false,
     "strict": true,
     "esModuleInterop": true,
     "allowSyntheticDefaultImports": true,
@@ -17,7 +28,11 @@
     "skipLibCheck": true,
     "noEmit": true,
     "useDefineForClassFields": true,
-    "types": ["vite/client", "node"]
+    "types": [
+      "vite/client",
+      "node",
+      "@testing-library/jest-dom"
+    ]
   },
   "include": [
     "src/**/*.ts",
@@ -27,7 +42,9 @@
     "forge.env.d.ts",
     "vite.main.config.ts",
     "vite.preload.config.ts",
-    "vite.renderer.config.ts"
+    "vite.renderer.config.ts",
+    "vitest.config.ts",
+    "vitest.setup.ts"
   ],
   "exclude": ["node_modules", ".vite", "out", "dist"]
 }
