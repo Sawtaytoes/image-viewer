@@ -26,15 +26,19 @@
    Google CDN on every window open. */
 @import "../fonts/SourceSansPro.css";
 
-/* PHASE 2 will add these two lines when `@charcuterie/ui@0.2.0` publishes:
-
-     @import "@charcuterie/ui/styles.css";
-     @source "../../node_modules/@charcuterie/ui/dist";
+/* The shared components' own stylesheet, plus the scan path that makes their
+   utilities exist.
 
    The `@source` is NOT optional and fails **silently** without it — Tailwind v4
    scans source text for complete class strings and does not scan dependencies,
    so every shared component renders unstyled with no error and no failing
-   test. rip-deck's `packages/web/src/styles/tailwind.css` is the reference. */
+   test. rip-deck's `packages/web/src/styles/tailwind.css` is the reference.
+
+   It points at `dist` rather than `src`: `dist` is the compiled JSX the app
+   actually runs, and both directories ship in the package, so scanning `src`
+   too would only double the work for the same class strings. */
+@import "@charcuterie/ui/styles.css";
+@source "../../node_modules/@charcuterie/ui/dist";
 
 /* Unlayered on purpose, and it has to be.
 
