@@ -1,3 +1,4 @@
+import { IconButton, Select, Tooltip } from "@charcuterie/ui"
 import {
   Fragment,
   memo,
@@ -13,17 +14,18 @@ import SortIcon from "../icons/SortIcon"
 import SettingsContext from "../settings/SettingsContext"
 import {
   getFolderSortOrder,
-  sortOrders,
+  isSortOrder,
+  sortOrderOptions,
 } from "../settings/sortOrders"
 import DeleteFileModal from "../toolkit/DeleteFileModal"
 import FileSystemContext from "./FileSystemContext"
 
 const pathApi = window.api.path
 
-const sortToggleLabels: Record<string, string> = {
-  [sortOrders.modifiedDesc]: "Newest",
-  [sortOrders.name]: "Name",
-}
+// `Select`'s root is `w-full`, and the `className` it takes lands on the
+// `<select>` rather than that root — so the width belongs to this wrapper.
+const sortPickerClassName =
+  "flex w-[132px] flex-none items-center gap-1"
 
 // One rung of the ancestor trail: what to show, and where clicking it goes.
 interface BreadcrumbSegment {
@@ -73,17 +75,25 @@ const DirectoryControls = () => {
     setFilePath,
   } = useContext(FileSystemContext)
 
-  const { sortOrdersByFolder, toggleSortOrder } =
-    useContext(SettingsContext)
+  const { setSortOrder, sortOrdersByFolder } = useContext(
+    SettingsContext,
+  )
 
   const sortOrder = getFolderSortOrder(
     sortOrdersByFolder,
     filePath,
   )
 
-  const toggleFolderSortOrder = useCallback(() => {
-    toggleSortOrder(filePath)
-  }, [filePath, toggleSortOrder])
+  // `isSortOrder` narrows the `Select`'s raw string back to the union without a
+  // cast — see the matching handler in `PaneGallery`.
+  const changeFolderSortOrder = useCallback(
+    (nextSortOrder: string) => {
+      if (isSortOrder(nextSortOrder)) {
+        setSortOrder(filePath, nextSortOrder)
+      }
+    },
+    [filePath, setSortOrder],
+  )
 
   const breadcrumbSegments = useMemo(
     () =>
@@ -113,14 +123,22 @@ const DirectoryControls = () => {
 
   return (
     <div className="flex items-center">
+      {/* Was a bare `<div onClick>`: not focusable, not in the tab order, no
+          accessible name, and unreachable by the Enter/Space every other
+          control in this bar answers to. `IconButton` is a real `<button>` with
+          `aria-label`. */}
       {!isRootFilePath && (
-        <div
-          className="inline-flex cursor-pointer items-center rounded-[5px] p-1 hover:bg-intent-neutral-surface-hover active:bg-intent-neutral-solid"
-          onClick={navigateUpFolderTree}
-          title="^ Go up a Directory"
-        >
-          <ArrowUpwardIcon />
-        </div>
+        <Tooltip label="Go up a directory">
+          <IconButton
+            appearance="ghost"
+            intent="neutral"
+            label="Go up a directory"
+            onClick={navigateUpFolderTree}
+            size="sm"
+          >
+            <ArrowUpwardIcon />
+          </IconButton>
+        </Tooltip>
       )}
 
       <div className="flex min-w-0 flex-auto flex-wrap items-center font-normal select-none">
@@ -161,26 +179,37 @@ const DirectoryControls = () => {
         )}
       </div>
 
-      {/* Sort-order toggle: icon + the current order's label so the state is
-          legible at a glance. Sits between the breadcrumb and the delete
-          action. */}
-      <button
-        className="inline-flex flex-none cursor-pointer items-center gap-1 rounded-[5px] border-0 bg-transparent px-2 py-1 font-normal whitespace-nowrap text-inherit hover:bg-intent-neutral-surface-hover"
-        onClick={toggleFolderSortOrder}
-        title={
-          sortOrder === sortOrders.modifiedDesc
-            ? "Sorting by date modified (newest first) — grouped like Explorer. Click to sort by name."
-            : "Sorting by name. Click to sort by date modified (newest first)."
-        }
-        type="button"
-      >
+      {/* Sort-order picker. `key={filePath}` re-seeds the uncontrolled
+          `<select>` because the order is stored per folder path — navigating is
+          a second writer, and without it the control would keep showing the
+          previous folder's choice. */}
+      <div className={sortPickerClassName}>
         <SortIcon />
-        {sortToggleLabels[sortOrder]}
-      </button>
 
-      <div onClick={openDeleteFileModal}>
-        <DeleteForeverIcon />
+        <Select
+          key={filePath}
+          label="Sort order"
+          onChange={changeFolderSortOrder}
+          options={sortOrderOptions}
+          size="sm"
+          value={sortOrder}
+        />
       </div>
+
+      {/* The other bare `<div onClick>`, and the worse of the two: it deletes
+          the current folder and had no name, no focus and no keyboard path at
+          all. */}
+      <Tooltip label="Delete this folder">
+        <IconButton
+          appearance="ghost"
+          intent="danger"
+          label="Delete this folder"
+          onClick={openDeleteFileModal}
+          size="sm"
+        >
+          <DeleteForeverIcon />
+        </IconButton>
+      </Tooltip>
 
       <DeleteFileModal
         isVisible={isDeleteFileModalVisible}

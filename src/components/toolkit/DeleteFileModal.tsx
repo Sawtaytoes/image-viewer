@@ -12,6 +12,8 @@ type DeleteFileModalProps = Pick<
   "isVisible" | "onClose" | "onConfirm"
 >
 
+// The question is the dialog's accessible name now (`Modal`'s `heading`), so it
+// travels as a `message` prop rather than as `children`.
 const DeleteFileModal = ({
   isVisible,
   onClose,
@@ -21,11 +23,10 @@ const DeleteFileModal = ({
     closeButtonText="No"
     confirmButtonText="Yes"
     isVisible={isVisible}
+    message="Are you sure you want to delete this file or directory?"
     onClose={onClose}
     onConfirm={onConfirm}
-  >
-    Are you sure you want to delete this file or directory?
-  </ConfirmationModal>
+  />
 )
 
 const MemoizedDeleteFileModal = memo(DeleteFileModal)
