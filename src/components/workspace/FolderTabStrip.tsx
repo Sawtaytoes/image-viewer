@@ -1,3 +1,4 @@
+import { Tooltip } from "@charcuterie/ui"
 import {
   memo,
   useCallback,
@@ -82,14 +83,18 @@ const FolderTabStrip = () => {
         ))}
       </div>
 
-      <button
-        className={clearQueueButtonClassName}
-        onClick={clearQueue}
-        title="Remove every folder from the queue"
-        type="button"
-      >
-        Clear queue
-      </button>
+      {/* "Clear queue" throws away every tab in one press, and the `title` that
+          said so was the only warning — invisible on touch, which is how this
+          strip is normally used. */}
+      <Tooltip label="Remove every folder from the queue">
+        <button
+          className={clearQueueButtonClassName}
+          onClick={clearQueue}
+          type="button"
+        >
+          Clear queue
+        </button>
+      </Tooltip>
     </div>
   )
 }

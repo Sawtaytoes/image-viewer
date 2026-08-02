@@ -1,3 +1,4 @@
+import { Tooltip } from "@charcuterie/ui"
 import type { CSSProperties, PointerEvent } from "react"
 import {
   Fragment,
@@ -266,60 +267,81 @@ const TitleBar = () => {
           <div className={separatorClassName} />
         )}
 
+        {/* Four native `title`s become four `Tooltip`s. The three queue actions
+            keep their visible text as the accessible name and the tip explains
+            the consequence — "Save for later" says nothing about *closing* the
+            queue, which is the half that surprises people.
+
+            A `title` never appears on a touch device at all, and this bar is
+            reachable by a drag-down gesture on the Surface
+            (`docs/decisions/2026-06-30-queue-is-summonable-by-touch.md`), so on
+            the app's primary input every one of these explanations was dead
+            text. `Tooltip` also opens on focus, which `title` does not. */}
         {isLoadShown && (
-          <button
-            className={buttonClassName}
-            onClick={loadQueue}
-            title="Load the saved queue"
-            type="button"
-          >
-            Load queue
-          </button>
+          <Tooltip label="Load the saved queue">
+            <button
+              className={buttonClassName}
+              onClick={loadQueue}
+              type="button"
+            >
+              Load queue
+            </button>
+          </Tooltip>
         )}
 
         {isSaveForLaterShown && (
-          <button
-            className={buttonClassName}
-            onClick={saveAndCloseQueue}
-            title="Save the current queue for later, then close it"
-            type="button"
-          >
-            Save for later
-          </button>
+          <Tooltip label="Save the current queue for later, then close it">
+            <button
+              className={buttonClassName}
+              onClick={saveAndCloseQueue}
+              type="button"
+            >
+              Save for later
+            </button>
+          </Tooltip>
         )}
 
         {isCloseShown && (
-          <button
-            className={buttonClassName}
-            onClick={clearQueue}
-            title="Close the queue without saving"
-            type="button"
-          >
-            Close queue
-          </button>
+          <Tooltip label="Close the queue without saving">
+            <button
+              className={buttonClassName}
+              onClick={clearQueue}
+              type="button"
+            >
+              Close queue
+            </button>
+          </Tooltip>
         )}
 
-        <button
-          aria-label={
-            isFullScreen
-              ? "Exit fullscreen"
-              : "Enter fullscreen"
-          }
-          className={fullscreenButtonClassName}
-          onClick={toggleFullScreen}
-          title={
+        {/* The `aria-label` stays and the tip is deliberately *not* the same
+            string: `useRole(context, { role: "tooltip" })` points
+            `aria-describedby` at the tip, so the name stays "Exit fullscreen"
+            and the shortcut rides along as the description rather than being
+            read as part of the button's name. */}
+        <Tooltip
+          label={
             isFullScreen
               ? "Exit fullscreen (F11)"
               : "Enter fullscreen (F11)"
           }
-          type="button"
         >
-          {isFullScreen ? (
-            <FullscreenExitIcon />
-          ) : (
-            <FullscreenIcon />
-          )}
-        </button>
+          <button
+            aria-label={
+              isFullScreen
+                ? "Exit fullscreen"
+                : "Enter fullscreen"
+            }
+            className={fullscreenButtonClassName}
+            onClick={toggleFullScreen}
+            type="button"
+          >
+            {isFullScreen ? (
+              <FullscreenExitIcon />
+            ) : (
+              <FullscreenIcon />
+            )}
+          </button>
+        </Tooltip>
       </div>
     </Fragment>
   )

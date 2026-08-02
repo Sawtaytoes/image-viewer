@@ -136,18 +136,37 @@ describe("FolderPickerPopover (per-column menu)", () => {
 
     // Open elsewhere → flagged. The current pane's folder and an unopened
     // folder are not.
+    //
+    // The flag is a `Tooltip` rather than a native `title` now, so it is not in
+    // the document until the row is hovered or focused — which makes this the
+    // stronger test: `getByTitle` only ever proved an attribute was spelled
+    // right, and could not have caught a tip that never opened. Focus is the
+    // trigger driven here because it is the one a keyboard gets, and it needs no
+    // fake timers (hover waits out `Tooltip`'s 200ms `restMs`).
+    fireEvent.focus(screen.getByText("Dogs"))
+
+    expect(screen.getByRole("tooltip")).toHaveTextContent(
+      "Dogs — already open in another column",
+    )
+
+    // The other two rows are checked by their own text rather than by
+    // `queryByRole("tooltip")` returning nothing, because a synthetic `blur`
+    // does not close the first tip: floating-ui's `useFocus` reads
+    // `relatedTarget` to decide whether focus left the pair, and
+    // `fireEvent.blur` supplies none — so the Dogs tip is still open here and
+    // a bare role query would find it and blame the wrong row.
+    fireEvent.focus(screen.getByText("Cats"))
+
     expect(
-      screen.getByTitle(
-        "Dogs — already open in another column",
-      ),
-    ).toBeInTheDocument()
-    expect(
-      screen.queryByTitle(
+      screen.queryByText(
         "Cats — already open in another column",
       ),
     ).not.toBeInTheDocument()
+
+    fireEvent.focus(screen.getByText("Birds"))
+
     expect(
-      screen.queryByTitle(
+      screen.queryByText(
         "Birds — already open in another column",
       ),
     ).not.toBeInTheDocument()

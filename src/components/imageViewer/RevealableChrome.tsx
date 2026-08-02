@@ -1,3 +1,4 @@
+import { Tooltip } from "@charcuterie/ui"
 import type {
   Dispatch,
   PointerEventHandler,
@@ -261,15 +262,20 @@ const RevealableChrome = ({
           <AddIcon />
         </button>
 
-        <button
-          aria-label="Spawn window on another display"
-          className={CHROME_BUTTON_CLASSES}
-          onClick={openDisplayMenu}
-          title="Open a new window on another display"
-          type="button"
-        >
-          <NewWindowIcon />
-        </button>
+        {/* The one control in this bar whose icon does not explain itself — a
+            "new window" glyph says nothing about *which display*. It was a
+            native `title`, so on touch (this app's primary input) the
+            explanation never appeared at all. */}
+        <Tooltip label="Open a new window on another display">
+          <button
+            aria-label="Spawn window on another display"
+            className={CHROME_BUTTON_CLASSES}
+            onClick={openDisplayMenu}
+            type="button"
+          >
+            <NewWindowIcon />
+          </button>
+        </Tooltip>
       </div>
 
       {isDisplayMenuOpen && (
