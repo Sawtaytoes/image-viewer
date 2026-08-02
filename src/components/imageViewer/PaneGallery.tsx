@@ -120,9 +120,8 @@ const PaneGallery = ({
 
   const { addFoldersToQueue } = useContext(WorkspaceContext)
 
-  const { setSortOrder, sortOrdersByFolder } = useContext(
-    SettingsContext,
-  )
+  const { setSortOrder, sortOrdersByFolder } =
+    useContext(SettingsContext)
 
   const sortOrder = getFolderSortOrder(
     sortOrdersByFolder,

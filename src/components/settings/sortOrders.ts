@@ -45,7 +45,14 @@ const isSortOrder = (value: string): value is SortOrder =>
 // `value` keeps its `SortOrder` literal type (`SelectOption.value` is a
 // `string`, and `SortOrder` is assignable to it), so adding a third order to
 // the union and forgetting this array is a type error at the annotation.
-const sortOrderOptions: readonly {
+//
+// Not `readonly`, and that is the library's call rather than ours: `SelectProps`
+// declares `options: SelectItem[]`, so a `readonly` array is rejected outright
+// (TS4104) and the only ways to pass one are a spread — a fresh array every
+// render, which defeats the `memo` on both call sites — or a cast. A mutable
+// annotation is the honest third option until `@charcuterie/ui` widens the prop
+// to `readonly SelectItem[]`, which costs it nothing.
+const sortOrderOptions: {
   label: string
   value: SortOrder
 }[] = [
