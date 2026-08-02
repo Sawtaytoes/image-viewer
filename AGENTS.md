@@ -43,10 +43,44 @@ stylesheet, so **no test can tell a real utility from a class name Tailwind neve
 a `className` assertion passes either way. The Vite build runs the real Tailwind pass and is
 the only gate that can.
 
-There is no working global `yarn` on the sandbox host; `corepack enable --install-directory
-/tmp/bin yarn` then `export PATH=/tmp/bin:$PATH`, or call the binaries directly
-(`node_modules/.bin/tsc`, `node_modules/.bin/vitest`, …), which is what a subagent scoped to one
-directory should do anyway.
+There is no working global `yarn` on the sandbox host; `corepack yarn <script>` works without
+installing anything (`corepack enable` may fail on EACCES writing `/usr/local/bin`), or call the
+binaries directly (`node_modules/.bin/tsc`, `node_modules/.bin/vitest`, …), which is what a
+subagent scoped to one directory should do anyway.
+
+## Running the app in the sandbox — you can, so do
+
+**Never write "there is no GUI in this sandbox."** It is false, it has been written in this
+repo's docs before, and the fleet rule forbids it. Any change with a visual result gets run and
+screenshotted *in the state that changed* — an open menu with focus on an item, a tooltip opened
+by keyboard, a dialog with its backdrop. A default render proves nothing.
+
+**Do not use the dev server.** `MAIN_WINDOW_VITE_DEV_SERVER_URL` is baked into
+`.vite/build/main.js`, and a stale build carries whatever port the last agent used — one session
+loaded a *different app* from another agent's `:5173`. Build for `file://` instead, which is
+`main.js`'s `loadFile` branch:
+
+```bash
+# renderer → the path main.js looks for, with relative asset URLs
+yarn vite build --config vite.renderer.config.ts \
+  --outDir .vite/renderer/main_window --base ./ --emptyOutDir
+
+# main + preload → cjs lib build, electron + node builtins external, and
+# define MAIN_WINDOW_VITE_DEV_SERVER_URL=undefined + MAIN_WINDOW_VITE_NAME='"main_window"'
+
+IMAGE_VIEWER_FAKE_FS=1 xvfb-run -n 71 -s "-screen 0 1600x1000x24" \
+  ./node_modules/.bin/electron . \
+  --remote-debugging-port=9333 --user-data-dir=/tmp/iv-userdata --no-sandbox
+```
+
+Then drive it with Playwright over CDP — `chromium.connectOverCDP("http://127.0.0.1:9333")` and
+pick the page whose URL contains `main_window` (a DevTools page is also listed). `playwright-core`
+is not a dependency here; import a sibling repo's copy rather than installing one.
+
+Two things that will waste your time if you don't know them: **`window.api` is frozen** by
+`contextBridge`, so you cannot stub the preload bridge from the renderer to simulate slow disk or
+errors; and the fake FS resolves reads within the same tick, so any "loading" state is unreachable
+without a delay knob in `src/fakeFileSystem.ts`. Screenshots go in `__screenshots__/` (gitignored).
 
 ## The one rule that matters: the renderer has no Node access
 
