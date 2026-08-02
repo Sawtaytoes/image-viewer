@@ -1,4 +1,4 @@
-import { Tooltip } from "@charcuterie/ui"
+import { Menu } from "@charcuterie/ui"
 import type {
   Dispatch,
   PointerEventHandler,
@@ -20,8 +20,8 @@ import ArrowBackIcon from "../icons/ArrowBackIcon"
 import NewWindowIcon from "../icons/NewWindowIcon"
 import FolderTabStrip from "../workspace/FolderTabStrip"
 import WorkspaceContext from "../workspace/WorkspaceContext"
-import DisplayPickerPopover from "./DisplayPickerPopover"
 import ImageViewerContext from "./ImageViewerContext"
+import useDisplayMenuItems from "./useDisplayMenuItems"
 import type { EdgeSwipePoint } from "./useEdgeSwipe"
 import useEdgeSwipe from "./useEdgeSwipe"
 import type { SpawnTapFeedback } from "./useTapFeedback"
@@ -212,6 +212,12 @@ const RevealableChrome = ({
     scheduleAutoHide()
   }, [scheduleAutoHide, suppressChromeReveal])
 
+  // `Menu` dismisses itself when a row is chosen, but the chrome bar has to be
+  // put away too — so spawning runs the same close path a dismiss does.
+  const displayMenuItems = useDisplayMenuItems({
+    onSpawn: closeDisplayMenu,
+  })
+
   return (
     <Fragment>
       <div
@@ -262,25 +268,43 @@ const RevealableChrome = ({
           <AddIcon />
         </button>
 
-        {/* The one control in this bar whose icon does not explain itself — a
-            "new window" glyph says nothing about *which display*. It was a
-            native `title`, so on touch (this app's primary input) the
-            explanation never appeared at all. */}
-        <Tooltip label="Open a new window on another display">
-          <button
-            aria-label="Spawn window on another display"
-            className={CHROME_BUTTON_CLASSES}
-            onClick={openDisplayMenu}
-            type="button"
-          >
-            <NewWindowIcon />
-          </button>
-        </Tooltip>
-      </div>
+        {/* This button had a `title` too, and it is the one place in the sweep
+            where the tooltip did NOT survive — `Menu` and `Tooltip` cannot
+            share a trigger in `@charcuterie/ui@0.2.0`.
 
-      {isDisplayMenuOpen && (
-        <DisplayPickerPopover onClose={closeDisplayMenu} />
-      )}
+            Both are slot components built on `useClonedChild`, which is a bare
+            `cloneElement` with no ref merge and no prop merge. Nesting them
+            either way round means the outer one clones the *inner component*,
+            whose prop list is closed, so every reference prop and the ref are
+            dropped — silently, with a green typecheck and a tip that simply
+            never opens. Chaining them through a forwarding adapter does not
+            help either: the second clone overwrites the first one's `ref`, and
+            that ref is what floating-ui positions against.
+
+            The menu wins because its name depends on this button.
+            `useRole(context, { role: "menu" })` puts `aria-labelledby` on the
+            panel pointing here, and `aria-labelledby` beats `aria-label` — so
+            the button's name IS the menu's name. Losing the tip costs little:
+            it was a native `title`, invisible on touch, and a menu that lists
+            the displays by name explains itself better than a sentence about
+            it did. Reported for M6f alongside the `Field`/`Tooltip` pair. */}
+        <Menu
+          isVisible={isDisplayMenuOpen}
+          items={displayMenuItems}
+          onDismiss={closeDisplayMenu}
+          placement="bottom-end"
+          trigger={
+            <button
+              aria-label="Spawn window on another display"
+              className={CHROME_BUTTON_CLASSES}
+              onClick={openDisplayMenu}
+              type="button"
+            >
+              <NewWindowIcon />
+            </button>
+          }
+        />
+      </div>
     </Fragment>
   )
 }

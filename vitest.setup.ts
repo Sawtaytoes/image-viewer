@@ -162,3 +162,98 @@ if (!HTMLDialogElement.prototype.showModal) {
     this.dispatchEvent(new Event("close"))
   }
 }
+
+// jsdom does not implement the Popover API either, and `@charcuterie/ui`'s
+// `Menu` is built on it — `showPopover()` on the panel, plus a
+// `matches(":popover-open")` guard so it is never called twice.
+//
+// Both halves have to be shimmed, and the selector is the half that is easy to
+// miss: `:popover-open` is not a selector jsdom's parser knows, so
+// `matches()` *throws* on it rather than returning `false`, which turns the
+// guard itself into the crash. `matches` is therefore wrapped to answer that
+// one selector from the shim's own state and defer everything else to the real
+// implementation.
+//
+// Like the `<dialog>` shim above, this models only what a test can observe:
+// which element is open. The top layer, light-dismiss and `::backdrop` are the
+// browser's, and jsdom has no rendering to hang them on.
+const openPopovers = new WeakSet<HTMLElement>()
+
+if (!HTMLElement.prototype.showPopover) {
+  HTMLElement.prototype.showPopover =
+    function showPopover() {
+      openPopovers.add(this)
+    }
+
+  HTMLElement.prototype.hidePopover =
+    function hidePopover() {
+      openPopovers.delete(this)
+    }
+
+  HTMLElement.prototype.togglePopover =
+    function togglePopover(
+      options?: boolean | { force?: boolean },
+    ) {
+      const isForced =
+        typeof options === "boolean"
+          ? options
+          : options?.force
+
+      const shouldOpen = isForced ?? !openPopovers.has(this)
+
+      if (shouldOpen) {
+        openPopovers.add(this)
+      } else {
+        openPopovers.delete(this)
+      }
+
+      return shouldOpen
+    }
+
+  const originalMatches = Element.prototype.matches
+
+  // `defineProperty` rather than a plain assignment, and not for style:
+  // `Element.prototype.matches` is declared as four overloads, three of which
+  // are `this is HTMLElementTagNameMap[K]` type predicates. A `(selectors:
+  // string) => boolean` is not assignable to that (TS2322), so a direct
+  // assignment needs an `as` cast to compile. `defineProperty`'s `value` is
+  // untyped, which lets the wrapper keep its honest signature.
+  Object.defineProperty(Element.prototype, "matches", {
+    configurable: true,
+    value: function matches(
+      this: Element,
+      selectors: string,
+    ) {
+      if (selectors === ":popover-open") {
+        return openPopovers.has(this as HTMLElement)
+      }
+
+      return originalMatches.call(this, selectors)
+    },
+    writable: true,
+  })
+}
+
+// …and the last piece, which is the one that fails most confusingly. jsdom's UA
+// stylesheet carries
+//
+//   [popover]:not(:popover-open):not(dialog[open]) { display: none }
+//
+// and the `matches` wrapper above cannot reach the cascade — it answers
+// `element.matches(":popover-open")` for `Menu`'s own guard, while jsdom's style
+// engine still cannot evaluate the selector and so keeps the rule matched. The
+// panel therefore renders, with the right role and the right children, and
+// `getByRole("menu")` reports "Unable to find role=menu": Testing Library
+// filters on `display: none` and the element is computed-hidden.
+//
+// An author rule with `!important` outranks the UA rule and is narrow enough to
+// affect nothing else — the alternative is `{ hidden: true }` on every menu
+// query in the suite, which would also make those queries blind to an element
+// that really was hidden.
+const popoverVisibilityStyle =
+  document.createElement("style")
+
+popoverVisibilityStyle.textContent =
+  "[popover] { display: block !important; }"
+
+document.head.appendChild(popoverVisibilityStyle)
