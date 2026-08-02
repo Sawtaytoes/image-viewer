@@ -1,4 +1,11 @@
 import {
+  Button,
+  IconButton,
+  Select,
+  Toast,
+  Tooltip,
+} from "@charcuterie/ui"
+import {
   Fragment,
   memo,
   useCallback,
@@ -20,25 +27,24 @@ import CloseIcon from "../icons/CloseIcon"
 import PlayArrowIcon from "../icons/PlayArrowIcon"
 import SortIcon from "../icons/SortIcon"
 import SettingsContext from "../settings/SettingsContext"
-import type { SortOrder } from "../settings/sortOrders"
 import {
   getFolderSortOrder,
+  isSortOrder,
+  sortOrderOptions,
   sortOrders,
 } from "../settings/sortOrders"
-import Button from "../toolkit/Button"
 import WorkspaceContext from "../workspace/WorkspaceContext"
 import PaneGalleryFolderTile from "./PaneGalleryFolderTile"
 import PaneGalleryImageTile from "./PaneGalleryImageTile"
 
 const pathApi = window.api.path
 
-const ICON_BUTTON_CLASSES =
-  "flex cursor-pointer items-center rounded-[5px] border-0 bg-transparent p-1 text-content-primary hover:bg-surface-raised"
-
-// Sort-order toggle: icon + the current order's label, mirroring the file
-// browser's DirectoryControls so the gallery sorts the same folder the same way.
-const SORT_TOGGLE_CLASSES =
-  "inline-flex flex-none cursor-pointer items-center gap-1 rounded-[5px] border-0 bg-transparent px-2 py-1 text-[15px] font-semibold whitespace-nowrap text-content-primary hover:bg-surface-raised"
+// Sort-order picker: the shared `Select` beside the sort glyph, mirroring the
+// file browser's DirectoryControls so the gallery sorts the same folder the
+// same way. `Select`'s own root is `w-full`, so the width lives on this wrapper
+// rather than in the `className` it forwards (that lands on the `<select>`).
+const SORT_PICKER_CLASSES =
+  "flex w-[132px] flex-none items-center gap-1"
 
 // Thumbnails are sized by a fixed minimum track, not a fraction of the pane, so
 // each tile stays the same physical size whether the gallery fills the window or
@@ -61,10 +67,10 @@ const GROUP_HEADER_CLASSES =
 const LOADING_CLASSES =
   "flex flex-auto items-center justify-center p-6 after:h-[28px] after:w-[28px] after:animate-spinner after:rounded-full after:border-[3px] after:border-content-disabled after:border-t-content-primary after:content-['']"
 
-const sortToggleLabels: Record<SortOrder, string> = {
-  [sortOrders.modifiedDesc]: "Newest",
-  [sortOrders.name]: "Name",
-}
+// `Toast` renders an `<li>`; this is the `<ul>` it needs, positioned where the
+// hand-rolled bar was. See `FileBrowser` for why it is not `ToastRegion`.
+const MULTI_SELECT_BAR_CLASSES =
+  "absolute bottom-4 left-1/2 z-[2] m-0 flex w-auto max-w-[90%] -translate-x-1/2 list-none flex-col p-0"
 
 // A directory or an image, tagged with which it is. The grouped view interleaves
 // the two listings by mtime, so once they are in one array the tag is the only
@@ -114,17 +120,27 @@ const PaneGallery = ({
 
   const { addFoldersToQueue } = useContext(WorkspaceContext)
 
-  const { sortOrdersByFolder, toggleSortOrder } =
-    useContext(SettingsContext)
+  const { setSortOrder, sortOrdersByFolder } = useContext(
+    SettingsContext,
+  )
 
   const sortOrder = getFolderSortOrder(
     sortOrdersByFolder,
     browsePath,
   )
 
-  const toggleFolderSortOrder = useCallback(() => {
-    toggleSortOrder(browsePath)
-  }, [browsePath, toggleSortOrder])
+  // `Select` hands back the raw `value` string, and `isSortOrder` is the type
+  // predicate that turns it back into a `SortOrder` without a cast. The guard
+  // is not ceremony: the `<option>`s come from this app, but the DOM is where
+  // the value lives and the narrowing has to happen somewhere real.
+  const changeFolderSortOrder = useCallback(
+    (nextSortOrder: string) => {
+      if (isSortOrder(nextSortOrder)) {
+        setSortOrder(browsePath, nextSortOrder)
+      }
+    },
+    [browsePath, setSortOrder],
+  )
 
   const { directories, imageFiles, isLoading } =
     useFolderListing(browsePath)
@@ -301,42 +317,58 @@ const PaneGallery = ({
         data-viewer-overlay
       >
         <div className="flex flex-none items-center gap-1 bg-surface-sunken px-2 py-1.5">
-          <button
-            className={ICON_BUTTON_CLASSES}
-            disabled={!hasParentFolder}
-            onClick={goUp}
-            title="Go up a directory"
-            type="button"
-          >
-            <ArrowUpwardIcon />
-          </button>
+          <Tooltip label="Go up a directory">
+            <IconButton
+              appearance="ghost"
+              intent="neutral"
+              isDisabled={!hasParentFolder}
+              label="Go up a directory"
+              onClick={goUp}
+              size="sm"
+            >
+              <ArrowUpwardIcon />
+            </IconButton>
+          </Tooltip>
 
           <span className="min-w-0 flex-auto overflow-hidden font-semibold text-ellipsis whitespace-nowrap">
             {title}
           </span>
 
-          <button
-            className={SORT_TOGGLE_CLASSES}
-            onClick={toggleFolderSortOrder}
-            title={
-              sortOrder === sortOrders.modifiedDesc
-                ? "Sorting by date modified (newest first) — grouped like Explorer. Click to sort by name."
-                : "Sorting by name. Click to sort by date modified (newest first)."
-            }
-            type="button"
-          >
-            <SortIcon />
-            {sortToggleLabels[sortOrder]}
-          </button>
+          {/* Was a click-to-cycle `<button>` whose only statement of its own
+              state was the word on its face — nothing announced "Name, 1 of 2",
+              and the two orders were reachable only by pressing until the label
+              changed. It is a real `<select>` now.
 
-          <button
-            className={ICON_BUTTON_CLASSES}
-            onClick={onClose}
-            title="Close gallery"
-            type="button"
-          >
-            <CloseIcon />
-          </button>
+              `key` re-seeds it, and it has to: `Select` is uncontrolled by
+              design (the platform owns a `<select>`'s value), while the sort
+              order here is stored *per folder path* — so drilling into a folder
+              with a different order is a second writer, and without the key the
+              control would keep showing the previous folder's choice with a
+              green typecheck. */}
+          <div className={SORT_PICKER_CLASSES}>
+            <SortIcon />
+
+            <Select
+              key={browsePath}
+              label="Sort order"
+              onChange={changeFolderSortOrder}
+              options={sortOrderOptions}
+              size="sm"
+              value={sortOrder}
+            />
+          </div>
+
+          <Tooltip label="Close gallery">
+            <IconButton
+              appearance="ghost"
+              intent="neutral"
+              label="Close gallery"
+              onClick={onClose}
+              size="sm"
+            >
+              <CloseIcon />
+            </IconButton>
+          </Tooltip>
         </div>
 
         {isLoading ? (
@@ -402,24 +434,23 @@ const PaneGallery = ({
         )}
 
         {isMultiSelectMode && selectedCount > 0 && (
-          <div className="absolute bottom-4 left-1/2 z-[2] flex max-w-[90%] -translate-x-1/2 animate-action-bar-in items-center gap-3 rounded-[12px] bg-surface-overlay px-4 py-2.5 shadow-[0_4px_16px_var(--color-scrim)]">
-            <Button
-              onClick={queueSelectedFolders}
-              type="positive"
+          <ul className={MULTI_SELECT_BAR_CLASSES}>
+            <Toast
+              duration={0}
+              intent="accent"
+              onRemove={clearMultiSelect}
+              title={`${selectedCount} folders selected`}
             >
-              <span className="inline-flex items-center justify-center gap-1">
-                <PlayArrowIcon />
+              <Button
+                iconStart={<PlayArrowIcon />}
+                intent="success"
+                onClick={queueSelectedFolders}
+                size="lg"
+              >
                 Open {selectedCount} folders
-              </span>
-            </Button>
-
-            <Button
-              onClick={clearMultiSelect}
-              type="negative"
-            >
-              Cancel
-            </Button>
-          </div>
+              </Button>
+            </Toast>
+          </ul>
         )}
       </div>
     </MultiSelectContext.Provider>

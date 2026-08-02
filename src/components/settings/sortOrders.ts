@@ -37,6 +37,22 @@ const isSortOrder = (value: string): value is SortOrder =>
   value === sortOrders.name ||
   value === sortOrders.modifiedDesc
 
+// The two orders as `@charcuterie/ui` `Select` options — one array, so the file
+// browser's picker and the in-pane gallery's are literally the same control
+// with the same labels rather than two `Record<SortOrder, string>` maps that
+// have to be kept in step by hand.
+//
+// `value` keeps its `SortOrder` literal type (`SelectOption.value` is a
+// `string`, and `SortOrder` is assignable to it), so adding a third order to
+// the union and forgetting this array is a type error at the annotation.
+const sortOrderOptions: readonly {
+  label: string
+  value: SortOrder
+}[] = [
+  { label: "Name", value: "name" },
+  { label: "Newest", value: "modifiedDesc" },
+]
+
 // The order for a folder, falling back to the default when it has none stored
 // (or when the path is unknown, e.g. the drive list at the root, where callers
 // have no folder path at all).
@@ -52,6 +68,7 @@ export {
   defaultSortOrder,
   getFolderSortOrder,
   isSortOrder,
+  sortOrderOptions,
   sortOrders,
   sortOrdersByFolderStorageKey,
 }

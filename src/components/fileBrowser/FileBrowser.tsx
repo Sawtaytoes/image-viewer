@@ -1,4 +1,12 @@
 import {
+  Button,
+  Field,
+  IconButton,
+  Toast,
+  Tooltip,
+  VisuallyHidden,
+} from "@charcuterie/ui"
+import {
   type ChangeEventHandler,
   type KeyboardEventHandler,
   memo,
@@ -27,7 +35,6 @@ import {
   getFolderSortOrder,
   sortOrders,
 } from "../settings/sortOrders"
-import Button from "../toolkit/Button"
 import DeleteFileModal from "../toolkit/DeleteFileModal"
 import FolderTabStrip from "../workspace/FolderTabStrip"
 import WorkspaceContext from "../workspace/WorkspaceContext"
@@ -57,6 +64,14 @@ const insetFileBrowserClassName = `${fileBrowserClassName} mt-(--title-bar-heigh
 // Fullscreen auto-hides the title bar, so the browser reclaims that top strip.
 // The bar reveals as an overlay above it rather than pushing this down.
 const fullBleedFileBrowserClassName = `${fileBrowserClassName} mt-0 h-screen`
+
+// `Toast` renders an `<li>` — it is built to sit in `ToastRegion`'s `<ul>`, and
+// this bar supplies its own instead. Not `ToastRegion` itself: that component
+// takes `ToastRecord`s, which carry a `description` and nothing that could hold
+// the "Open N folders" control, so the region can render a notification and not
+// an action bar.
+const multiSelectBarClassName =
+  "fixed bottom-6 left-1/2 z-[9999] m-0 flex w-auto max-w-[90%] -translate-x-1/2 list-none flex-col p-0"
 
 // Reused as both the initial value and the cleared value — toggling always
 // builds a fresh Set, so this is never mutated.
@@ -743,14 +758,37 @@ const FileBrowser = () => {
             keeps them put whether or not the tab strip is there. `relative`
             anchors the indeterminate progress line to the bar's bottom edge. */}
         <div className="relative row-start-3 flex items-center gap-2 bg-surface-raised px-2 py-1.5">
-          <input
-            className="min-w-0 flex-auto rounded-[5px] border-0 bg-surface-sunken px-3 py-2 text-[15px] text-content-primary placeholder:text-content-muted focus:outline-2 focus:outline-intent-accent-solid"
-            onChange={onSearchChange}
-            onKeyDown={onSearchKeyDown}
-            placeholder="Search folders in this directory and its subfolders…"
-            type="text"
-            value={searchQuery}
-          />
+          {/* `Field` owns the control's id and renders the real `<label for>`
+              that names it. Before this, the box had no accessible name at all
+              — only a `placeholder`, which is announced as a *value* hint and
+              disappears the moment anything is typed. The label is
+              `VisuallyHidden` rather than absent because a visible one above a
+              full-width search bar costs a row of a touch-first layout, and a
+              hidden `<label>` names a control exactly as well as a shown one.
+
+              The "Searching subfolders…" hint stays a sibling rather than
+              moving into `Field`'s `description` slot: a description renders
+              *under* the input, so it would grow the bar every time a walk
+              started, and this row is deliberately built so nothing appearing
+              in it nudges the layout (see the progress line below). */}
+          <Field
+            className="min-w-0 flex-auto"
+            label={
+              <VisuallyHidden>
+                Search folders in this directory and its
+                subfolders
+              </VisuallyHidden>
+            }
+          >
+            <input
+              className="w-full rounded-[5px] border-0 bg-surface-sunken px-3 py-2 text-[15px] text-content-primary placeholder:text-content-muted focus:outline-2 focus:outline-intent-accent-solid"
+              onChange={onSearchChange}
+              onKeyDown={onSearchKeyDown}
+              placeholder="Search folders in this directory and its subfolders…"
+              type="text"
+              value={searchQuery}
+            />
+          </Field>
 
           {isSearching && isSearchPending && (
             // Inline "still walking the tree" hint — the instant current-
@@ -762,15 +800,22 @@ const FileBrowser = () => {
           )}
 
           {isSearching && (
-            <button
-              aria-label="Clear search"
-              className="inline-flex h-8 w-8 flex-none cursor-pointer items-center justify-center rounded-full border-0 bg-transparent p-0 text-content-secondary hover:bg-intent-neutral-surface-hover hover:text-content-primary"
-              onClick={clearSearch}
-              title="Clear search"
-              type="button"
-            >
-              <CloseIcon />
-            </button>
+            // The `title` attribute is gone fleet-wide in this phase: it is
+            // unreachable by touch, unreachable by keyboard, and cannot be
+            // styled. `Tooltip` opens on hover AND focus, closes on Escape, and
+            // points `aria-describedby` at itself.
+            <Tooltip label="Clear search">
+              <IconButton
+                className="flex-none rounded-full border-transparent"
+                label="Clear search"
+                appearance="ghost"
+                intent="neutral"
+                onClick={clearSearch}
+                size="sm"
+              >
+                <CloseIcon />
+              </IconButton>
+            </Tooltip>
           )}
 
           {isSearching && isSearchPending && (
@@ -851,24 +896,33 @@ const FileBrowser = () => {
       </div>
 
       {isMultiSelectMode && selectedCount > 0 && (
-        <div className="fixed bottom-6 left-1/2 z-[9999] flex -translate-x-1/2 items-center gap-4 rounded-[12px] bg-surface-overlay px-5 py-3 shadow-[0_4px_16px_var(--color-scrim)]">
-          <Button
-            onClick={openSelectedFolders}
-            type="positive"
+        <ul className={multiSelectBarClassName}>
+          <Toast
+            // `0` disables the auto-dismiss timer. Everything else `Toast` does
+            // is what this bar hand-rolled — bottom-centred, elevated, an enter
+            // transition (`animate-action-bar-in`, now the component's own) —
+            // but a selection is not a notification with a deadline, and a bar
+            // that vanished after five seconds mid-selection would be a bug.
+            duration={0}
+            intent="accent"
+            // The ✕ **is** Cancel. Keeping a separate "Cancel" button beside a
+            // dismiss control that does the identical thing is two affordances
+            // for one action; `data-density="kiosk"` (this same phase) sizes the
+            // ✕ to the 44px touch target the old button was reaching for by
+            // hand.
+            onRemove={clearMultiSelect}
+            title={`${selectedCount} folders selected`}
           >
-            <span className="inline-flex items-center justify-center gap-1">
-              <PlayArrowIcon />
+            <Button
+              iconStart={<PlayArrowIcon />}
+              intent="success"
+              onClick={openSelectedFolders}
+              size="lg"
+            >
               Open {selectedCount} folders
-            </span>
-          </Button>
-
-          <Button
-            onClick={clearMultiSelect}
-            type="negative"
-          >
-            Cancel
-          </Button>
-        </div>
+            </Button>
+          </Toast>
+        </ul>
       )}
     </MultiSelectContext.Provider>
   )

@@ -209,67 +209,72 @@
     }
   }
 
-  /* The confirmation modal's open/close animation.
+  /* The confirmation modal's four `@keyframes` are gone in M6c phase 2. They
+     drove a hand-rolled backdrop `<div>` that stayed mounted on an `isRendered`
+     flag until `animationend`; the modal is `@charcuterie/ui`'s `Modal` — a real
+     `<dialog>` — now, and a `<dialog>` cannot be animated closed that way at all
+     (`close()` takes it out of the top layer on the spot). The replacement is
+     the `@starting-style` block below, which animates `[open]` itself. */
+}
 
-     Emotion's `keyframes` helper minted these next to the component and
-     interpolated an `ANIMATION_DURATION_MS` constant into the shorthand. Tailwind
-     has no runtime to mint anything, so the keyframes are theme values here and
-     the component names them with `animate-*`. The duration moved in with them —
-     the JS constant existed only to be interpolated (the modal unmounts on
-     `animationend`, not on a timer), so keeping it would have been a second copy
-     of a number nothing reads.
+/* The confirmation modal's open AND close animation, which
+   `docs/decisions/2026-06-03-delete-needs-confirmation-and-guards-stray-delete-key.md`
+   asks for by name.
 
-     The modal must stay mounted through the close animation and the delete
-     confirm is a locked decision
-     (`docs/decisions/2026-06-03-delete-needs-confirmation-and-guards-stray-delete-key.md`),
-     which is why every one of these ends in `forwards`. */
-  --animate-backdrop-fade-in: backdrop-fade-in 200ms ease
-    forwards;
-  --animate-backdrop-fade-out: backdrop-fade-out 200ms ease
-    forwards;
-  --animate-modal-scale-in: modal-scale-in 200ms ease
-    forwards;
-  --animate-modal-scale-out: modal-scale-out 200ms ease
-    forwards;
+   It cannot be a utility and it cannot be `@keyframes`. `@charcuterie/ui`'s
+   `Modal` calls `close()` the moment `isVisible` goes false, which drops the
+   `<dialog>` out of the top layer in the same frame — an exit *animation* has
+   nothing left to play on. `transition-behavior: allow-discrete` on `display`
+   and `overlay` is the platform's answer: the browser holds both discrete
+   properties at their old value for the transition's duration, so the dialog
+   stays displayed and stays in the top layer while `opacity`/`transform` run.
+   `@starting-style` supplies the "before it was open" value the entry needs,
+   because an element that did not exist a frame ago has nothing to transition
+   from — this is the `<dialog>` equivalent of `Toast`'s enter-frame comment.
 
-  @keyframes backdrop-fade-in {
-    from {
-      opacity: 0;
-    }
-    to {
-      opacity: 1;
-    }
+   Unlayered and on the bare `dialog` selector (0,0,1) on purpose: `Modal`'s own
+   classes set neither `opacity` nor `transform`, so nothing here competes with
+   a utility, and putting it in `@layer base` would lose to Preflight's reset. */
+dialog {
+  opacity: 0;
+  transform: scale(0.9);
+  transition:
+    opacity 200ms ease,
+    transform 200ms ease,
+    overlay 200ms ease allow-discrete,
+    display 200ms ease allow-discrete;
+}
+
+dialog[open] {
+  opacity: 1;
+  transform: scale(1);
+}
+
+@starting-style {
+  dialog[open] {
+    opacity: 0;
+    transform: scale(0.9);
   }
+}
 
-  @keyframes backdrop-fade-out {
-    from {
-      opacity: 1;
-    }
-    to {
-      opacity: 0;
-    }
-  }
+/* The scrim fades with it. `::backdrop` is a separate box with its own
+   transition — without this rule the dialog scales away over a scrim that
+   vanishes instantly. */
+dialog::backdrop {
+  opacity: 0;
+  transition:
+    opacity 200ms ease,
+    overlay 200ms ease allow-discrete,
+    display 200ms ease allow-discrete;
+}
 
-  @keyframes modal-scale-in {
-    from {
-      opacity: 0;
-      transform: scale(0.9);
-    }
-    to {
-      opacity: 1;
-      transform: scale(1);
-    }
-  }
+dialog[open]::backdrop {
+  opacity: 1;
+}
 
-  @keyframes modal-scale-out {
-    from {
-      opacity: 1;
-      transform: scale(1);
-    }
-    to {
-      opacity: 0;
-      transform: scale(0.9);
-    }
+@starting-style {
+  dialog[open]::backdrop {
+    opacity: 0;
   }
 }
 
