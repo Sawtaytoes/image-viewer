@@ -5,9 +5,15 @@
 [branch-for-non-trivial-work](decisions/2026-05-07-branch-for-non-trivial-work.md)).
 **Milestone:** charcuterie M6c, phase 2 of two. Phase 1 is
 [`2026-07-31-m6c-typescript-and-tailwind.md`](2026-07-31-m6c-typescript-and-tailwind.md).
-**Library version: `@charcuterie/ui@^0.2.0`.** `1.0.0` was expected to land mid-milestone and
-did not — the registry still shows `0.1.0`, `0.1.1`, `0.2.0` with `latest → 0.2.0`, checked at
-the start and again at the end. **The bump is left for whoever merges this.**
+**Library version: `@charcuterie/ui@^1.0.0` + `@charcuterie/tokens@^1.0.0`.** The whole milestone
+was built against `^0.2.0` — `1.0.0` was not on the registry at the start, nor at any of the three
+checks during the work — and it published while the handoff was being written. It was bumped, all
+five gates re-run, and the app relaunched and re-driven on it: no source change was needed, and
+the tooltip, the `<dialog>`, the Toast and `data-density="kiosk"` all behave identically.
+
+The bump costs bundle size and it is worth stating rather than burying: the renderer goes
+**336.41 kB → 357.19 kB raw, 105.27 kB → 111.86 kB gz** (+20.78 / +6.59). `@charcuterie/logic`
+went `0.1.0 → 1.0.0` in the same resolution.
 
 Phase 1 converted the renderer to TypeScript + Tailwind and *deliberately replaced no component*.
 This is the replacement.
@@ -16,7 +22,7 @@ This is the replacement.
 
 | Gate | Phase 1 | Now |
 | --- | --- | --- |
-| `yarn typecheck` | clean, 152 files | clean, **153 files** |
+| `yarn typecheck` | clean, 152 files | clean, **152 files** |
 | `yarn test:run` | 114 tests, 25 files | **120 tests, 26 files** |
 | `yarn lint:biome` | clean, 162 files | clean, **163 files** |
 | `yarn lint:eslint` | clean | clean |
@@ -73,7 +79,7 @@ not stylistic. Written up as a locked decision so nobody "finishes the job":
   other panes keep theirs, so a single `aria-selected` tab would be a false statement.
 
 **`Icon` does not exist.** The work order lists `Icon` for `icons/SvgIcon` and its 14 glyphs.
-`@charcuterie/ui@0.2.0` exports no `Icon` component at all — icons are plain `ReactNode` passed to
+`@charcuterie/ui` exports no `Icon` component at all, in `0.2.0` or `1.0.0` — icons are plain `ReactNode` passed to
 `Button`'s `iconStart`/`iconEnd` or `IconButton`'s `children`. `SvgIcon` stays the app's own.
 mux-magic reached the same conclusion independently. **This row of the work order is unbuildable
 and should be struck rather than carried forward.**
@@ -248,7 +254,7 @@ renders the previous agent left in `__screenshots__/` (`filebrowser-VIOLET.png`,
 
 ## What phase 3 (or M6f) gets
 
-1. **Bump to `@charcuterie/ui@^1.0.0`** once it publishes, and re-run all five gates.
+1. ~~Bump to `^1.0.0`~~ — **done** at the end of this milestone; no source change was needed.
 2. **The `useClonedChild` ref/handler merge** — one library change that unblocks `Field`+`Tooltip`,
    `Menu`+`Tooltip` and every future slot pair.
 3. **`MenuItem` pointer hooks**, or an accepted answer for "a menu row with a hover side effect".
