@@ -162,8 +162,14 @@ describe("PaneGallery (in-pane gallery)", () => {
   it("leaves the gallery via the close control", async () => {
     const { onClose } = renderGallery()
 
+    // By role, not by `title`: the close control is an `IconButton` inside a
+    // `Tooltip` now, so the name lives in `aria-label` and the native `title`
+    // that used to carry it is gone. Querying the role is also the stronger
+    // assertion — `findByTitle` matched a `<div>` just as happily.
     fireEvent.click(
-      await screen.findByTitle("Close gallery"),
+      await screen.findByRole("button", {
+        name: "Close gallery",
+      }),
     )
 
     expect(onClose).toHaveBeenCalled()

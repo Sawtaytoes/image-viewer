@@ -126,3 +126,39 @@ if (!globalThis.IntersectionObserver) {
     }
   }
 }
+
+// jsdom implements `<dialog>` as an element but not as a *dialog*: it parses
+// the tag and then leaves `showModal`, `close` and the top layer unimplemented.
+// `@charcuterie/ui`'s `Modal` is a real `<dialog>` driven by `showModal()`, so
+// without this every test that renders one dies with
+// `dialogElement.showModal is not a function` — inside a passive effect, which
+// surfaces as an unrelated-looking failure in whichever test happened to mount
+// the tree.
+//
+// The shim is deliberately the smallest thing that is still *true*: `open` and
+// the `close` event are what a test can observe, so those are real. It does not
+// pretend to have a focus trap, a top layer or `::backdrop` — jsdom computes no
+// styles and traps no focus, so faking those would only let a test assert
+// behaviour the browser owns and this environment cannot check.
+if (!HTMLDialogElement.prototype.showModal) {
+  HTMLDialogElement.prototype.showModal =
+    function showModal() {
+      this.open = true
+    }
+
+  HTMLDialogElement.prototype.show = function show() {
+    this.open = true
+  }
+
+  HTMLDialogElement.prototype.close = function close(
+    returnValue?: string,
+  ) {
+    this.open = false
+
+    if (returnValue !== undefined) {
+      this.returnValue = returnValue
+    }
+
+    this.dispatchEvent(new Event("close"))
+  }
+}

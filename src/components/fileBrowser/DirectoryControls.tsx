@@ -1,4 +1,8 @@
-import { IconButton, Select, Tooltip } from "@charcuterie/ui"
+import {
+  IconButton,
+  Select,
+  Tooltip,
+} from "@charcuterie/ui"
 import {
   Fragment,
   memo,
@@ -75,9 +79,8 @@ const DirectoryControls = () => {
     setFilePath,
   } = useContext(FileSystemContext)
 
-  const { setSortOrder, sortOrdersByFolder } = useContext(
-    SettingsContext,
-  )
+  const { setSortOrder, sortOrdersByFolder } =
+    useContext(SettingsContext)
 
   const sortOrder = getFolderSortOrder(
     sortOrdersByFolder,
