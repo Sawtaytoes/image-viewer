@@ -50,7 +50,7 @@ const titleBarClassName =
   "[-webkit-app-region:drag] fixed top-0 right-0 left-0 z-[10000] flex h-(--title-bar-height) items-center gap-1.5 bg-surface-sunken px-[10px] text-content-primary select-none transition-transform duration-[220ms] ease-[ease]"
 
 const appNameClassName =
-  "flex-none text-[13px] font-semibold whitespace-nowrap text-content-secondary"
+  "flex-none text-sm font-semibold whitespace-nowrap text-content-secondary"
 
 // Everything the two kinds of button share EXCEPT the horizontal padding, which
 // differs between them. Two `px-*` utilities on one element would be resolved by
@@ -58,7 +58,7 @@ const appNameClassName =
 // so the shared part deliberately sets no `px` at all and each button adds its
 // own. `enabled:` is `:enabled`, which is what the old `:not(:disabled)` meant.
 const buttonBaseClassName =
-  "[-webkit-app-region:no-drag] flex-none cursor-pointer rounded-[5px] border-0 bg-transparent py-[5px] text-[13px] font-normal whitespace-nowrap text-content-primary enabled:hover:bg-intent-neutral-surface-hover enabled:active:bg-intent-neutral-solid-hover disabled:cursor-default disabled:text-content-disabled"
+  "[-webkit-app-region:no-drag] flex-none cursor-pointer rounded-[5px] border-0 bg-transparent py-[5px] text-sm font-normal whitespace-nowrap text-content-primary enabled:hover:bg-intent-neutral-surface-hover enabled:active:bg-intent-neutral-solid-hover disabled:cursor-default disabled:text-content-disabled"
 
 const buttonClassName = `${buttonBaseClassName} px-[10px]`
 

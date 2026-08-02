@@ -49,7 +49,7 @@ const CHROME_BAR_CLASSES =
   "fixed left-0 top-(--title-bar-height) z-[3] flex w-full items-center gap-2 bg-surface-overlay px-2 py-1.5 touch-none transition-transform duration-[220ms] ease-[ease]"
 
 const CHROME_BUTTON_CLASSES =
-  "inline-flex flex-none cursor-pointer items-center gap-1 rounded-[5px] border-0 bg-transparent px-2.5 py-1.5 text-[16px] font-light text-content-primary hover:bg-intent-neutral-surface-hover"
+  "inline-flex flex-none cursor-pointer items-center gap-1 rounded-[5px] border-0 bg-transparent px-2.5 py-1.5 text-lg font-light text-content-primary hover:bg-intent-neutral-surface-hover"
 
 interface RevealableChromeProps {
   // Chrome visibility lives in `ImageViewer` so the active column can outline

@@ -781,7 +781,7 @@ const FileBrowser = () => {
             }
           >
             <input
-              className="w-full rounded-[5px] border-0 bg-surface-sunken px-3 py-2 text-[15px] text-content-primary placeholder:text-content-muted focus:outline-2 focus:outline-intent-accent-solid"
+              className="w-full rounded-[5px] border-0 bg-surface-sunken px-3 py-2 text-md text-content-primary placeholder:text-content-muted focus:outline-2 focus:outline-intent-accent-solid"
               onChange={onSearchChange}
               onKeyDown={onSearchKeyDown}
               placeholder="Search folders in this directory and its subfolders…"
@@ -794,7 +794,7 @@ const FileBrowser = () => {
             // Inline "still walking the tree" hint — the instant current-
             // directory matches already show, so this just signals more may
             // stream in.
-            <span className="flex-none whitespace-nowrap text-[13px] text-content-muted">
+            <span className="flex-none whitespace-nowrap text-sm text-content-muted">
               Searching subfolders…
             </span>
           )}
@@ -844,12 +844,12 @@ const FileBrowser = () => {
             // Shown in place of the folder grid while a search is running or has
             // no hits, so an empty result set reads as a state rather than a
             // blank window.
-            <div className="p-5 text-[16px] text-content-muted">
+            <div className="p-5 text-lg text-content-muted">
               Searching…
             </div>
           ) : isSearching &&
             displayedDirectories.length === 0 ? (
-            <div className="p-5 text-[16px] text-content-muted">
+            <div className="p-5 text-lg text-content-muted">
               No folders match “{trimmedQuery}”.
             </div>
           ) : isGroupedView ? (

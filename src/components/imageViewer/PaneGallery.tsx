@@ -58,7 +58,7 @@ const GRID_CLASSES =
 // `:not(:first-of-type)` rule has no utility of its own, so it is an arbitrary
 // variant rather than three more class names on the caller.
 const GROUP_HEADER_CLASSES =
-  "col-span-full flex items-end px-1.5 pt-2.5 pb-1 text-[15px] font-semibold text-content-secondary [&:not(:first-of-type)]:mt-1 [&:not(:first-of-type)]:border-t [&:not(:first-of-type)]:border-border-strong"
+  "col-span-full flex items-end px-1.5 pt-2.5 pb-1 text-md font-semibold text-content-secondary [&:not(:first-of-type)]:mt-1 [&:not(:first-of-type)]:border-t [&:not(:first-of-type)]:border-border-strong"
 
 // Centered spinner shown while a folder's listing is still being read, so
 // climbing into a slow directory reads as "loading" rather than "stuck". The

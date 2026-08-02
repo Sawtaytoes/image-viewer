@@ -16,7 +16,7 @@ import CloseIcon from "../icons/CloseIcon"
 // order in the `class` attribute — so "base colour plus an active override"
 // would be a coin flip.
 const tabClassName =
-  "inline-flex flex-none cursor-pointer items-center gap-1.5 rounded-[6px] py-2 pr-2 pl-[14px] text-[18px] font-light select-none"
+  "inline-flex flex-none cursor-pointer items-center gap-1.5 rounded-[6px] py-2 pr-2 pl-[14px] text-lg font-light select-none"
 
 // `#3d9be0` — the old selection blue — is the accent intent now, and the hue
 // changes with it

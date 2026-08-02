@@ -33,7 +33,7 @@ const EmptyPaneAffordance = ({
     >
       <AddIcon />
 
-      <div className="text-[18px]">Tap to pick folder</div>
+      <div className="text-lg">Tap to pick folder</div>
     </div>
   )
 }

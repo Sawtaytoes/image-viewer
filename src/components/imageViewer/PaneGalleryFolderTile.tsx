@@ -167,7 +167,7 @@ const PaneGalleryFolderTile = ({
       )}
 
       {isSelected && (
-        <div className="absolute top-2 right-2 flex h-[26px] w-[26px] items-center justify-center rounded-full bg-intent-accent-content text-[18px] font-semibold text-intent-accent-surface">
+        <div className="absolute top-2 right-2 flex h-[26px] w-[26px] items-center justify-center rounded-full bg-intent-accent-content text-lg font-semibold text-intent-accent-surface">
           ✓
         </div>
       )}

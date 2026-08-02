@@ -190,13 +190,13 @@ const Directory = ({
           top-right check badge so the two never overlap, and only shows for a
           gallery with a known, non-zero count. */}
       {Boolean(imageCount) && (
-        <div className="absolute right-2 bottom-2 flex min-w-[22px] items-center justify-center rounded-[11px] bg-scrim px-[7px] py-0.5 text-[13px] font-semibold text-content-primary">
+        <div className="absolute right-2 bottom-2 flex min-w-[22px] items-center justify-center rounded-[11px] bg-scrim px-[7px] py-0.5 text-sm font-semibold text-content-primary">
           {imageCount}
         </div>
       )}
 
       {isSelected && (
-        <div className="absolute top-2 right-2 flex h-[26px] w-[26px] items-center justify-center rounded-full bg-intent-accent-content text-[18px] font-semibold text-intent-accent-surface">
+        <div className="absolute top-2 right-2 flex h-[26px] w-[26px] items-center justify-center rounded-full bg-intent-accent-content text-lg font-semibold text-intent-accent-surface">
           ✓
         </div>
       )}

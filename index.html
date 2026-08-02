@@ -11,18 +11,25 @@
      `:root` carries it, so naming it here would be a second place to change if
      the fleet ever moves.
 
-     `data-density="comfortable"` says the default out loud, and the value is
-     the interesting part. This app is touch-first on a Surface
-     (`docs/decisions/2026-06-03-touch-first-is-the-whole-point.md`), which
-     argues for `kiosk` — but every control here still carries the explicit
-     pixel size it had under Emotion, so switching density would resize all of
-     them at once with no way to tell a deliberate change from a regression.
-     `kiosk` is PHASE 2's, once the controls come from `@charcuterie/ui` and the
-     density axis is the thing that sizes them. -->
+     `data-density="kiosk"`, as of phase 2. This app is touch-first on a Surface
+     (`docs/decisions/2026-06-03-touch-first-is-the-whole-point.md`), and kiosk
+     is the axis that says so: `--control-min-touch-target` stays 2.75rem at
+     every density, but the control heights go 2.125/2.5/3rem →
+     2.75/3.25/3.75rem and the type ramp scales with them, so a `size="sm"`
+     `IconButton` is a 44px target rather than a 34px one.
+
+     Phase 1 held this at `comfortable` for a good reason — every control still
+     carried the explicit pixel size it had under Emotion, so flipping density
+     would have resized nothing and proved nothing. That is no longer true:
+     the controls come from `@charcuterie/ui` now, and the app's own
+     `text-[NNpx]` literals were replaced by the `text-sm`…`text-2xl` ramp in
+     the same commit as this line. Both halves had to land together — the ramp
+     without the flip is a no-op, and the flip without the ramp resizes the
+     library's controls while the app's own text stays put. -->
 <html
   lang="en"
   data-scheme="dark"
-  data-density="comfortable"
+  data-density="kiosk"
 >
   <head>
     <meta charset="UTF-8" />
