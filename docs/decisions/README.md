@@ -105,3 +105,8 @@ to apply here); everything else is sourced from Image Viewer's own chats, commit
 - [2026-07-31 — The renderer is TypeScript; `allowJs` is off](2026-07-31-the-renderer-is-typescript.md)
 - [2026-07-31 — Styling is Tailwind v4 on `@charcuterie/tokens`, not Emotion](2026-07-31-styling-is-tailwind-on-charcuterie-tokens.md)
 - [2026-07-31 — The selection blue becomes the `accent` intent, and its hue changes](2026-07-31-selection-blue-becomes-the-accent-intent.md) ← **the one visible change; wants the owner's eye**
+
+### 2026-08-02 — Charcuterie M6c phase 2: the components arrive
+
+- [2026-08-02 — Three work-order sites keep their own component](2026-08-02-three-work-order-sites-keep-their-own-component.md) ← **read before "finishing" the migration**
+- [2026-08-02 — The display picker is an anchored menu, not a centred sheet](2026-08-02-the-display-picker-is-an-anchored-menu.md)

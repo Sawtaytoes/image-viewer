@@ -153,3 +153,40 @@ rules it establishes are in
   and the file browser's search bar flips luminance. Both are deliberate, both are recorded, and
   both want a look on the tablet. `yarn package` was not run — this sandbox cannot build for
   Windows.
+
+## 2026-08-02 — `@charcuterie/ui` components (branch `feat/m6c-charcuterie-ui`)
+
+Phase 2 of M6c: phase 1 made the renderer TypeScript + Tailwind and deliberately replaced no
+component; this replaces them. Full write-up:
+[`docs/2026-08-02-m6c-phase-2-charcuterie-ui.md`](2026-08-02-m6c-phase-2-charcuterie-ui.md).
+
+- **Eight of the eleven itemised sites adopted** — `Tooltip` (8 call sites), `Select` (2), `Modal`
+  (2), `Button`/`IconButton`, `Field`, `Toast` (2), `Menu` (the display picker), `ProgressBar` —
+  plus `data-density="kiosk"` and the type ramp (17 `text-[NNpx]` → `text-sm`…`text-2xl`).
+- **Every native `title` on a control is gone.** The only one left is `Image`'s on the `<img>`.
+  This is the milestone's real win: a `title` never appears on touch, which is this app's primary
+  input, so those explanations were dead text on the input that matters — and "Clear queue" wipes
+  the whole queue with no other warning.
+- **Three sites were tried and rejected on evidence**, recorded as a locked decision so nobody
+  "finishes" them: `FolderPickerPopover`→`Menu` (top layer, breaks the in-pane rule; nested
+  button; no trigger), `DateGroupedGrid`→`Accordion` (would delete the windowing), and
+  `FolderTabStrip`→`Tabs` (no tab panels, and `aria-selected` would be a false statement).
+  **`Icon` does not exist in the library at all** — that work-order row is unbuildable.
+- **New library defect: `Menu` and `Tooltip` cannot share a trigger.** Same root cause as the
+  known `Field`+`Tooltip` bug — `useClonedChild` is a bare `cloneElement` with no ref or prop
+  merge — so it is a property of *every* slot pair, not those two components. A forwarding
+  adapter does not fix this pair, because the second clone overwrites the first one's ref.
+- **Three jsdom gaps shimmed** (`<dialog>`, the Popover API, and jsdom's UA
+  `[popover]:not(:popover-open){display:none}` rule), each of which failed as something other
+  than "unimplemented".
+- **The app was run.** Phase 1's "there is no GUI in this sandbox" was wrong: built without a dev
+  server, launched under Xvfb with the fake-FS fixtures, driven over CDP with Playwright. Six
+  surfaces screenshotted in their *changed* state — tooltip open on keyboard focus, the real
+  `<dialog>` with its backdrop, the pinned Toast, the Menu with roving focus on its first item,
+  and the density flip before/after. The recipe is in the handoff.
+- **Verified:** `yarn typecheck` (153 files) / `yarn test:run` (**120 pass**, was 114) /
+  `yarn lint:biome` (163 files) / `yarn lint:eslint` / `yarn build:renderer` — all green.
+- **Owed (human/GUI):** the accent hue is still open from phase 1 and **was not touched here**.
+  `ProgressBar`'s loading state is the one surface that could not be driven — the fake FS resolves
+  reads in-tick and `contextBridge` freezes `window.api`, so it cannot be stalled. **Left on
+  `^0.2.0`:** `1.0.0` had not published by the end of the milestone (registry checked twice).
