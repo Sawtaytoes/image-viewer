@@ -1,3 +1,4 @@
+import { ProgressBar } from "@charcuterie/ui"
 import {
   memo,
   useContext,
@@ -202,10 +203,30 @@ const Image = ({
 
   return (
     <div className="relative flex h-full w-full items-center justify-center">
+      {/* Was a bare `<progress max="100">` with the number as its child. The
+          child text is a *fallback* — browsers that implement `<progress>`
+          never render it — so the readout it looked like it had was invisible
+          in every browser this app has ever run in, and the element had no
+          accessible name at all: a screen reader got "progress bar, 40%" with
+          no statement of what was loading.
+
+          `isValueShown` is the readout the old markup was reaching for, and it
+          is what `ui-needs-visible-feedback` asks for
+          (`docs/decisions/2026-06-03-ui-needs-visible-feedback.md`). The label
+          is the accessible name and stays visually hidden — the filename is
+          already under the cursor as the image's own `title`, and printing it
+          twice over a half-loaded photo is noise.
+
+          The width is bounded here rather than left to the component: its root
+          is `flex flex-col` with no width of its own, so inside this centring
+          flex row it would otherwise shrink to its content. */}
       {downloadedPercent !== 100 && (
-        <progress max="100" value={downloadedPercent}>
-          {downloadedPercent}
-        </progress>
+        <ProgressBar
+          className="w-1/2 max-w-[420px]"
+          isValueShown
+          label={`Loading ${fileName}`}
+          value={downloadedPercent}
+        />
       )}
 
       <div
