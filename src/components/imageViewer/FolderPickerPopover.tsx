@@ -1,3 +1,4 @@
+import { Tooltip } from "@charcuterie/ui"
 import type { MouseEvent, MouseEventHandler } from "react"
 import {
   memo,
@@ -259,6 +260,31 @@ const FolderPickerPopover = ({
             const isOpenElsewhere =
               !isCurrent && folderIdsOpenElsewhere.has(id)
 
+            // Built once and wrapped conditionally, because `Tooltip`'s `label`
+            // is a required `string` — there is no "no tip" value to pass. The
+            // old `title={cond ? … : undefined}` had a spelling for absence;
+            // this is the equivalent, and it keeps one `<button>` rather than
+            // two branches that could drift apart.
+            const pickFolderButton = (
+              <button
+                className={PICK_FOLDER_BUTTON_CLASSES}
+                onClick={(event) => {
+                  pickFolder(event, id)
+                }}
+                type="button"
+              >
+                <FolderIcon />
+                <span className="overflow-hidden text-ellipsis whitespace-nowrap">
+                  {name}
+                </span>
+                {isOpenElsewhere && (
+                  // Pushed to the row's trailing edge; reads as "this is
+                  // already open somewhere".
+                  <span className="h-2.5 w-2.5 flex-none rounded-full bg-intent-accent-solid" />
+                )}
+              </button>
+            )
+
             return (
               <div
                 className={`${QUEUED_ROW_CLASSES}${
@@ -270,42 +296,30 @@ const FolderPickerPopover = ({
                 }`}
                 key={id}
               >
-                <button
-                  className={PICK_FOLDER_BUTTON_CLASSES}
-                  onClick={(event) => {
-                    pickFolder(event, id)
-                  }}
-                  title={
-                    isOpenElsewhere
-                      ? `${name} — already open in another column`
-                      : undefined
-                  }
-                  type="button"
-                >
-                  <FolderIcon />
-                  <span className="overflow-hidden text-ellipsis whitespace-nowrap">
-                    {name}
-                  </span>
-                  {isOpenElsewhere && (
-                    // Pushed to the row's trailing edge; reads as "this is
-                    // already open somewhere".
-                    <span className="h-2.5 w-2.5 flex-none rounded-full bg-intent-accent-solid" />
-                  )}
-                </button>
+                {isOpenElsewhere ? (
+                  <Tooltip
+                    label={`${name} — already open in another column`}
+                  >
+                    {pickFolderButton}
+                  </Tooltip>
+                ) : (
+                  pickFolderButton
+                )}
 
-                <button
-                  aria-label={`Remove ${name} from queue`}
-                  className={
-                    REMOVE_FROM_QUEUE_BUTTON_CLASSES
-                  }
-                  onClick={(event) => {
-                    removeFromQueue(event, id)
-                  }}
-                  title="Remove from queue"
-                  type="button"
-                >
-                  <CloseIcon />
-                </button>
+                <Tooltip label="Remove from queue">
+                  <button
+                    aria-label={`Remove ${name} from queue`}
+                    className={
+                      REMOVE_FROM_QUEUE_BUTTON_CLASSES
+                    }
+                    onClick={(event) => {
+                      removeFromQueue(event, id)
+                    }}
+                    type="button"
+                  >
+                    <CloseIcon />
+                  </button>
+                </Tooltip>
               </div>
             )
           })
