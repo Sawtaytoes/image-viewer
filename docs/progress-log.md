@@ -184,9 +184,13 @@ component; this replaces them. Full write-up:
   surfaces screenshotted in their *changed* state — tooltip open on keyboard focus, the real
   `<dialog>` with its backdrop, the pinned Toast, the Menu with roving focus on its first item,
   and the density flip before/after. The recipe is in the handoff.
-- **Verified:** `yarn typecheck` (153 files) / `yarn test:run` (**120 pass**, was 114) /
+- **Verified:** `yarn typecheck` (152 files) / `yarn test:run` (**120 pass**, was 114) /
   `yarn lint:biome` (163 files) / `yarn lint:eslint` / `yarn build:renderer` — all green.
+- **Ended on `@charcuterie/ui@^1.0.0`.** The whole milestone was built against `^0.2.0` — `1.0.0`
+  was not on the registry at the start or at any check during the work — and it published as the
+  handoff was being written. Bumped, all five gates re-run, and the app relaunched and re-driven
+  on it: **no source change was needed**. Cost: renderer 336.41 → 357.19 kB raw, 105.27 → 111.86
+  kB gz.
 - **Owed (human/GUI):** the accent hue is still open from phase 1 and **was not touched here**.
   `ProgressBar`'s loading state is the one surface that could not be driven — the fake FS resolves
-  reads in-tick and `contextBridge` freezes `window.api`, so it cannot be stalled. **Left on
-  `^0.2.0`:** `1.0.0` had not published by the end of the milestone (registry checked twice).
+  reads in-tick and `contextBridge` freezes `window.api`, so it cannot be stalled.
