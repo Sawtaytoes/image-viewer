@@ -23,7 +23,7 @@ import WorkspaceContext from "../workspace/WorkspaceContext"
 // colours are appended per row instead of layered on top of a shared block the
 // way the Emotion `css` composition did it.
 const MENU_ROW_CLASSES =
-  "flex cursor-pointer items-center gap-3.5 rounded-[7px] border-0 bg-transparent px-[22px] py-4 text-left text-[24px] font-light whitespace-nowrap"
+  "flex cursor-pointer items-center gap-3.5 rounded-[7px] border-0 bg-transparent px-[22px] py-4 text-left text-2xl font-light whitespace-nowrap"
 
 const NEUTRAL_ROW_CLASSES =
   "text-content-primary hover:bg-surface-raised"
@@ -51,7 +51,7 @@ const OPEN_ELSEWHERE_ROW_CLASSES =
 
 // The folder-picking part of the row; fills the row and ellipsizes long names.
 const PICK_FOLDER_BUTTON_CLASSES =
-  "flex min-w-0 flex-auto cursor-pointer items-center gap-3.5 rounded-[7px] border-0 bg-transparent px-[22px] py-4 text-left text-[24px] font-light text-content-primary hover:bg-intent-neutral-surface-hover"
+  "flex min-w-0 flex-auto cursor-pointer items-center gap-3.5 rounded-[7px] border-0 bg-transparent px-[22px] py-4 text-left text-2xl font-light text-content-primary hover:bg-intent-neutral-surface-hover"
 
 // The one per-row action: drop the folder from the queue. Immediate — no
 // confirmation, since it doesn't touch any files. A big, finger-sized hit area
@@ -250,7 +250,7 @@ const FolderPickerPopover = ({
           24px) so they match the bumped-up text. */}
       <div className="flex max-h-[85%] min-w-[460px] max-w-[92%] animate-pop-in flex-col gap-1 overflow-y-auto rounded-[12px] bg-surface-sunken p-3 shadow-[0_8px_24px_var(--color-scrim)] select-none [&_svg]:h-[30px] [&_svg]:w-[30px]">
         {queuedFolders.length === 0 ? (
-          <div className="p-5 text-[20px] font-light text-content-muted">
+          <div className="p-5 text-xl font-light text-content-muted">
             No folders queued yet.
           </div>
         ) : (

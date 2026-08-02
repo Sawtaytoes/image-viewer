@@ -65,7 +65,7 @@ const itemClassName =
   "absolute drop-shadow-[3px_3px_4px_var(--color-surface-sunken)]"
 
 const headerClassName =
-  "absolute flex w-full items-center px-2 text-[18px] font-semibold text-content-secondary after:absolute after:right-2 after:bottom-1.5 after:left-2 after:border-b after:border-border-default after:content-['']"
+  "absolute flex w-full items-center px-2 text-lg font-semibold text-content-secondary after:absolute after:right-2 after:bottom-1.5 after:left-2 after:border-b after:border-border-default after:content-['']"
 
 interface DateGroupedGridProps {
   groups: DateGroup<DateGroupedEntry>[]
