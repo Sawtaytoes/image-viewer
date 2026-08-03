@@ -1,6 +1,6 @@
 # 2026-06-02 — Give JSX-bearing files the `.jsx` extension
 
-- **Status:** Locked
+- **Status:** Superseded by [[2026-07-31-the-renderer-is-typescript]] — the `.jsx` extension was explicitly "a natural stepping stone to the later `.jsx` → `.tsx` conversion", and that conversion landed on 2026-07-31. JSX now lives in `.tsx`; the toolchain argument below is why it can never live in `.js`.
 - **Date:** 2026-06-02
 - **Deciders:** Kevin (owner) + agent
 - **Source:** Migrated from `docs/research/0007-jsx-file-extensions.md` (Phase 1 modernization)

@@ -7,9 +7,13 @@
 /.vite
 /.eslintcache
 /build
+/dist
 /node_modules
 /out
 *.log
+
+# Playwright/ad-hoc screenshots — scratch, not deliverables (fleet-wide rule)
+__screenshots__/
 
 # Yarn (Berry) — node-modules linker, no zero-install
 .yarn/*

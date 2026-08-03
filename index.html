@@ -1,5 +1,36 @@
 <!doctype html>
-<html lang="en">
+<!-- The three Charcuterie axes, all on `<html>` and all static.
+
+     `data-scheme="dark"` is pinned rather than following the OS: this is an
+     image viewer, and bright chrome beside a photo is exactly what a viewer is
+     not for. It used to be unreachable as a *choice* — the colours were
+     hardcoded greys in twenty-four Emotion blocks — so pinning it here is the
+     first time the app has a scheme it could change at all.
+
+     `data-variant` is omitted deliberately: `daylight` is the default and
+     `:root` carries it, so naming it here would be a second place to change if
+     the fleet ever moves.
+
+     `data-density="kiosk"`, as of phase 2. This app is touch-first on a Surface
+     (`docs/decisions/2026-06-03-touch-first-is-the-whole-point.md`), and kiosk
+     is the axis that says so: `--control-min-touch-target` stays 2.75rem at
+     every density, but the control heights go 2.125/2.5/3rem →
+     2.75/3.25/3.75rem and the type ramp scales with them, so a `size="sm"`
+     `IconButton` is a 44px target rather than a 34px one.
+
+     Phase 1 held this at `comfortable` for a good reason — every control still
+     carried the explicit pixel size it had under Emotion, so flipping density
+     would have resized nothing and proved nothing. That is no longer true:
+     the controls come from `@charcuterie/ui` now, and the app's own
+     `text-[NNpx]` literals were replaced by the `text-sm`…`text-2xl` ramp in
+     the same commit as this line. Both halves had to land together — the ramp
+     without the flip is a no-op, and the flip without the ramp resizes the
+     library's controls while the app's own text stays put. -->
+<html
+  lang="en"
+  data-scheme="dark"
+  data-density="kiosk"
+>
   <head>
     <meta charset="UTF-8" />
 
@@ -13,20 +44,35 @@
       name="viewport"
     />
 
-    <link
-      href="https://fonts.gstatic.com"
-      rel="preconnect"
-    />
-
-    <link
-      href="https://fonts.googleapis.com/css2?family=Source+Sans+Pro:wght@300;400;600&display=swap"
-      rel="stylesheet"
-    />
+    <!-- The Google Fonts `<link>` pair that used to be here is gone. Source
+         Sans Pro is bundled out of `src/fonts/` by `src/styles/tailwind.css`,
+         which is what `docs/decisions/2026-06-30-self-host-fonts-locally.md`
+         asked for and what `startup-speed-is-top-priority` needs — a CDN
+         round-trip on every window open is the cost that decision names, and
+         this app opens several windows. -->
 
     <title>Image Viewer</title>
+
+    <style>
+      /* Prevent a white flash before the bundled CSS loads.
+
+         The one hex left in the app chrome, and it has to be one: this rule
+         exists precisely for the moment BEFORE any stylesheet has parsed, so it
+         cannot read a custom property. It is `daylight`'s `surface.base` at
+         `data-scheme="dark"`, and `firstPaintColour.test.ts` reads the token out
+         of `@charcuterie/tokens` and fails if the two ever drift.
+
+         `color-scheme` is set here for the same reason: the native scrollbar is
+         painted before the token stylesheet lands. */
+      html,
+      body {
+        background-color: #131822;
+        color-scheme: dark;
+      }
+    </style>
   </head>
-  <body>
+  <body class="bg-surface-base text-content-primary">
     <div id="reactRoot"></div>
-    <script type="module" src="/src/renderer.jsx"></script>
+    <script type="module" src="/src/renderer.tsx"></script>
   </body>
 </html>

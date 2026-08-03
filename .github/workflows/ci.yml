@@ -35,3 +35,11 @@ jobs:
 
       - name: Lint (ESLint)
         run: yarn lint:eslint
+
+      # The only gate that can see a Tailwind class that generates nothing.
+      # jsdom does not compute styles from a stylesheet, so a `className`
+      # assertion in a test passes whether or not the utility exists — a class
+      # built from a template literal renders unstyled with no error anywhere.
+      # This runs the real Tailwind pass over the real source.
+      - name: Build renderer
+        run: yarn build:renderer

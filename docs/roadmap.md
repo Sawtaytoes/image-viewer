@@ -18,7 +18,9 @@ from the original `TASKS.md` or the kickoff conversation is lost.
 ## Owner's headline goals (from the kickoff)
 
 1. **Startup speed** — "takes forever to load"; the single most important improvement. Profile cold
-   start; lazy-load the image pipeline; self-host fonts; trim bundle. (`wmic` removal in Phase 1 is a
+   start; lazy-load the image pipeline; ~~self-host fonts~~ (✅ done in M6c — the CSS existed and
+   was imported by nothing, so `index.html` was still fetching the Google CDN on every window
+   open); trim bundle. (`wmic` removal in Phase 1 is a
    first down-payment — see [research/0006](decisions/2026-06-02-drive-enumeration-no-wmic.md).)
 2. **Built-in file manager / file viewer** — so the app no longer depends on Windows Explorer.
 3. **Multiple galleries at once / side-by-side views** — open more than one folder; compare.
@@ -28,8 +30,11 @@ from the original `TASKS.md` or the kickoff conversation is lost.
    Live in the **file browser** and (branch `feat/viewer-delete`) the **image viewer**: `[Delete]` on the
    active column trashes the current image, advances to the next (or reverts the column to empty when it
    was the folder's last image); the legacy single-image view deletes and drops back to the gallery.
-5. **Full TypeScript conversion** of `src/**` (Phase 1 only sets up TS tooling — see
-   [research/0004](decisions/2026-06-02-typescript-tooling-now-convert-later.md)).
+5. **Full TypeScript conversion** of `src/**` — ✅ **the renderer is done** (M6c, 2026-07-31;
+   [decision](decisions/2026-07-31-the-renderer-is-typescript.md)). `allowJs` is off, so a `.js`
+   under `src/` is now a hard error. **Still open:** `src/main.js` and `src/preload.js`, the two
+   Node-side programs — see [the M6c handoff](2026-07-31-m6c-typescript-and-tailwind.md) for what
+   converting them costs and why it was not done in the same pass.
 
 ## Carried over from the original `TASKS.md`
 

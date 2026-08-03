@@ -123,3 +123,74 @@ otherwise untouched. Full brief + rationale: [workers/feature-heic-support.md](w
   portrait shot. **Follow-up:** thumbnail decode is ~1.3 s/image on the main thread — fine per-image,
   slow for a big HEIC folder on first browse (cached after); future work = embedded-preview extraction
   and/or moving the decode to a `utilityProcess`/worker.
+
+## 2026-07-31 — TypeScript + Tailwind (branch `feat/m6c-typescript-tailwind`)
+
+Charcuterie milestone **M6c phase 1**: the renderer becomes TypeScript and Tailwind v4 on
+`@charcuterie/tokens`, so the app can consume `@charcuterie/ui` in phase 2. Full write-up:
+[2026-07-31-m6c-typescript-and-tailwind.md](2026-07-31-m6c-typescript-and-tailwind.md); the house
+rules it establishes are in
+[typescript-and-tailwind-conventions.md](typescript-and-tailwind-conventions.md).
+
+- **132 files** converted `.js`/`.jsx` → `.ts`/`.tsx`. `allowJs` is now **false**, so a `.js`
+  under `src/` is a module `tsc` cannot resolve rather than one it silently skips. `main.js` and
+  `preload.js` are excluded by name and remain the open work.
+- **Emotion is gone** — 26 files, 125 `css` props, 24 `propTypes` blocks, and **119 colour
+  literals → 0**. `@emotion/react` and `prop-types` are out of `package.json`.
+- **Typecheck went from 16 files to 152.** It was green on `master` while 132 source files were
+  not in the program at all.
+- Four things found that no gate could see: the self-hosted fonts had **never been switched on**
+  (the CSS was imported by nothing, its `url()`s pointed at a `public/` dir that does not exist,
+  and `index.html` still hit the Google CDN); `preload.d.ts` had never heard of `fullScreen`,
+  `searchFolders` or the four saved-queue members; two contexts were `createContext()` with no
+  argument; and `fakeFileSystem`'s `searchFolders` depended on a variable shadow that a rename
+  would have silently turned into "search the whole drive".
+- **Verified:** `yarn typecheck` / `yarn lint:biome` (162 files) / `yarn lint:eslint` /
+  `yarn test:run` (**114 pass**, was 108) / `yarn build:renderer` — all green. `build:renderer`
+  is new and is in CI, because it is the only gate that can see a Tailwind class which generates
+  no CSS.
+- **Owed (human/GUI):** the selection blue changes hue (cyan → the accent intent's blue-violet)
+  and the file browser's search bar flips luminance. Both are deliberate, both are recorded, and
+  both want a look on the tablet. `yarn package` was not run — this sandbox cannot build for
+  Windows.
+
+## 2026-08-02 — `@charcuterie/ui` components (branch `feat/m6c-charcuterie-ui`)
+
+Phase 2 of M6c: phase 1 made the renderer TypeScript + Tailwind and deliberately replaced no
+component; this replaces them. Full write-up:
+[`docs/2026-08-02-m6c-phase-2-charcuterie-ui.md`](2026-08-02-m6c-phase-2-charcuterie-ui.md).
+
+- **Eight of the eleven itemised sites adopted** — `Tooltip` (8 call sites), `Select` (2), `Modal`
+  (2), `Button`/`IconButton`, `Field`, `Toast` (2), `Menu` (the display picker), `ProgressBar` —
+  plus `data-density="kiosk"` and the type ramp (17 `text-[NNpx]` → `text-sm`…`text-2xl`).
+- **Every native `title` on a control is gone.** The only one left is `Image`'s on the `<img>`.
+  This is the milestone's real win: a `title` never appears on touch, which is this app's primary
+  input, so those explanations were dead text on the input that matters — and "Clear queue" wipes
+  the whole queue with no other warning.
+- **Three sites were tried and rejected on evidence**, recorded as a locked decision so nobody
+  "finishes" them: `FolderPickerPopover`→`Menu` (top layer, breaks the in-pane rule; nested
+  button; no trigger), `DateGroupedGrid`→`Accordion` (would delete the windowing), and
+  `FolderTabStrip`→`Tabs` (no tab panels, and `aria-selected` would be a false statement).
+  **`Icon` does not exist in the library at all** — that work-order row is unbuildable.
+- **New library defect: `Menu` and `Tooltip` cannot share a trigger.** Same root cause as the
+  known `Field`+`Tooltip` bug — `useClonedChild` is a bare `cloneElement` with no ref or prop
+  merge — so it is a property of *every* slot pair, not those two components. A forwarding
+  adapter does not fix this pair, because the second clone overwrites the first one's ref.
+- **Three jsdom gaps shimmed** (`<dialog>`, the Popover API, and jsdom's UA
+  `[popover]:not(:popover-open){display:none}` rule), each of which failed as something other
+  than "unimplemented".
+- **The app was run.** Phase 1's "there is no GUI in this sandbox" was wrong: built without a dev
+  server, launched under Xvfb with the fake-FS fixtures, driven over CDP with Playwright. Six
+  surfaces screenshotted in their *changed* state — tooltip open on keyboard focus, the real
+  `<dialog>` with its backdrop, the pinned Toast, the Menu with roving focus on its first item,
+  and the density flip before/after. The recipe is in the handoff.
+- **Verified:** `yarn typecheck` (152 files) / `yarn test:run` (**120 pass**, was 114) /
+  `yarn lint:biome` (163 files) / `yarn lint:eslint` / `yarn build:renderer` — all green.
+- **Ended on `@charcuterie/ui@^1.0.0`.** The whole milestone was built against `^0.2.0` — `1.0.0`
+  was not on the registry at the start or at any check during the work — and it published as the
+  handoff was being written. Bumped, all five gates re-run, and the app relaunched and re-driven
+  on it: **no source change was needed**. Cost: renderer 336.41 → 357.19 kB raw, 105.27 → 111.86
+  kB gz.
+- **Owed (human/GUI):** the accent hue is still open from phase 1 and **was not touched here**.
+  `ProgressBar`'s loading state is the one surface that could not be driven — the fake FS resolves
+  reads in-tick and `contextBridge` freezes `window.api`, so it cannot be stalled.

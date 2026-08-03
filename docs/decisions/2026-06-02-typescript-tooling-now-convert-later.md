@@ -1,6 +1,6 @@
 # 2026-06-02 — Stand up TypeScript tooling now, convert source later
 
-- **Status:** Locked
+- **Status:** Superseded by [[2026-07-31-the-renderer-is-typescript]] — the deferred conversion happened on 2026-07-31, and `allowJs` is off. The *reason* for the deferral stands as history; the `allowJs: true` / `checkJs: false` rule does not.
 - **Date:** 2026-06-02
 - **Deciders:** Kevin (owner) + agent
 - **Source:** Migrated from `docs/research/0004-typescript-strategy.md` (Phase 1 modernization)

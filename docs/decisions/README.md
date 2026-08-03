@@ -99,3 +99,14 @@ to apply here); everything else is sourced from Image Viewer's own chats, commit
 - [2026-06-30 — Queue is summonable by touch](2026-06-30-queue-is-summonable-by-touch.md)
 - [2026-06-30 — Multi-view has delete + selection affordances](2026-06-30-multiview-has-delete-and-selection-affordances.md)
 - [2026-06-30 — Self-host the fonts locally](2026-06-30-self-host-fonts-locally.md)
+
+### 2026-07-31 — Charcuterie M6c: TypeScript + Tailwind
+
+- [2026-07-31 — The renderer is TypeScript; `allowJs` is off](2026-07-31-the-renderer-is-typescript.md)
+- [2026-07-31 — Styling is Tailwind v4 on `@charcuterie/tokens`, not Emotion](2026-07-31-styling-is-tailwind-on-charcuterie-tokens.md)
+- [2026-07-31 — The selection blue becomes the `accent` intent, and its hue changes](2026-07-31-selection-blue-becomes-the-accent-intent.md) ← **the one visible change; wants the owner's eye**
+
+### 2026-08-02 — Charcuterie M6c phase 2: the components arrive
+
+- [2026-08-02 — Three work-order sites keep their own component](2026-08-02-three-work-order-sites-keep-their-own-component.md) ← **read before "finishing" the migration**
+- [2026-08-02 — The display picker is an anchored menu, not a centred sheet](2026-08-02-the-display-picker-is-an-anchored-menu.md)
