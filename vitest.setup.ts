@@ -25,6 +25,10 @@ const extname = (filePath: string) => {
 
 const api: Window["api"] = {
   cliFilePath: "",
+  colorScheme: {
+    get: () => "dark",
+    onChanged: () => () => {},
+  },
   countFolderImages: () => Promise.resolve(0),
   createNewWindow: () => {},
   deleteFilePath: () => Promise.resolve(true),

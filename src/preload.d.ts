@@ -34,6 +34,14 @@ declare global {
         // eslint-disable-next-line @typescript-eslint/naming-convention
         spawnedViewer?: boolean
       }) => void
+      // The OS colour scheme from the main process's `nativeTheme`, the seam the
+      // renderer's `@charcuterie/logic` resolver reads instead of `matchMedia`.
+      // `get` is a synchronous read ("light" | "dark"); `onChanged` subscribes to
+      // OS light/dark flips and returns an unsubscribe.
+      colorScheme: {
+        get: () => "dark" | "light"
+        onChanged: (callback: () => void) => () => void
+      }
       // This window's OS fullscreen state. Main owns the truth (F11 flips it
       // there too), so `get` hydrates on mount, `toggle` resolves to the new
       // state, and `onChanged` tracks every enter/leave however it was

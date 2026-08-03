@@ -383,6 +383,29 @@ contextBridge.exposeInMainWorld("api", {
     : countFolderImages,
   createNewWindow: (payload) =>
     ipcRenderer.send("createNewWindow", payload),
+  // The OS colour scheme, read from the main process's `nativeTheme` (the
+  // renderer has no reliable `prefers-color-scheme` under contextIsolation). This
+  // is the seam `@charcuterie/logic`'s colour-scheme resolver is injected onto in
+  // place of the browser `matchMedia` default: `get` is a synchronous IPC read of
+  // `nativeTheme.shouldUseDarkColors` (the resolver's `get()` must be sync), and
+  // `onChanged` subscribes to main's `nativeTheme.on("updated")` broadcast,
+  // returning an unsubscribe (same shape as `fullScreen.onChanged`). Not branched
+  // on the fake FS — it touches no disk, and a fake window still follows the OS.
+  colorScheme: {
+    get: () => ipcRenderer.sendSync("get-native-theme"),
+    onChanged: (callback) => {
+      const listener = () => callback()
+
+      ipcRenderer.on("native-theme-updated", listener)
+
+      return () => {
+        ipcRenderer.removeListener(
+          "native-theme-updated",
+          listener,
+        )
+      }
+    },
+  },
   // OS-level fullscreen for this window. Main owns the truth (F11 flips it there
   // too), so `get` hydrates on mount, `toggle` returns the new state, and
   // `onChanged` tracks every enter/leave however it was triggered.

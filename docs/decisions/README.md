@@ -110,3 +110,7 @@ to apply here); everything else is sourced from Image Viewer's own chats, commit
 
 - [2026-08-02 — Three work-order sites keep their own component](2026-08-02-three-work-order-sites-keep-their-own-component.md) ← **read before "finishing" the migration**
 - [2026-08-02 — The display picker is an anchored menu, not a centred sheet](2026-08-02-the-display-picker-is-an-anchored-menu.md)
+
+### 2026-08-03 — Charcuterie 1.1.0: follow the OS scheme
+
+- [2026-08-03 — Follow the OS colour scheme via Electron `nativeTheme`, not `matchMedia`](2026-08-03-follow-the-os-scheme-via-electron-nativetheme.md) ← **the default is now `system`, not always-dark**

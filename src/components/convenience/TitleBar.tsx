@@ -15,6 +15,7 @@ import FullscreenIcon from "../icons/FullscreenIcon"
 import ImageViewerContext from "../imageViewer/ImageViewerContext"
 import useEdgeSwipe from "../imageViewer/useEdgeSwipe"
 import WorkspaceContext from "../workspace/WorkspaceContext"
+import ColorSchemeControl from "./ColorSchemeControl"
 import FullScreenContext from "./FullScreenContext"
 
 const pathApi = window.api.path
@@ -312,6 +313,12 @@ const TitleBar = () => {
             </button>
           </Tooltip>
         )}
+
+        {/* Follow-the-OS colour scheme, cycling light → dark → system. Placed
+            here, at the start of the right-aligned cluster (it carries the
+            `ml-auto`), so it sits beside the fullscreen control rather than in the
+            left group with the app name and queue actions. */}
+        <ColorSchemeControl />
 
         {/* The `aria-label` stays and the tip is deliberately *not* the same
             string: `useRole(context, { role: "tooltip" })` points
