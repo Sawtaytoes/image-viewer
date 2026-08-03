@@ -133,11 +133,12 @@ if (!globalThis.IntersectionObserver) {
 
 // jsdom implements `<dialog>` as an element but not as a *dialog*: it parses
 // the tag and then leaves `showModal`, `close` and the top layer unimplemented.
-// `@charcuterie/ui`'s `Modal` is a real `<dialog>` driven by `showModal()`, so
-// without this every test that renders one dies with
-// `dialogElement.showModal is not a function` — inside a passive effect, which
-// surfaces as an unrelated-looking failure in whichever test happened to mount
-// the tree.
+// This shim is vestigial as of `@charcuterie/ui@2.0.0`, which portals its
+// `Dialog` to the body rather than rendering a native `<dialog>`, so nothing in
+// these tests calls `showModal()` any more. It is kept as a harmless jsdom
+// polyfill — it patches only when the method is absent and asserts nothing — so
+// a future consumer that does render a native `<dialog>` is not left tripping
+// over `dialogElement.showModal is not a function` inside a passive effect.
 //
 // The shim is deliberately the smallest thing that is still *true*: `open` and
 // the `close` event are what a test can observe, so those are real. It does not
