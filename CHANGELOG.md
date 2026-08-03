@@ -1,3 +1,10 @@
+# [2.6.0](https://github.com/Sawtaytoes/image-viewer/compare/v2.5.0...v2.6.0) (2026-08-03)
+
+
+### Features
+
+* follow the OS colour scheme via an Electron nativeTheme resolver ([#5](https://github.com/Sawtaytoes/image-viewer/issues/5)) ([29d2b97](https://github.com/Sawtaytoes/image-viewer/commit/29d2b97973a79ec790f568eb5acca98d7b75c394))
+
 # [2.5.0](https://github.com/Sawtaytoes/image-viewer/compare/v2.4.0...v2.5.0) (2026-08-03)
 
 
