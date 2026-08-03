@@ -1,3 +1,10 @@
+# [2.5.0](https://github.com/Sawtaytoes/image-viewer/compare/v2.4.0...v2.5.0) (2026-08-03)
+
+
+### Features
+
+* M6c — renderer to TypeScript + Tailwind, consuming @charcuterie/ui ([#4](https://github.com/Sawtaytoes/image-viewer/issues/4)) ([a288c86](https://github.com/Sawtaytoes/image-viewer/commit/a288c869e61bea043dd374c2cc28a5c46acf0869))
+
 # [2.4.0](https://github.com/Sawtaytoes/image-viewer/compare/v2.3.0...v2.4.0) (2026-07-23)
 
 
