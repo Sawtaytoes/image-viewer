@@ -1,8 +1,10 @@
 # M6c phase 2 — image-viewer consumes `@charcuterie/ui`
 
 **Date:** 2026-08-02
-**Branch:** `feat/m6c-charcuterie-ui`, pushed, **not merged** (`master` is the owner's call —
-[branch-for-non-trivial-work](decisions/2026-05-07-branch-for-non-trivial-work.md)).
+**Branch:** `feat/m6c-charcuterie-ui`, pushed; owner-approved and **squash-merged to `master`**
+via [#4](https://github.com/Sawtaytoes/image-viewer/pull/4) on 2026-08-02
+([branch-for-non-trivial-work](decisions/2026-05-07-branch-for-non-trivial-work.md) — master is
+the owner's call, and the owner made it).
 **PR:** [#4](https://github.com/Sawtaytoes/image-viewer/pull/4) opened 2026-08-02 (all 21 M6c
 commits — the whole milestone; `master` is still pre-M6c `v2.3.0`). Merging fires
 `release.yml` (semantic-release, `windows-latest`) → a GitHub Release with the Squirrel
