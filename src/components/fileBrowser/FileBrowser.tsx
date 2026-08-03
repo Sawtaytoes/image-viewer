@@ -149,6 +149,14 @@ const FileBrowser = () => {
 
   const { isFullScreen } = useContext(FullScreenContext)
 
+  // The viewer is a fixed overlay that fully covers this browser when open, so
+  // its directory controls and tab strip are dead weight underneath — and the
+  // tab strip would be a SECOND live `FolderTabStrip` beside the one the viewer
+  // chrome renders. Drop them while the viewer is open so exactly one of each is
+  // mounted. Same open test `ImageViewer` uses.
+  const isViewerOpen =
+    Boolean(imageFilePath) || panes.length > 0
+
   const sortOrder = getFolderSortOrder(
     sortOrdersByFolder,
     filePath,
@@ -749,9 +757,9 @@ const FileBrowser = () => {
             : insetFileBrowserClassName
         }
       >
-        <DirectoryControls />
+        {!isViewerOpen && <DirectoryControls />}
 
-        <FolderTabStrip />
+        {!isViewerOpen && <FolderTabStrip />}
 
         {/* Explicit rows (not auto-placement): FolderTabStrip renders null when
             the queue is empty, so pinning the search bar and list to fixed rows
