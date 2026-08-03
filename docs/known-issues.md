@@ -45,6 +45,29 @@ details in [workers/feature-heic-support.md](workers/feature-heic-support.md). *
 (tiles render + open in single/columns, EXIF orientation correct) and a thumbnail-perf follow-up for
 large HEIC folders.
 
+## ✅ FIXED: fullscreen mode — broken taps, two pull-down bars, off-target directory controls
+
+**Was (fullscreen only):** tapping near the top of the screen "didn't work properly"; pulling down from
+the top revealed **two** stacked pull-down bars; and the directory navigation controls (go-up,
+breadcrumb) had to be "clicked in a weird spot."
+
+**Cause:** the viewer is a fixed overlay over an always-mounted file browser, and in fullscreen **two**
+independent auto-hiding top bars were live — the custom `TitleBar` (pinned `top-0`) and the viewer's
+`RevealableChrome` (pinned ~40px lower) — each with its own summon gesture, so one pull summoned both
+(and `FolderTabStrip` was mounted twice). A `z-[9999]` invisible hit-strip over the top 32px, there only
+to catch a mouse hover, sat above everything and **swallowed taps** on the directory controls — reviving
+the locked-out ["up-arrow opens the menu instead of going up"](decisions/2026-06-04-up-arrow-navigates-up-not-dropdown.md)
+bug. And the chrome drew 40px below where the full-bleed viewer starts, so its hitboxes were offset.
+
+**Fix (unify to one bar):** in fullscreen with the viewer open, the `TitleBar` **stands down** (no
+reveal, no strip, stays put) and `RevealableChrome` is the single bar, re-anchored to `top-0` with a
+fullscreen-exit control added. The tap-stealing hit-strip is gone — the top reveal zone is now a
+`pointer-events-none` grab handle plus a document-level `pointermove` listener (mouse) / edge-swipe
+(touch). `FileBrowser` drops its `DirectoryControls` + `FolderTabStrip` while the viewer is open.
+Decision: [in fullscreen the viewer has ONE top bar](decisions/2026-08-03-fullscreen-viewer-has-one-top-bar.md);
+brief: [workers/fix-fullscreen-single-top-bar.md](workers/fix-fullscreen-single-top-bar.md). **Still owed:**
+a touch pass in the packaged app on the Surface.
+
 ## Other deferred items
 
 - **Manual parity pass still owed** now that image loading is fixed: opening a single image,
