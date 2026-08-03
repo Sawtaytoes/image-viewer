@@ -11,6 +11,10 @@ delegated work follows the same shape. One file per worker task.
 
 ## Open briefs (work to be picked up later)
 
+- [fix-fullscreen-single-top-bar.md](fix-fullscreen-single-top-bar.md) — ✅ **Done.** Fullscreen showed
+  two stacked pull-down bars, a tap-stealing top hit-strip, and directory controls with offset hitboxes;
+  unified to one anchored bar with the title bar standing down (feeds
+  [the fullscreen-one-bar decision](../decisions/2026-08-03-fullscreen-viewer-has-one-top-bar.md)).
 - [fix-image-loading.md](fix-image-loading.md) — ✅ **Done.** Images don't render after the
   upgrade (the `safe-file-protocol` fetch path); full data-flow trace, hypotheses, and candidate fixes.
 - [release-pipeline.md](release-pipeline.md) — ✅ **Done.** CI that publishes a downloadable EXE to Gitea +
