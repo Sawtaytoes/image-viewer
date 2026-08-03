@@ -114,3 +114,7 @@ to apply here); everything else is sourced from Image Viewer's own chats, commit
 ### 2026-08-03 — Charcuterie 1.1.0: follow the OS scheme
 
 - [2026-08-03 — Follow the OS colour scheme via Electron `nativeTheme`, not `matchMedia`](2026-08-03-follow-the-os-scheme-via-electron-nativetheme.md) ← **the default is now `system`, not always-dark**
+
+### 2026-08-03 — Fullscreen bug fix
+
+- [2026-08-03 — In fullscreen the viewer has ONE top bar, not two](2026-08-03-fullscreen-viewer-has-one-top-bar.md) ← **no covering hit-strip; the title bar stands down for the viewer chrome**
