@@ -3,7 +3,7 @@
 - **Status:** Locked
 - **Date:** 2026-08-03
 - **Deciders:** Kevin (owner) + agent
-- **Source:** Charcuterie 1.1.0 colour-scheme switcher rollout; this repo's `feat/color-scheme-switcher` PR
+- **Source:** Charcuterie 1.1.0 colour-scheme switcher rollout; [PR #5](https://github.com/Sawtaytoes/image-viewer/pull/5) (owner-approved, squash-merged into `master` 2026-08-03)
 
 ## Decision (the rule)
 
