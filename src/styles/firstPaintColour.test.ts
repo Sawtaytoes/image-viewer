@@ -1,49 +1,77 @@
 import { readFileSync } from "node:fs"
 import { resolve } from "node:path"
 
-import { resolveTokens } from "@charcuterie/tokens"
+import {
+  buildFirstPaintScript,
+  DEFAULT_COLOR_SCHEME_STORAGE_KEY,
+  daylight,
+  resolveTokens,
+} from "@charcuterie/tokens"
 import { describe, expect, it } from "vitest"
 
-// `index.html` carries one hardcoded hex, in an inline `<style>`, and it has to:
-// the rule paints the window before any stylesheet has parsed, which is before
-// `--color-surface-base` exists. A custom property cannot be its own fallback.
+// `index.html` no longer pins a scheme. It carries the inline first-paint script
+// from `@charcuterie/tokens` — `buildFirstPaintScript(daylight)` — which runs
+// before any stylesheet parses and sets `<html data-scheme>` from the saved
+// (`localStorage`) or OS choice, painting the canvas with a scheme-branched
+// fallback hex so first paint never flashes the wrong theme.
 //
-// So the hex is a copy, and a copy drifts. This test is the thing that notices —
-// it reads the token out of the package and the literal out of the markup and
-// insists they are the same colour. Without it the failure mode is a white flash
-// on every window open, which nobody files a bug about and every gate passes.
-//
-// The scheme/variant pair must match `<html data-scheme=… data-variant=…>`;
-// `daylight` is the default variant, which is why `index.html` does not name it.
+// That snippet is a *copy* pasted into the markup (it has to be inline to run
+// early), and a copy drifts. These tests are the thing that notices: they
+// regenerate the snippet from the package and insist the markup still contains
+// it, and they check the fallback hexes against the token source — the same
+// provenance guard the old single hardcoded hex had. Without them the failure
+// mode is a flash of the wrong theme on window open, which nobody files a bug
+// about and every other gate passes.
 const INDEX_HTML_PATH = resolve(
   import.meta.dirname,
   "../../index.html",
 )
 
-describe("index.html's first-paint colour", () => {
-  it("matches surface.base for the scheme the document pins", () => {
+describe("index.html's first-paint script", () => {
+  it("contains the exact buildFirstPaintScript(daylight) snippet, un-drifted", () => {
     const markup = readFileSync(INDEX_HTML_PATH, "utf8")
 
-    const backgroundMatch = markup.match(
-      /background-color:\s*(#[0-9a-fA-F]{3,8})/,
+    expect(markup).toContain(
+      buildFirstPaintScript(daylight),
     )
+  })
 
-    expect(backgroundMatch).not.toBeNull()
+  it("uses the shared storage key so pre-paint and runtime agree", () => {
+    const markup = readFileSync(INDEX_HTML_PATH, "utf8")
 
-    const { colour } = resolveTokens({
+    // The runtime `localStoragePersistence` default is this same key; if they
+    // disagree the pre-paint attribute and the hydrated state differ by a flash.
+    expect(markup).toContain(
+      `var KEY = "${DEFAULT_COLOR_SCHEME_STORAGE_KEY}"`,
+    )
+  })
+
+  it("branches the fallback hex on both schemes' surface.base", () => {
+    const markup = readFileSync(INDEX_HTML_PATH, "utf8")
+
+    const dark = resolveTokens({
       scheme: "dark",
       variant: "daylight",
     })
 
-    expect(
-      backgroundMatch?.[1]?.toLowerCase(),
-    ).toStrictEqual(colour.surface.base.toLowerCase())
+    const light = resolveTokens({
+      scheme: "light",
+      variant: "daylight",
+    })
+
+    expect(markup).toContain(dark.colour.surface.base)
+    expect(markup).toContain(light.colour.surface.base)
   })
 
-  it("pins the same scheme in the attribute and in color-scheme", () => {
+  it("no longer pins a scheme in the <html> tag", () => {
     const markup = readFileSync(INDEX_HTML_PATH, "utf8")
 
-    expect(markup).toContain('data-scheme="dark"')
-    expect(markup).toContain("color-scheme: dark")
+    // The `<html …>` open tag must carry no `data-scheme` — the first-paint
+    // script sets it. (Prose in comments may still mention the old pin, so scope
+    // this to the actual open tag rather than the whole file.)
+    const htmlTag =
+      markup.match(/<html\b[^>]*>/s)?.[0] ?? ""
+
+    expect(htmlTag).not.toContain("data-scheme")
   })
 })
