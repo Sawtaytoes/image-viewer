@@ -12,7 +12,7 @@ type DeleteFileModalProps = Pick<
   "isVisible" | "onClose" | "onConfirm"
 >
 
-// The question is the dialog's accessible name now (`Modal`'s `heading`), so it
+// The question is the dialog's accessible name now (`Dialog`'s `heading`), so it
 // travels as a `message` prop rather than as `children`.
 const DeleteFileModal = ({
   isVisible,
