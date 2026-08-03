@@ -6,6 +6,7 @@
 import type {
   DirectoryEntry,
   Display,
+  FolderMatch,
   ImageBytes,
   ImageFile,
   PathStat,
@@ -33,6 +34,17 @@ declare global {
         // eslint-disable-next-line @typescript-eslint/naming-convention
         spawnedViewer?: boolean
       }) => void
+      // This window's OS fullscreen state. Main owns the truth (F11 flips it
+      // there too), so `get` hydrates on mount, `toggle` resolves to the new
+      // state, and `onChanged` tracks every enter/leave however it was
+      // triggered (returns an unsubscribe).
+      fullScreen: {
+        get: () => Promise<boolean>
+        onChanged: (
+          callback: (isFullScreen: boolean) => void,
+        ) => () => void
+        toggle: () => Promise<boolean>
+      }
       // Connected displays for the "spawn window on another screen" menu.
       getDisplays: () => Promise<Display[]>
       // Show/hide the transient "which monitor is this?" identify overlay.
@@ -58,11 +70,25 @@ declare global {
         ) => Promise<QueuedFolder[]>
         clear: () => void
         get: () => Promise<QueuedFolder[]>
+        // Whether a saved slot currently exists (gates the "Load queue"
+        // button).
+        hasSaved: () => Promise<boolean>
+        // Replace the live queue with the saved slot; main broadcasts the
+        // change to every window.
+        load: () => Promise<QueuedFolder[]>
         // Subscribe to queue changes (from any window); returns an unsubscribe.
         onChanged: (
           callback: (folders: QueuedFolder[]) => void,
         ) => () => void
+        // Fires whenever the saved slot appears/changes, so "Load queue" can
+        // enable across every window when one of them saves. Returns an
+        // unsubscribe.
+        onSavedChanged: (
+          callback: (isSaved: boolean) => void,
+        ) => () => void
         remove: (folderId: string) => void
+        // Snapshot the live queue into the saved slot.
+        save: () => Promise<boolean>
       }
       // Trash a file or folder (resolves to whether it was removed).
       deleteFilePath: (payload: {
@@ -93,6 +119,15 @@ declare global {
       readImageData: (
         filePath: string,
       ) => Promise<ImageBytes>
+      // Recursive folder-name search under `rootPath` (folders only, every
+      // depth, bounded). `onBatch` streams each directory level's matches as
+      // they are found; the promise settles on the authoritative full list —
+      // which is how the fake FS, that streams nothing, still works.
+      searchFolders: (
+        rootPath: string,
+        query: string,
+        onBatch?: (matches: FolderMatch[]) => void,
+      ) => Promise<FolderMatch[]>
       // Record the last-viewed image index for a folder path (session-only,
       // shared across windows; last write wins).
       setFolderLastIndex: (

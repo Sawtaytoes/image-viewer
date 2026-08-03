@@ -1,27 +1,50 @@
+/* Self-hosted Source Sans Pro, imported by `src/styles/tailwind.css`.
+
+   The paths are RELATIVE (`./SourceSansPro/…`), not absolute (`/fonts/…`).
+   Absolute is what this file shipped with and it could never have worked: there
+   is no `public/` directory in this repo, so nothing served `/fonts/*`, and in
+   the packaged app the renderer is loaded from a `file://` URL where a leading
+   `/` means the drive root. A relative URL is a module specifier to Vite, which
+   hashes the woff2 into the bundle and rewrites the reference — so the font
+   ships inside the asar instead of being fetched from Google on every window
+   open. See `docs/decisions/2026-06-30-self-host-fonts-locally.md`.
+
+   `local('')` is kept from the original: an empty `local()` is the documented
+   google-webfonts-helper trick for skipping the local-lookup step entirely. */
+
 /* source-sans-pro-300 - latin */
 @font-face {
-  font-family: 'Source Sans Pro';
+  font-family: "Source Sans Pro";
   font-style: normal;
   font-weight: 300;
-  src: local(''),
-       url('/fonts/source-sans-pro-v14-latin-300.woff2') format('woff2'), /* Chrome 26+, Opera 23+, Firefox 39+ */
-       url('/fonts/source-sans-pro-v14-latin-300.woff') format('woff'); /* Chrome 6+, Firefox 3.6+, IE 9+, Safari 5.1+ */
+  font-display: swap;
+  src:
+    local(""),
+    url("./SourceSansPro/source-sans-pro-v14-latin-300.woff2") format("woff2"),
+    url("./SourceSansPro/source-sans-pro-v14-latin-300.woff") format("woff");
 }
+
 /* source-sans-pro-regular - latin */
 @font-face {
-  font-family: 'Source Sans Pro';
+  font-family: "Source Sans Pro";
   font-style: normal;
   font-weight: 400;
-  src: local(''),
-       url('/fonts/source-sans-pro-v14-latin-regular.woff2') format('woff2'), /* Chrome 26+, Opera 23+, Firefox 39+ */
-       url('/fonts/source-sans-pro-v14-latin-regular.woff') format('woff'); /* Chrome 6+, Firefox 3.6+, IE 9+, Safari 5.1+ */
+  font-display: swap;
+  src:
+    local(""),
+    url("./SourceSansPro/source-sans-pro-v14-latin-regular.woff2")
+      format("woff2"),
+    url("./SourceSansPro/source-sans-pro-v14-latin-regular.woff") format("woff");
 }
+
 /* source-sans-pro-600 - latin */
 @font-face {
-  font-family: 'Source Sans Pro';
+  font-family: "Source Sans Pro";
   font-style: normal;
   font-weight: 600;
-  src: local(''),
-       url('/fonts/source-sans-pro-v14-latin-600.woff2') format('woff2'), /* Chrome 26+, Opera 23+, Firefox 39+ */
-       url('/fonts/source-sans-pro-v14-latin-600.woff') format('woff'); /* Chrome 6+, Firefox 3.6+, IE 9+, Safari 5.1+ */
+  font-display: swap;
+  src:
+    local(""),
+    url("./SourceSansPro/source-sans-pro-v14-latin-600.woff2") format("woff2"),
+    url("./SourceSansPro/source-sans-pro-v14-latin-600.woff") format("woff");
 }
