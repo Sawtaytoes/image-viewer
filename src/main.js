@@ -4,6 +4,7 @@ import {
   app,
   BrowserWindow,
   ipcMain,
+  nativeTheme,
   screen,
   shell,
 } from "electron"
@@ -281,6 +282,31 @@ ipcMain.handle("window:isFullScreen", (event) =>
 // Synchronous bridge for the drive list (consumed at renderer module-load time).
 ipcMain.on("get-windows-drives", (event) => {
   event.returnValue = getWindowsDrives()
+})
+
+// The OS colour scheme, owned by the main process. This is the whole reason the
+// colour-scheme switcher works in this app: the renderer runs with
+// `contextIsolation` on and no Node access, so it has no reliable read of the OS
+// `prefers-color-scheme` — but `nativeTheme` in main does. `nativeTheme.themeSource`
+// is left at its default `"system"` (we only *read* the OS answer, never override
+// it), so `shouldUseDarkColors` is the live OS truth. The renderer's
+// `@charcuterie/logic` colour-scheme resolver is bridged onto these two channels
+// (see preload's `colorScheme`): a synchronous read for `resolver.get()` and the
+// `updated` broadcast for `resolver.subscribe()`.
+ipcMain.on("get-native-theme", (event) => {
+  event.returnValue = nativeTheme.shouldUseDarkColors
+    ? "dark"
+    : "light"
+})
+
+// The OS flipped light/dark (or high-contrast) — tell every open window so each
+// renderer following `system` re-resolves live, no restart.
+nativeTheme.on("updated", () => {
+  for (const browserWindow of BrowserWindow.getAllWindows()) {
+    if (!browserWindow.isDestroyed()) {
+      browserWindow.webContents.send("native-theme-updated")
+    }
+  }
 })
 
 // Session-only "resume where I left off" memory, keyed by folder path so it's

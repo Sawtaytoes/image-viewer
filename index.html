@@ -1,11 +1,16 @@
 <!doctype html>
-<!-- The three Charcuterie axes, all on `<html>` and all static.
+<!-- The three Charcuterie axes on `<html>`.
 
-     `data-scheme="dark"` is pinned rather than following the OS: this is an
-     image viewer, and bright chrome beside a photo is exactly what a viewer is
-     not for. It used to be unreachable as a *choice* — the colours were
-     hardcoded greys in twenty-four Emotion blocks — so pinning it here is the
-     first time the app has a scheme it could change at all.
+     `data-scheme` is NO LONGER pinned here — it is written before first paint by
+     the inline first-paint script in `<head>` below, from the saved choice
+     (`localStorage`) or, failing that, the OS. The app now follows the OS
+     light/dark scheme through Charcuterie's colour-scheme switcher (see the
+     title bar's `ColorSchemeControl`), and the default mode is `system`. Pinning
+     `dark` here would flash the wrong theme for a frame on a light-resolved load,
+     which is exactly what the first-paint script exists to prevent. The runtime
+     `useColorScheme` hook keeps writing this same attribute, off the same
+     `localStorage` key (`charcuterie-scheme`), so the pre-paint value and the
+     hydrated state always agree.
 
      `data-variant` is omitted deliberately: `daylight` is the default and
      `:root` carries it, so naming it here would be a second place to change if
@@ -16,23 +21,49 @@
      is the axis that says so: `--control-min-touch-target` stays 2.75rem at
      every density, but the control heights go 2.125/2.5/3rem →
      2.75/3.25/3.75rem and the type ramp scales with them, so a `size="sm"`
-     `IconButton` is a 44px target rather than a 34px one.
-
-     Phase 1 held this at `comfortable` for a good reason — every control still
-     carried the explicit pixel size it had under Emotion, so flipping density
-     would have resized nothing and proved nothing. That is no longer true:
-     the controls come from `@charcuterie/ui` now, and the app's own
-     `text-[NNpx]` literals were replaced by the `text-sm`…`text-2xl` ramp in
-     the same commit as this line. Both halves had to land together — the ramp
-     without the flip is a no-op, and the flip without the ramp resizes the
-     library's controls while the app's own text stays put. -->
+     `IconButton` is a 44px target rather than a 34px one. -->
 <html
   lang="en"
-  data-scheme="dark"
   data-density="kiosk"
 >
   <head>
     <meta charset="UTF-8" />
+
+    <!-- First-paint colour scheme. PASTED VERBATIM from
+         `@charcuterie/tokens`' `buildFirstPaintScript(daylight)` (its emitted
+         `dist/first-paint-script.html`), so it must run before any stylesheet:
+         it sets `<html data-scheme>` from the saved/OS choice and paints the
+         canvas with a scheme-branched fallback hex, so first paint never flashes
+         the wrong theme. `src/styles/firstPaintColour.test.ts` regenerates the
+         snippet from the package and fails if this copy drifts — the same
+         provenance guard the old single hex had. `KEY` here
+         (`charcuterie-scheme`) is `DEFAULT_COLOR_SCHEME_STORAGE_KEY`, the same
+         key `localStoragePersistence` uses at runtime, so the two agree. It
+         replaces the old hardcoded `data-scheme="dark"` pin and its static
+         anti-flash `<style>`. -->
+<script>
+  (function () {
+    var KEY = "charcuterie-scheme";
+    var stored;
+    try {
+      stored = window.localStorage.getItem(KEY);
+    } catch (error) {
+      stored = null;
+    }
+    var isDark = stored === "dark" ||
+      ((stored === null || stored === "system") &&
+        window.matchMedia("(prefers-color-scheme: dark)").matches);
+    var scheme = isDark ? "dark" : "light";
+    document.documentElement.setAttribute("data-scheme", scheme);
+    var background = isDark ? "#131822" : "#F5F7FA";
+    var style = document.createElement("style");
+    style.textContent =
+      "html,body{background-color:var(--color-surface-base," +
+      background +
+      ");color-scheme:" + scheme + "}";
+    document.head.appendChild(style);
+  })();
+</script>
 
     <meta
       content="max-age=604800"
@@ -52,24 +83,6 @@
          this app opens several windows. -->
 
     <title>Image Viewer</title>
-
-    <style>
-      /* Prevent a white flash before the bundled CSS loads.
-
-         The one hex left in the app chrome, and it has to be one: this rule
-         exists precisely for the moment BEFORE any stylesheet has parsed, so it
-         cannot read a custom property. It is `daylight`'s `surface.base` at
-         `data-scheme="dark"`, and `firstPaintColour.test.ts` reads the token out
-         of `@charcuterie/tokens` and fails if the two ever drift.
-
-         `color-scheme` is set here for the same reason: the native scrollbar is
-         painted before the token stylesheet lands. */
-      html,
-      body {
-        background-color: #131822;
-        color-scheme: dark;
-      }
-    </style>
   </head>
   <body class="bg-surface-base text-content-primary">
     <div id="reactRoot"></div>

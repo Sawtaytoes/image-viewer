@@ -27,8 +27,9 @@
     "node": ">=20.18.0"
   },
   "dependencies": {
-    "@charcuterie/tokens": "^1.0.0",
-    "@charcuterie/ui": "^1.0.0",
+    "@charcuterie/logic": "^1.1.0",
+    "@charcuterie/tokens": "^1.1.0",
+    "@charcuterie/ui": "^1.1.0",
     "electron-squirrel-startup": "^1.0.1",
     "heic-convert": "^2.1.0",
     "react": "^19.2.0",
