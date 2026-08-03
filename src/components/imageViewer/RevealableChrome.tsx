@@ -15,8 +15,10 @@ import {
   useState,
 } from "react"
 
+import FullScreenContext from "../convenience/FullScreenContext"
 import AddIcon from "../icons/AddIcon"
 import ArrowBackIcon from "../icons/ArrowBackIcon"
+import FullscreenExitIcon from "../icons/FullscreenExitIcon"
 import NewWindowIcon from "../icons/NewWindowIcon"
 import FolderTabStrip from "../workspace/FolderTabStrip"
 import WorkspaceContext from "../workspace/WorkspaceContext"
@@ -37,16 +39,25 @@ const AUTO_HIDE_MS = 3000
 // controls — the up-a-folder button especially — stay tappable instead of being
 // swallowed by this strip's hover-to-reveal.
 //
-// It sits below the fixed custom title bar (`top-(--title-bar-height)`) so
-// hover-to-reveal isn't swallowed by it. Tailwind cannot interpolate the
-// `TITLE_BAR_HEIGHT` constant Emotion used, so the number lives in the custom
-// property; `titleBarHeight.test.ts` fails if the two drift.
-const HIT_STRIP_CLASSES =
-  "fixed left-0 top-(--title-bar-height) z-[1] h-8 w-full touch-none"
+// In fullscreen the title bar auto-hides and the viewer fills from `top-0`
+// (`ImageViewer`'s full-bleed classes), so the chrome must anchor to the very
+// top too — otherwise it drew ~40px below where the viewer starts and its
+// hitbox sat offset from where the controls appeared ("click them in a weird
+// spot"). Windowed, it still sits below the fixed custom title bar. Tailwind
+// cannot interpolate the `TITLE_BAR_HEIGHT` constant Emotion used, so the number
+// lives in the custom property; `titleBarHeight.test.ts` fails if the two drift.
+const TOP_ANCHOR_FULLSCREEN = "top-0"
+const TOP_ANCHOR_WINDOWED = "top-(--title-bar-height)"
 
-// Sits just under the fixed custom title bar rather than behind it.
+// It sits below the fixed custom title bar (windowed) so hover-to-reveal isn't
+// swallowed by it; the top anchor is appended per-mode at render.
+const HIT_STRIP_CLASSES =
+  "fixed left-0 z-[1] h-8 w-full touch-none"
+
+// Sits just under the fixed custom title bar rather than behind it (windowed);
+// the top anchor is appended per-mode at render.
 const CHROME_BAR_CLASSES =
-  "fixed left-0 top-(--title-bar-height) z-[3] flex w-full items-center gap-2 bg-surface-overlay px-2 py-1.5 touch-none transition-transform duration-[220ms] ease-[ease]"
+  "fixed left-0 z-[3] flex w-full items-center gap-2 bg-surface-overlay px-2 py-1.5 touch-none transition-transform duration-[220ms] ease-[ease]"
 
 const CHROME_BUTTON_CLASSES =
   "inline-flex flex-none cursor-pointer items-center gap-1 rounded-[5px] border-0 bg-transparent px-2.5 py-1.5 text-lg font-light text-content-primary hover:bg-intent-neutral-surface-hover"
@@ -78,6 +89,10 @@ const RevealableChrome = ({
 
   const { leaveImageViewer } = useContext(
     ImageViewerContext,
+  )
+
+  const { isFullScreen, toggleFullScreen } = useContext(
+    FullScreenContext,
   )
 
   const [isDisplayMenuOpen, setIsDisplayMenuOpen] =
@@ -218,10 +233,14 @@ const RevealableChrome = ({
     onSpawn: closeDisplayMenu,
   })
 
+  const topAnchorClass = isFullScreen
+    ? TOP_ANCHOR_FULLSCREEN
+    : TOP_ANCHOR_WINDOWED
+
   return (
     <Fragment>
       <div
-        className={HIT_STRIP_CLASSES}
+        className={`${HIT_STRIP_CLASSES} ${topAnchorClass}`}
         onPointerMove={onHitStripPointerMove}
         ref={hitStripRef}
       >
@@ -239,7 +258,7 @@ const RevealableChrome = ({
           one of two static classes — a `translate-y-[${…}]` built at runtime is
           text Tailwind never scans, so the bar would simply never move. */}
       <div
-        className={`${CHROME_BAR_CLASSES} ${
+        className={`${CHROME_BAR_CLASSES} ${topAnchorClass} ${
           isVisible ? "translate-y-0" : "-translate-y-full"
         }`}
         onPointerDown={scheduleAutoHide}
@@ -304,6 +323,23 @@ const RevealableChrome = ({
             </button>
           }
         />
+
+        {/* Fullscreen exit lives here only while fullscreen: the title bar —
+            which normally owns this control — stands down when the viewer is
+            open in fullscreen so a single bar summons (see `TitleBar`), so
+            without this the only touch way out of fullscreen would be to leave
+            the viewer first. Windowed, the title bar's own control is reachable,
+            so this stays hidden to avoid a duplicate. */}
+        {isFullScreen && (
+          <button
+            aria-label="Exit fullscreen"
+            className={CHROME_BUTTON_CLASSES}
+            onClick={toggleFullScreen}
+            type="button"
+          >
+            <FullscreenExitIcon />
+          </button>
+        )}
       </div>
     </Fragment>
   )
