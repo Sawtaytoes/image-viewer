@@ -1,3 +1,10 @@
+## [2.6.1](https://github.com/Sawtaytoes/image-viewer/compare/v2.6.0...v2.6.1) (2026-08-04)
+
+
+### Bug Fixes
+
+* colour-scheme button hover + focus visible in the title bar ([#8](https://github.com/Sawtaytoes/image-viewer/issues/8)) ([49b67ce](https://github.com/Sawtaytoes/image-viewer/commit/49b67ce306efcb807c73126ded7343e6a51ccd65))
+
 # [2.6.0](https://github.com/Sawtaytoes/image-viewer/compare/v2.5.0...v2.6.0) (2026-08-03)
 
 
