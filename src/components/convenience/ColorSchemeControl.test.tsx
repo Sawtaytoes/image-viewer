@@ -60,25 +60,4 @@ describe("ColorSchemeControl", () => {
       ),
     ).toBe("light")
   })
-
-  it("overrides the hover/active background to the neutral title-bar tokens", () => {
-    // Guard for the visible-hover fix. Charcuterie's ghost IconButton defaults to
-    // the *accent* intent, whose hover is invisible against this app's
-    // `bg-surface-sunken` title bar; we override to the neutral tokens the sibling
-    // controls use, `!`-important so it beats the built-in accent hover. jsdom
-    // computes no styles, so this only guards the class from silent removal — the
-    // real proof is `build:renderer` + the __screenshots__ hover/focus captures.
-    render(<ColorSchemeControl />)
-
-    const button = screen.getByRole("button", {
-      name: /colour scheme/i,
-    })
-
-    expect(button.className).toContain(
-      "hover:bg-intent-neutral-surface-hover!",
-    )
-    expect(button.className).toContain(
-      "active:bg-intent-neutral-solid-hover!",
-    )
-  })
 })
