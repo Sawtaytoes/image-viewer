@@ -11,6 +11,12 @@ import { defineConfig } from "vitest/config"
 // missing utility is `yarn build:renderer`, and that runs the real plugin.
 export default defineConfig({
   plugins: [react()],
+  // Mirror the renderer's `resolve.dedupe` (see `vite.renderer.config.ts`): with
+  // `@charcuterie/ui@2.x` (a React library) in the graph, a second React copy
+  // breaks the shared React transform here too. One React, same as the app.
+  resolve: {
+    dedupe: ["react", "react-dom"],
+  },
   test: {
     environment: "jsdom",
     globals: true,
