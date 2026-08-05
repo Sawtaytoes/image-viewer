@@ -470,6 +470,10 @@ contextBridge.exposeInMainWorld("api", {
     addMany: (folders) =>
       ipcRenderer.invoke("queue:addMany", folders),
     clear: () => ipcRenderer.send("queue:clear"),
+    // Delete the saved slot entirely (distinct from `clear`, which empties the
+    // live queue). Main removes the file and broadcasts the new saved-state.
+    clearSaved: () =>
+      ipcRenderer.invoke("queue:clearSaved"),
     get: () => ipcRenderer.invoke("queue:get"),
     // Whether a saved slot currently exists (gates the "Load queue" button).
     hasSaved: () => ipcRenderer.invoke("queue:hasSaved"),

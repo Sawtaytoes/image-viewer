@@ -44,6 +44,9 @@ export interface WorkspaceContextValue {
   ) => void
   clearPanes: () => void
   clearQueue: () => void
+  // Delete the saved queue slot entirely (the live queue is untouched) — the
+  // "reset the saved one" that save/load/close never offered.
+  clearSavedQueue: () => void
   // Trash the folder on disk, then dequeue it. Resolves to whether it went.
   deleteFolder: (folderId: string) => Promise<boolean>
   // Whether a saved queue slot exists, so "Load queue" can enable.
@@ -87,6 +90,7 @@ export const defaultWorkspaceContextValue: WorkspaceContextValue =
     assignFolderToPane: () => {},
     clearPanes: () => {},
     clearQueue: () => {},
+    clearSavedQueue: () => {},
     deleteFolder: () => Promise.resolve(false),
     hasSavedQueue: false,
     isChromeRevealSuppressed: false,

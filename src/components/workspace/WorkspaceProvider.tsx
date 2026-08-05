@@ -595,6 +595,14 @@ const WorkspaceProvider = ({
     window.api.queue.clear()
   }, [])
 
+  // Discard the saved slot itself (the live queue is untouched). Distinct from
+  // `clearQueue`, which closes the *live* queue — this is the "reset the saved
+  // one" the save/load/close trio never had. Main broadcasts `savedChanged`, so
+  // `hasSavedQueue` drops to false in every window.
+  const clearSavedQueue = useCallback(() => {
+    window.api.queue.clearSaved()
+  }, [])
+
   // Snapshot the current queue into the saved slot (main persists it and
   // broadcasts the new saved-state). Resolves once written so callers can
   // sequence a clear after it — e.g. the title bar's "Save for later" closes the
@@ -786,6 +794,7 @@ const WorkspaceProvider = ({
         assignFolderToPane,
         clearPanes,
         clearQueue,
+        clearSavedQueue,
         deleteFolder,
         hasSavedQueue,
         isChromeRevealSuppressed,
@@ -808,6 +817,7 @@ const WorkspaceProvider = ({
         assignFolderToPane,
         clearPanes,
         clearQueue,
+        clearSavedQueue,
         deleteFolder,
         hasSavedQueue,
         isChromeRevealSuppressed,

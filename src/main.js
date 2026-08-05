@@ -437,6 +437,19 @@ ipcMain.handle("queue:load", () => {
 
 ipcMain.handle("queue:hasSaved", () => hasSavedQueue())
 
+// Delete the saved slot entirely (the live queue is untouched) and broadcast, so
+// "Load queue"/"Delete saved" disable across every window. Best-effort remove;
+// the broadcast reports the real on-disk state either way.
+ipcMain.handle("queue:clearSaved", () => {
+  try {
+    fs.rmSync(savedQueueFilePath(), { force: true })
+  } catch {
+    // Leave the file as-is; broadcastSavedQueueState() still reports the truth.
+  }
+
+  broadcastSavedQueueState()
+})
+
 // A new window hydrates its mirror from this.
 ipcMain.handle("queue:get", () => queuedFolders)
 

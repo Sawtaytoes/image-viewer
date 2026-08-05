@@ -18,6 +18,7 @@ import {
 import type { ImageFile } from "../../types"
 import type { DateGroup } from "../fileBrowser/dateGroups"
 import groupEntriesByDate from "../fileBrowser/dateGroups"
+import driveDirectories from "../fileBrowser/driveDirectories"
 import type { MultiSelectContextValue } from "../fileBrowser/MultiSelectContext"
 import MultiSelectContext from "../fileBrowser/MultiSelectContext"
 import sortDirectoryEntries from "../fileBrowser/sortDirectoryEntries"
@@ -85,6 +86,11 @@ interface GalleryEntry extends ImageFile {
 // builds a fresh Set, so this is never mutated.
 const initialSelectedFolderPaths = new Set<string>()
 
+// Stable empty listing for the all-drives root (drives are folders, no loose
+// images). A shared constant keeps the memo deps below from seeing a fresh array
+// each render.
+const NO_IMAGE_FILES: ImageFile[] = []
+
 interface PaneGalleryProps {
   // Path of the image the owning column is currently showing, so the tile for
   // it can be outlined while browsing the folder it lives in. Null when the
@@ -141,8 +147,23 @@ const PaneGallery = ({
     [browsePath, setSortOrder],
   )
 
-  const { directories, imageFiles, isLoading } =
-    useFolderListing(browsePath)
+  // The all-drives root (empty path): the same "climbed past the drive" state
+  // the home browser shows, so a gallery opened from a queue isn't locked to the
+  // drive it opened in.
+  const isDrivesRoot = browsePath === ""
+
+  const listing = useFolderListing(browsePath)
+
+  // At the all-drives root there is no folder to read — surface the connected
+  // drives as tiles (exactly as `FileSystemProvider` does). Everywhere else, the
+  // browsed folder's own listing.
+  const directories = isDrivesRoot
+    ? driveDirectories
+    : listing.directories
+  const imageFiles = isDrivesRoot
+    ? NO_IMAGE_FILES
+    : listing.imageFiles
+  const isLoading = isDrivesRoot ? false : listing.isLoading
 
   const isGroupedView =
     sortOrder === sortOrders.modifiedDesc
@@ -180,9 +201,17 @@ const PaneGallery = ({
     return groupEntriesByDate(combinedEntries)
   }, [directories, imageFiles, isGroupedView])
 
-  const parentPath = pathApi.dirname(browsePath)
-  const hasParentFolder =
-    Boolean(parentPath) && parentPath !== browsePath
+  // Climbing: a normal folder → its `dirname`; a drive root (which is its own
+  // `dirname`, e.g. `C:\` → `C:\`) → the all-drives root (empty path), matching
+  // the home browser's `navigateUpFolderTree`; the all-drives root itself has no
+  // parent.
+  const isDriveRoot =
+    !isDrivesRoot &&
+    pathApi.dirname(browsePath) === browsePath
+  const parentPath = isDriveRoot
+    ? ""
+    : pathApi.dirname(browsePath)
+  const hasParentFolder = !isDrivesRoot
 
   const enterMultiSelect = useCallback(() => {
     setIsMultiSelectMode(true)

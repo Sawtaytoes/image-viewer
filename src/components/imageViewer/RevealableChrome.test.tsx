@@ -7,9 +7,94 @@ import { createRef } from "react"
 import { describe, expect, it, vi } from "vitest"
 
 import FullScreenContext from "../convenience/FullScreenContext"
+import FileSystemContext, {
+  type FileSystemContextValue,
+} from "../fileBrowser/FileSystemContext"
+import WorkspaceContext, {
+  defaultWorkspaceContextValue,
+} from "../workspace/WorkspaceContext"
 import WorkspaceProvider from "../workspace/WorkspaceProvider"
+import ImageViewerContext from "./ImageViewerContext"
 import ImageViewerProvider from "./ImageViewerProvider"
 import RevealableChrome from "./RevealableChrome"
+
+// A legacy single-image scene (`imageFilePath` set, no panes) with spies on the
+// column actions, so a click on "Add column" can be asserted to promote the
+// image before adding the next column.
+const LEGACY_IMAGE_FILES = [
+  { name: "a.bmp", path: "/Landscapes/a.bmp" },
+  { name: "b.bmp", path: "/Landscapes/b.bmp" },
+]
+
+const renderLegacyChrome = (
+  workspaceOverrides: Partial<
+    typeof defaultWorkspaceContextValue
+  > = {},
+) => {
+  const addPane = vi.fn(() => ({
+    currentIndex: 0,
+    folderId: null,
+    id: "pane-1",
+  }))
+  const addPaneAndFill = vi.fn()
+  const assignFolderPathToPane = vi.fn()
+  const leaveImageViewer = vi.fn()
+
+  const fileSystemValue: FileSystemContextValue = {
+    directories: [],
+    filePath: "/Landscapes",
+    imageFiles: LEGACY_IMAGE_FILES,
+    isLoading: false,
+    isRootFilePath: false,
+    navigateUpFolderTree: vi.fn(),
+    setFilePath: vi.fn(),
+  }
+
+  render(
+    <FileSystemContext.Provider value={fileSystemValue}>
+      <WorkspaceContext.Provider
+        value={{
+          ...defaultWorkspaceContextValue,
+          addPane,
+          addPaneAndFill,
+          assignFolderPathToPane,
+          panes: [],
+          ...workspaceOverrides,
+        }}
+      >
+        <ImageViewerContext.Provider
+          value={{
+            imageFileName: "b.bmp",
+            imageFilePath: "/Landscapes/b.bmp",
+            leaveImageViewer,
+            setImageFile: vi.fn(),
+          }}
+        >
+          <FullScreenContext.Provider
+            value={{
+              isFullScreen: false,
+              toggleFullScreen: vi.fn(),
+            }}
+          >
+            <RevealableChrome
+              isVisible
+              setIsVisible={vi.fn()}
+              spawn={vi.fn()}
+              viewerRef={createRef<HTMLDivElement>()}
+            />
+          </FullScreenContext.Provider>
+        </ImageViewerContext.Provider>
+      </WorkspaceContext.Provider>
+    </FileSystemContext.Provider>,
+  )
+
+  return {
+    addPane,
+    addPaneAndFill,
+    assignFolderPathToPane,
+    leaveImageViewer,
+  }
+}
 
 const renderChrome = ({
   isFullScreen,
@@ -66,6 +151,53 @@ describe("RevealableChrome", () => {
     expect(getChromeBar().className).toContain(
       "top-(--title-bar-height)",
     )
+  })
+
+  it("promotes the legacy single image into its own column before adding one, so it isn't dropped", () => {
+    const {
+      addPane,
+      addPaneAndFill,
+      assignFolderPathToPane,
+      leaveImageViewer,
+    } = renderLegacyChrome()
+
+    fireEvent.click(
+      screen.getByRole("button", { name: "Add column" }),
+    )
+
+    // The viewed image becomes column 1: its folder, positioned on that exact
+    // image (index 1 of the two-image listing).
+    expect(addPane).toHaveBeenCalledTimes(1)
+    expect(assignFolderPathToPane).toHaveBeenCalledWith(
+      "pane-1",
+      { name: "Landscapes", path: "/Landscapes" },
+      1,
+    )
+    expect(leaveImageViewer).toHaveBeenCalledTimes(1)
+    // ...then the requested new column is added.
+    expect(addPaneAndFill).toHaveBeenCalledTimes(1)
+  })
+
+  it("adds a plain column (no promotion) once columns already exist", () => {
+    const {
+      addPane,
+      addPaneAndFill,
+      assignFolderPathToPane,
+      leaveImageViewer,
+    } = renderLegacyChrome({
+      panes: [
+        { currentIndex: 0, folderId: null, id: "existing" },
+      ],
+    })
+
+    fireEvent.click(
+      screen.getByRole("button", { name: "Add column" }),
+    )
+
+    expect(addPane).not.toHaveBeenCalled()
+    expect(assignFolderPathToPane).not.toHaveBeenCalled()
+    expect(leaveImageViewer).not.toHaveBeenCalled()
+    expect(addPaneAndFill).toHaveBeenCalledTimes(1)
   })
 
   it("carries a fullscreen-exit control only in fullscreen (the title bar owns it windowed)", () => {

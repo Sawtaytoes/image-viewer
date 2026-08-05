@@ -18,6 +18,16 @@ import WorkspaceContext, {
 } from "../workspace/WorkspaceContext"
 import PaneGallery from "./PaneGallery"
 
+// The setup stub's `getWindowsDrives` is empty, so stand in a single drive for
+// the all-drives root the gallery climbs to (see the drive-root climb test).
+vi.mock("../fileBrowser/driveDirectories", () => ({
+  default: [{ name: "MockDrive", path: "/" }],
+}))
+
+// The gallery captures `window.api.path` once, so mutating `.dirname` in a test
+// is seen live; restore it afterwards.
+const originalDirname = window.api.path.dirname
+
 // useStateSelector subscribes here; emit a blob URL for any path so every
 // thumbnail renders an <img> (and is findable by its alt text). The Proxy hands
 // back the same fake URL for whatever filePath the selector reads — typed
@@ -128,6 +138,7 @@ const renderGallery = () => {
 describe("PaneGallery (in-pane gallery)", () => {
   afterEach(() => {
     window.api.readDirectory = () => Promise.resolve([])
+    window.api.path.dirname = originalDirname
   })
 
   it("opens the tapped image in this column at its index", async () => {
@@ -157,6 +168,70 @@ describe("PaneGallery (in-pane gallery)", () => {
     expect(
       screen.queryByAltText("cat-01.bmp"),
     ).not.toBeInTheDocument()
+  })
+
+  it("climbs past the drive root to the all-drives list instead of locking to the drive", async () => {
+    // POSIX `dirname` where a drive root ("/") is its own parent — the case that
+    // used to disable the up button and strand a queued gallery on one drive.
+    window.api.path.dirname = (targetPath: string) => {
+      const trimmed = targetPath.replace(/\/+$/, "")
+      const index = trimmed.lastIndexOf("/")
+
+      return index <= 0 ? "/" : trimmed.slice(0, index)
+    }
+
+    window.api.readDirectory = (directoryPath: string) =>
+      Promise.resolve(
+        directoryPath === "/cats" ? catsListing : [],
+      )
+
+    render(
+      <ImageLoaderContext.Provider value={imageLoaderValue}>
+        <WorkspaceContext.Provider
+          value={defaultWorkspaceContextValue}
+        >
+          <PaneGallery
+            folderPath="/cats"
+            onClose={vi.fn()}
+            onOpenImage={vi.fn()}
+          />
+        </WorkspaceContext.Provider>
+      </ImageLoaderContext.Provider>,
+    )
+
+    await screen.findByAltText("cat-01.bmp")
+
+    // /cats -> /
+    fireEvent.click(
+      screen.getByRole("button", {
+        name: "Go up a directory",
+      }),
+    )
+
+    // At the drive root the up control MUST stay enabled — the fix. Before it,
+    // `dirname("/") === "/"` made `hasParentFolder` false and disabled it here.
+    expect(
+      screen.getByRole("button", {
+        name: "Go up a directory",
+      }),
+    ).toBeEnabled()
+
+    // / -> "" (all-drives root): the drive tile shows and up is now disabled.
+    fireEvent.click(
+      screen.getByRole("button", {
+        name: "Go up a directory",
+      }),
+    )
+
+    expect(
+      await screen.findByText("MockDrive"),
+    ).toBeInTheDocument()
+
+    expect(
+      screen.getByRole("button", {
+        name: "Go up a directory",
+      }),
+    ).toBeDisabled()
   })
 
   it("leaves the gallery via the close control", async () => {
