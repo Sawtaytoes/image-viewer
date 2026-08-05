@@ -118,3 +118,7 @@ to apply here); everything else is sourced from Image Viewer's own chats, commit
 ### 2026-08-03 — Fullscreen bug fix
 
 - [2026-08-03 — In fullscreen the viewer has ONE top bar, not two](2026-08-03-fullscreen-viewer-has-one-top-bar.md) ← **no covering hit-strip; the title bar stands down for the viewer chrome**
+
+### 2026-08-05 — Dev-server gotcha
+
+- [2026-08-05 — No literal `<head>`/`<body>` tags inside index.html comments](2026-08-05-no-structural-tag-literals-in-index-html-comments.md) ← **Vite injects the HMR preamble at the first `<head>` — a commented one blanks the dev window**
