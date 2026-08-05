@@ -1,0 +1,58 @@
+<!doctype html>
+<!-- Browser entry document — the counterpart to `index.html`, which Electron
+     loads. It is identical EXCEPT the module script loads `/src/browserEntry.tsx`
+     (which installs a browser `window.api` before the renderer) instead of
+     `/src/renderer.tsx` (which assumes the Electron preload already did). Served
+     by `yarn dev:browser`; see `docs/2026-08-05-run-in-a-browser.md`.
+
+     The `<html>` axes and the first-paint colour-scheme script below are copied
+     verbatim from `index.html` — both are pure-browser (localStorage + matchMedia)
+     and must stay in sync with it. -->
+<html
+  lang="en"
+  data-density="kiosk"
+>
+  <head>
+    <meta charset="UTF-8" />
+
+<script>
+  (function () {
+    var KEY = "charcuterie-scheme";
+    var stored;
+    try {
+      stored = window.localStorage.getItem(KEY);
+    } catch (error) {
+      stored = null;
+    }
+    var isDark = stored === "dark" ||
+      ((stored === null || stored === "system") &&
+        window.matchMedia("(prefers-color-scheme: dark)").matches);
+    var scheme = isDark ? "dark" : "light";
+    document.documentElement.setAttribute("data-scheme", scheme);
+    var background = isDark ? "#131822" : "#F5F7FA";
+    var style = document.createElement("style");
+    style.textContent =
+      "html,body{background-color:var(--color-surface-base," +
+      background +
+      ");color-scheme:" + scheme + "}";
+    document.head.appendChild(style);
+  })();
+</script>
+
+    <meta
+      content="max-age=604800"
+      http-equiv="cache-control"
+    />
+
+    <meta
+      content="width=device-width, initial-scale=1"
+      name="viewport"
+    />
+
+    <title>Image Viewer (browser)</title>
+  </head>
+  <body class="bg-surface-base text-content-primary">
+    <div id="reactRoot"></div>
+    <script type="module" src="/src/browserEntry.tsx"></script>
+  </body>
+</html>
