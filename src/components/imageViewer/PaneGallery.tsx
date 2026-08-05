@@ -1,7 +1,6 @@
 import {
   Button,
   IconButton,
-  Select,
   Toast,
   Tooltip,
 } from "@charcuterie/ui"
@@ -21,6 +20,7 @@ import groupEntriesByDate from "../fileBrowser/dateGroups"
 import driveDirectories from "../fileBrowser/driveDirectories"
 import type { MultiSelectContextValue } from "../fileBrowser/MultiSelectContext"
 import MultiSelectContext from "../fileBrowser/MultiSelectContext"
+import SortOrderSelect from "../fileBrowser/SortOrderSelect"
 import sortDirectoryEntries from "../fileBrowser/sortDirectoryEntries"
 import useFolderListing from "../fileBrowser/useFolderListing"
 import ArrowUpwardIcon from "../icons/ArrowUpwardIcon"
@@ -31,7 +31,6 @@ import SettingsContext from "../settings/SettingsContext"
 import {
   getFolderSortOrder,
   isSortOrder,
-  sortOrderOptions,
   sortOrders,
 } from "../settings/sortOrders"
 import WorkspaceContext from "../workspace/WorkspaceContext"
@@ -40,10 +39,10 @@ import PaneGalleryImageTile from "./PaneGalleryImageTile"
 
 const pathApi = window.api.path
 
-// Sort-order picker: the shared `Select` beside the sort glyph, mirroring the
-// file browser's DirectoryControls so the gallery sorts the same folder the
-// same way. `Select`'s own root is `w-full`, so the width lives on this wrapper
-// rather than in the `className` it forwards (that lands on the `<select>`).
+// Sort-order picker: the shared `SortOrderSelect` beside the sort glyph,
+// mirroring the file browser's DirectoryControls so the gallery sorts the same
+// folder the same way. Its trigger is `w-full`, so the fixed width lives on this
+// wrapper alongside the leading glyph.
 const SORT_PICKER_CLASSES =
   "flex w-[132px] flex-none items-center gap-1"
 
@@ -134,10 +133,10 @@ const PaneGallery = ({
     browsePath,
   )
 
-  // `Select` hands back the raw `value` string, and `isSortOrder` is the type
-  // predicate that turns it back into a `SortOrder` without a cast. The guard
-  // is not ceremony: the `<option>`s come from this app, but the DOM is where
-  // the value lives and the narrowing has to happen somewhere real.
+  // `SortOrderSelect` hands back the raw `value` string, and `isSortOrder` is
+  // the type predicate that turns it back into a `SortOrder` without a cast. The
+  // guard is not ceremony: the options come from this app, but the value crosses
+  // through the DOM and the narrowing has to happen somewhere real.
   const changeFolderSortOrder = useCallback(
     (nextSortOrder: string) => {
       if (isSortOrder(nextSortOrder)) {
@@ -365,23 +364,17 @@ const PaneGallery = ({
           {/* Was a click-to-cycle `<button>` whose only statement of its own
               state was the word on its face — nothing announced "Name, 1 of 2",
               and the two orders were reachable only by pressing until the label
-              changed. It is a real `<select>` now.
+              changed. It is a non-native `Listbox` now (`SortOrderSelect`).
 
-              `key` re-seeds it, and it has to: `Select` is uncontrolled by
-              design (the platform owns a `<select>`'s value), while the sort
-              order here is stored *per folder path* — so drilling into a folder
-              with a different order is a second writer, and without the key the
-              control would keep showing the previous folder's choice with a
-              green typecheck. */}
+              No `key` remount: `SortOrderSelect` is controlled by `value`, so
+              drilling into a folder with a different per-path order re-seeds the
+              picker on its own — the remount the uncontrolled native `<select>`
+              needed is gone. */}
           <div className={SORT_PICKER_CLASSES}>
             <SortIcon />
 
-            <Select
-              key={browsePath}
-              label="Sort order"
+            <SortOrderSelect
               onChange={changeFolderSortOrder}
-              options={sortOrderOptions}
-              size="sm"
               value={sortOrder}
             />
           </div>
