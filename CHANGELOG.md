@@ -1,3 +1,15 @@
+# [2.7.0](https://github.com/Sawtaytoes/image-viewer/compare/v2.6.3...v2.7.0) (2026-08-05)
+
+
+### Bug Fixes
+
+* viewer UI, navigation, and queue fixes ([#11](https://github.com/Sawtaytoes/image-viewer/issues/11)) ([095c08b](https://github.com/Sawtaytoes/image-viewer/commit/095c08bb08ca4ff0c9e8165186bbb296e8e3e44a))
+
+
+### Features
+
+* run the renderer in a plain browser (dev:browser) ([#12](https://github.com/Sawtaytoes/image-viewer/issues/12)) ([338bd6b](https://github.com/Sawtaytoes/image-viewer/commit/338bd6b64f953447f9ab9d95536104ec0113e08c))
+
 ## [2.6.3](https://github.com/Sawtaytoes/image-viewer/compare/v2.6.2...v2.6.3) (2026-08-05)
 
 
