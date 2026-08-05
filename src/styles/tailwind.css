@@ -254,3 +254,34 @@ body {
 ::-webkit-scrollbar-corner {
   background-color: var(--color-surface-sunken);
 }
+
+/* Dank Mono — the owner's preferred mono, over the shipped Victor Mono.
+   image-viewer builds an OFFLINE EXE, so there is no origin to serve a
+   woff2 from and nothing to bind-mount: the font is picked up ONLY from
+   the machine's installed copy via local(), with no url() and no bytes
+   shipped in the artifact. A machine without Dank Mono installed degrades
+   to Victor Mono. Mechanism: charcuterie
+   docs/decisions/2026-08-05-dank-mono-reaches-the-fleet-by-bind-mount.md */
+@font-face {
+  font-family: "Dank Mono";
+  src: local("Dank Mono");
+  font-weight: 400;
+  font-style: normal;
+  font-display: swap;
+}
+@font-face {
+  font-family: "Dank Mono";
+  src: local("Dank Mono Italic"), local("Dank Mono");
+  font-weight: 400;
+  font-style: italic;
+  font-display: swap;
+}
+
+/* Unlayered so it beats @charcuterie/tokens' layered --font-mono; Victor
+   Mono stays the fallback for machines without the font installed. */
+:root {
+  --font-mono:
+    "Dank Mono", "Victor Mono", ui-monospace,
+    SFMono-Regular, "SF Mono", Menlo, Consolas,
+    "Liberation Mono", monospace;
+}
