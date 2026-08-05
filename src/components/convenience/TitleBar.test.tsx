@@ -1,9 +1,18 @@
-import { act, render, screen } from "@testing-library/react"
+import {
+  act,
+  fireEvent,
+  render,
+  screen,
+} from "@testing-library/react"
 import { describe, expect, it, vi } from "vitest"
 
 import ImageViewerContext, {
   type ImageViewerContextValue,
 } from "../imageViewer/ImageViewerContext"
+import WorkspaceContext, {
+  defaultWorkspaceContextValue,
+  type WorkspaceContextValue,
+} from "../workspace/WorkspaceContext"
 import WorkspaceProvider from "../workspace/WorkspaceProvider"
 import FullScreenContext from "./FullScreenContext"
 import TitleBar from "./TitleBar"
@@ -140,5 +149,69 @@ describe("TitleBar", () => {
     })
 
     expect(getBar().style.transform).toBe("translateY(0)")
+  })
+})
+
+// The queue actions read straight off `WorkspaceContext`, so an explicit
+// provider (spreading the real default) drives them directly — no async
+// `WorkspaceProvider` hydration off `window.api.queue.hasSaved()` to await, and
+// `clearSavedQueue` is a spy rather than a real disk write. Same pattern as
+// `RevealableChrome.test`.
+const renderTitleBarWithWorkspace = (
+  workspaceOverrides: Partial<WorkspaceContextValue>,
+) =>
+  render(
+    <WorkspaceContext.Provider
+      value={{
+        ...defaultWorkspaceContextValue,
+        ...workspaceOverrides,
+      }}
+    >
+      <ImageViewerContext.Provider
+        value={{
+          imageFileName: undefined,
+          imageFilePath: undefined,
+          leaveImageViewer: vi.fn(),
+          setImageFile: vi.fn(),
+        }}
+      >
+        <FullScreenContext.Provider
+          value={{
+            isFullScreen: false,
+            toggleFullScreen: vi.fn(),
+          }}
+        >
+          <TitleBar />
+        </FullScreenContext.Provider>
+      </ImageViewerContext.Provider>
+    </WorkspaceContext.Provider>,
+  )
+
+describe("TitleBar 'Delete saved'", () => {
+  it("shows the button when a saved queue exists and clears the saved slot on click", () => {
+    const clearSavedQueue = vi.fn()
+
+    renderTitleBarWithWorkspace({
+      clearSavedQueue,
+      hasSavedQueue: true,
+    })
+
+    const deleteSaved = screen.getByRole("button", {
+      name: "Delete saved",
+    })
+
+    fireEvent.click(deleteSaved)
+
+    expect(clearSavedQueue).toHaveBeenCalledTimes(1)
+  })
+
+  it("hides the button when there is no saved queue", () => {
+    renderTitleBarWithWorkspace({ hasSavedQueue: false })
+
+    expect(
+      screen.queryByRole("button", {
+        name: "Delete saved",
+      }),
+    ).not.toBeInTheDocument()
   })
 })
