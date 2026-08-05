@@ -1,3 +1,10 @@
+## [2.6.3](https://github.com/Sawtaytoes/image-viewer/compare/v2.6.2...v2.6.3) (2026-08-05)
+
+
+### Bug Fixes
+
+* fullscreen single top bar, dev-server preamble, and Vite 8 toolchain ([#6](https://github.com/Sawtaytoes/image-viewer/issues/6)) ([64f8b0b](https://github.com/Sawtaytoes/image-viewer/commit/64f8b0b296109282bad1ec36af221a08fb15c82b))
+
 ## [2.6.2](https://github.com/Sawtaytoes/image-viewer/compare/v2.6.1...v2.6.2) (2026-08-04)
 
 
