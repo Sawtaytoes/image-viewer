@@ -31,6 +31,14 @@ const pathApi = window.api.path
 const sortPickerClassName =
   "flex w-[132px] flex-none items-center gap-1"
 
+// Shared metrics for every breadcrumb rung so the trail doesn't shift between
+// the current segment and the clickable ones. `min-w-[2rem]` + `text-center`
+// give a real tap target even to a one-character root label (the POSIX `/`,
+// which was ~1ch and near-impossible to hit); the padding lifts the rest toward
+// this touch-first app's target size.
+const breadcrumbSegmentClassName =
+  "inline-flex min-w-[2rem] items-center justify-center rounded-[5px] px-2 py-1 text-center"
+
 // One rung of the ancestor trail: what to show, and where clicking it goes.
 interface BreadcrumbSegment {
   label: string
@@ -162,12 +170,14 @@ const DirectoryControls = () => {
                   // The current folder ("you are here") — same metrics as a
                   // segment button so the trail doesn't shift, but not
                   // interactive.
-                  <span className="cursor-default px-1 py-0.5 font-semibold">
+                  <span
+                    className={`${breadcrumbSegmentClassName} cursor-default font-semibold`}
+                  >
                     {label}
                   </span>
                 ) : (
                   <button
-                    className="cursor-pointer border-0 bg-transparent px-1 py-0.5 text-inherit hover:underline"
+                    className={`${breadcrumbSegmentClassName} cursor-pointer border-0 bg-transparent text-inherit hover:bg-intent-neutral-surface-hover`}
                     onClick={() => {
                       setFilePath(path)
                     }}

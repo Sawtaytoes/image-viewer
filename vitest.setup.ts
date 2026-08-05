@@ -53,6 +53,7 @@ const api: Window["api"] = {
     add: (folder: QueuedFolder) => Promise.resolve(folder),
     addMany: () => Promise.resolve([]),
     clear: () => {},
+    clearSaved: () => Promise.resolve(),
     get: () => Promise.resolve([]),
     hasSaved: () => Promise.resolve(false),
     load: () => Promise.resolve([]),

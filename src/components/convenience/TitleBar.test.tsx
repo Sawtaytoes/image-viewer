@@ -90,14 +90,15 @@ describe("TitleBar", () => {
     ).toBeNull()
   })
 
-  it("ignores the summon swipe in fullscreen while the viewer is open", () => {
+  it("stays slid up in fullscreen while the viewer is open, no matter what pointer events arrive", () => {
     renderTitleBar({
       imageFilePath: "C:\\pics\\photo.jpg",
       isFullScreen: true,
     })
 
-    // A downward drag from the top edge — the gesture that reveals the bar when
-    // it IS the active bar — must do nothing here.
+    // The old fullscreen summon gesture is gone: a downward drag from the top
+    // edge must not bring the standing-down bar back — the viewer chrome is the
+    // one summonable bar in this state.
     act(() => {
       document.documentElement.dispatchEvent(
         createPointerEvent("pointerdown", { clientY: 5 }),
@@ -113,36 +114,23 @@ describe("TitleBar", () => {
     )
   })
 
-  it("summons a grab handle that cannot intercept taps once hidden in fullscreen", () => {
+  it("pins the bar open in the fullscreen file browser and mounts no reveal strip, so it never covers the directory controls", () => {
     const { container } = renderTitleBar({
       isFullScreen: true,
     })
 
-    // Dismiss the initial flash with an upward swipe so the bar hides without
-    // waiting out the auto-hide timer.
-    act(() => {
-      document.documentElement.dispatchEvent(
-        createPointerEvent("pointerdown", { clientY: 300 }),
-      )
+    // No viewer open: the bar is pinned (not auto-hiding), so the fullscreen
+    // browser insets its content below it rather than the bar overlaying the
+    // directory controls (2026-08-05 decision — "pin the bar, push the content
+    // down").
+    expect(getBar().style.transform).toBe("translateY(0)")
 
-      document.documentElement.dispatchEvent(
-        createPointerEvent("pointermove", { clientY: 100 }),
-      )
-    })
-
-    expect(getBar().style.transform).toBe(
-      "translateY(-100%)",
-    )
-
-    // The only summon affordance left is the grab handle — and it is
-    // `pointer-events-none`, so a tap on a directory control beneath the top
-    // edge reaches the control instead of being swallowed (the regression
-    // `2026-06-04-up-arrow-navigates-up-not-dropdown` locked out).
-    const handleWrapper = container.querySelector(
-      ".pointer-events-none",
-    )
-
-    expect(handleWrapper).not.toBeNull()
+    // Nothing is mounted to summon a hidden bar — there is no hidden state to
+    // summon, and no covering strip that could swallow a tap on the directory
+    // controls beneath the top edge.
+    expect(
+      container.querySelector(".pointer-events-none"),
+    ).toBeNull()
   })
 
   it("keeps the bar pinned open when windowed regardless of the viewer", () => {
