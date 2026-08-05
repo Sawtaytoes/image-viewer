@@ -59,10 +59,15 @@ import VirtualizedList from "./VirtualizedList"
 const fileBrowserClassName =
   "grid w-full grid-rows-[auto_auto_auto_1fr] bg-surface-base text-content-primary"
 
+// Windowed AND the fullscreen file browser: the title bar is pinned at the top,
+// so the browser sits below it. In fullscreen the bar no longer auto-hides
+// (2026-08-05 decision — "pin the bar, push the content down"), so insetting
+// here is what keeps the pinned bar from overlaying the directory controls.
 const insetFileBrowserClassName = `${fileBrowserClassName} mt-(--title-bar-height) h-[calc(100vh-var(--title-bar-height))]`
 
-// Fullscreen auto-hides the title bar, so the browser reclaims that top strip.
-// The bar reveals as an overlay above it rather than pushing this down.
+// Only when the viewer is open in fullscreen: the title bar stands down and the
+// fixed viewer overlay covers this browser, so it fills the screen behind it
+// (its own top chrome is gated off in that state anyway).
 const fullBleedFileBrowserClassName = `${fileBrowserClassName} mt-0 h-screen`
 
 // `Toast` renders an `<li>` — it is built to sit in `ToastRegion`'s `<ul>`, and
@@ -752,7 +757,7 @@ const FileBrowser = () => {
     >
       <div
         className={
-          isFullScreen
+          isFullScreen && isViewerOpen
             ? fullBleedFileBrowserClassName
             : insetFileBrowserClassName
         }

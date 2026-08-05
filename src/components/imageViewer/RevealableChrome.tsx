@@ -16,6 +16,7 @@ import {
 } from "react"
 
 import FullScreenContext from "../convenience/FullScreenContext"
+import FileSystemContext from "../fileBrowser/FileSystemContext"
 import AddIcon from "../icons/AddIcon"
 import ArrowBackIcon from "../icons/ArrowBackIcon"
 import FullscreenExitIcon from "../icons/FullscreenExitIcon"
@@ -27,6 +28,8 @@ import useDisplayMenuItems from "./useDisplayMenuItems"
 import type { EdgeSwipePoint } from "./useEdgeSwipe"
 import useEdgeSwipe from "./useEdgeSwipe"
 import type { SpawnTapFeedback } from "./useTapFeedback"
+
+const pathApi = window.api.path
 
 const AUTO_HIDE_MS = 3000
 
@@ -81,14 +84,24 @@ const RevealableChrome = ({
   viewerRef,
 }: RevealableChromeProps) => {
   const {
+    addPane,
     addPaneAndFill,
+    assignFolderPathToPane,
     clearPanes,
     isChromeRevealSuppressed,
+    panes,
     suppressChromeReveal,
   } = useContext(WorkspaceContext)
 
-  const { leaveImageViewer } = useContext(
+  const { imageFilePath, leaveImageViewer } = useContext(
     ImageViewerContext,
+  )
+
+  // The legacy single-image view's folder + listing: that image lives at its
+  // position in `imageFiles` of the current `filePath`, which is exactly what a
+  // promoted column needs (see `onAddPane`).
+  const { filePath, imageFiles } = useContext(
+    FileSystemContext,
   )
 
   const { isFullScreen, toggleFullScreen } = useContext(
@@ -204,10 +217,45 @@ const RevealableChrome = ({
   }, [clearPanes, leaveImageViewer])
 
   const onAddPane = useCallback(() => {
+    // Adding a column from the legacy single-image view would otherwise DROP
+    // that image: `hasLegacyColumn` (in `ImageViewer`) is `panes.length === 0 &&
+    // imageFilePath`, so the instant the first pane appears the single-image
+    // column unmounts and the image "doesn't count". Promote it to a real column
+    // first — queue its folder, positioned on the exact image — then add the
+    // requested new column and clear the now-promoted legacy image.
+    if (imageFilePath && panes.length === 0) {
+      const legacyPane = addPane()
+
+      const legacyIndex = imageFiles.findIndex(
+        ({ path }) => path === imageFilePath,
+      )
+
+      assignFolderPathToPane(
+        legacyPane.id,
+        {
+          name: pathApi.basename(filePath),
+          path: filePath,
+        },
+        Math.max(0, legacyIndex),
+      )
+
+      leaveImageViewer()
+    }
+
     addPaneAndFill()
 
     reveal()
-  }, [addPaneAndFill, reveal])
+  }, [
+    addPane,
+    addPaneAndFill,
+    assignFolderPathToPane,
+    filePath,
+    imageFilePath,
+    imageFiles,
+    leaveImageViewer,
+    panes.length,
+    reveal,
+  ])
 
   const openDisplayMenu = useCallback(() => {
     // Keep the bar up while the menu is open (the fullscreen overlay sits above

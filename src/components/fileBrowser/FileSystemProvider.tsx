@@ -6,8 +6,9 @@ import {
   useMemo,
   useState,
 } from "react"
-
-import type { ImageFile } from "../../types"
+// The drive list surfaced at the root (empty filePath), shared with the
+// in-viewer `PaneGallery` so both climb to the same all-drives view.
+import driveDirectories from "./driveDirectories"
 import FileSystemContext, {
   type FileSystemContextValue,
 } from "./FileSystemContext"
@@ -16,15 +17,6 @@ import useFolderListing from "./useFolderListing"
 // All Node/Electron access goes through the preload bridge. See
 // docs/research/0002-electron-security-model.md.
 const pathApi = window.api.path
-
-// The drive list shown at the root (empty filePath). Mirrors what
-// `useDirectories` would produce for drive entries, minus a folder to list.
-const driveDirectories: ImageFile[] = window.api
-  .getWindowsDrives()
-  .map((driveLetter) => ({
-    name: driveLetter,
-    path: driveLetter,
-  }))
 
 // Resolved in the main process from the launch path or the configured default
 // directory (IMAGE_VIEWER_DEFAULT_DIRECTORY). Empty string ⇒ show the drive list.

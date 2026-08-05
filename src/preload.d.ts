@@ -77,6 +77,9 @@ declare global {
           folders: QueuedFolder[],
         ) => Promise<QueuedFolder[]>
         clear: () => void
+        // Delete the saved slot entirely (distinct from `clear`, which empties
+        // the live queue); main broadcasts the new saved-state.
+        clearSaved: () => Promise<void>
         get: () => Promise<QueuedFolder[]>
         // Whether a saved slot currently exists (gates the "Load queue"
         // button).
