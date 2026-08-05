@@ -114,3 +114,12 @@ to apply here); everything else is sourced from Image Viewer's own chats, commit
 ### 2026-08-03 — Charcuterie 1.1.0: follow the OS scheme
 
 - [2026-08-03 — Follow the OS colour scheme via Electron `nativeTheme`, not `matchMedia`](2026-08-03-follow-the-os-scheme-via-electron-nativetheme.md) ← **the default is now `system`, not always-dark**
+
+### 2026-08-03 — Fullscreen bug fix
+
+- [2026-08-03 — In fullscreen the viewer has ONE top bar, not two](2026-08-03-fullscreen-viewer-has-one-top-bar.md) ← **no covering hit-strip; the title bar stands down for the viewer chrome**
+
+### 2026-08-05 — Dev-server gotcha + toolchain
+
+- [2026-08-05 — No literal `<head>`/`<body>` tags inside index.html comments](2026-08-05-no-structural-tag-literals-in-index-html-comments.md) ← **Vite injects the HMR preamble at the first `<head>` — a commented one blanks the dev window**
+- [2026-08-05 — electron-forge is on a Vite 8 alpha; move to stable when it ships](2026-08-05-electron-forge-on-vite8-alpha-move-to-stable-when-available.md) ← **standing follow-up: bump `@electron-forge/*` off `8.0.0-alpha.10` every time we work here**
