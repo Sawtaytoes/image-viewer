@@ -181,10 +181,9 @@ const fullScreen = {
 
 // A browser tab is one "window"; `createNewWindow` opens another tab at the same
 // app, carrying the launch path (and the spawned-viewer flag) as query params
-// the way main passes them as argv. Note: each tab keeps its own in-memory queue
-// (there's no shared main process), so a spawned viewer boots empty rather than
-// mirroring this window's queue — enough to exercise the flow, not a full
-// multi-window sync.
+// the way main passes them as argv. The queue and "open elsewhere" set are
+// shared across tabs via the `localStorage` + `BroadcastChannel` layer below, so
+// a spawned viewer boots mirroring this window's queue rather than empty.
 const createNewWindow = (payload: {
   filePath?: string
   displayId?: number
@@ -232,19 +231,131 @@ const isSpawnedViewer = new URLSearchParams(
   window.location.search,
 ).has("spawnedViewer")
 
-// No other windows exist in the browser, so "open elsewhere" is always empty
-// and nothing ever changes it.
-const openFolders = {
-  get: (): Promise<string[]> => Promise.resolve([]),
-  onChanged:
-    (_callback: (paths: string[]) => void): (() => void) =>
-    () => {},
-  set: (_paths: string[]): void => {},
+// --- Shared queue + open-folders backing (harness only) ---
+//
+// The Electron app shares the queue (and the "open elsewhere" set) through the
+// main process; a browser tab has no main, so a window opened via
+// `createNewWindow` (`window.open`, incl. `?spawnedViewer=1`) used to boot with
+// an empty queue and could not mirror its source. Back the shared state with
+// `localStorage` (a freshly-opened tab hydrates) plus a `BroadcastChannel` (open
+// tabs update live), mirroring main's shared store closely enough to exercise
+// the spawn-on-display flow. Both are best-effort: without them (an older or
+// embedded browser) each tab keeps its own in-memory copy, exactly as before.
+const QUEUE_STORAGE_KEY = "imageViewer.browser.queue"
+const SAVED_QUEUE_STORAGE_KEY =
+  "imageViewer.browser.savedQueue"
+const OPEN_FOLDERS_STORAGE_KEY =
+  "imageViewer.browser.openFolders"
+const QUEUE_CHANNEL_NAME = "image-viewer-queue"
+
+// This tab's identity, so its own open folders are never counted among the
+// folders open *elsewhere* — the same per-window exclusion main does.
+const tabId = crypto.randomUUID()
+
+// Guarded reads/writes, matching `SettingsProvider`: a private-mode or disabled
+// `localStorage` (or malformed JSON) degrades to the in-memory copy rather than
+// throwing.
+const readStored = <Value>(
+  key: string,
+  fallback: Value,
+): Value => {
+  try {
+    const raw = window.localStorage.getItem(key)
+
+    return raw === null
+      ? fallback
+      : (JSON.parse(raw) as Value)
+  } catch {
+    return fallback
+  }
 }
 
-// In-memory single-window stand-in for main's shared queue. The renderer tracks
-// its own queue optimistically and only reconciles via `onChanged`, so echoing
-// the stored list back is enough.
+const writeStored = (key: string, value: unknown): void => {
+  try {
+    window.localStorage.setItem(key, JSON.stringify(value))
+  } catch {
+    // No persistence — live tabs still sync via the channel below.
+  }
+}
+
+// One channel carries all three kinds of update. Constructed once and guarded so
+// an environment without `BroadcastChannel` degrades to per-tab silently.
+type QueueBroadcastMessage =
+  | { folders: QueuedFolder[]; kind: "queue" }
+  | { folders: QueuedFolder[] | null; kind: "savedQueue" }
+  | { kind: "openFolders"; paths: string[]; tabId: string }
+
+const queueChannel: BroadcastChannel | null = (() => {
+  try {
+    return typeof BroadcastChannel === "undefined"
+      ? null
+      : new BroadcastChannel(QUEUE_CHANNEL_NAME)
+  } catch {
+    return null
+  }
+})()
+
+// The folders open in OTHER tabs (never this one), mirroring main's per-window
+// tracking so a spawned viewer skips whatever another window already shows. Each
+// tab reports its own paths under its `tabId`; the union of everyone else's is
+// the "open elsewhere" set the workspace reads.
+let ownOpenPaths: string[] = []
+const othersOpenPaths = new Map<string, string[]>()
+const openFolderListeners = new Set<
+  (paths: string[]) => void
+>()
+
+const openFoldersElsewhere = (): string[] => [
+  ...new Set(Array.from(othersOpenPaths.values()).flat()),
+]
+
+const emitOpenFolders = (): void => {
+  const elsewhere = openFoldersElsewhere()
+
+  for (const listener of openFolderListeners) {
+    listener([...elsewhere])
+  }
+}
+
+// Persist the full `tabId → paths` map so a freshly-opened tab hydrates what's
+// already open elsewhere before anyone re-broadcasts.
+const persistOpenFolders = (): void => {
+  const stored = readStored<Record<string, string[]>>(
+    OPEN_FOLDERS_STORAGE_KEY,
+    {},
+  )
+
+  stored[tabId] = ownOpenPaths
+  writeStored(OPEN_FOLDERS_STORAGE_KEY, stored)
+}
+
+const openFolders = {
+  get: (): Promise<string[]> =>
+    Promise.resolve(openFoldersElsewhere()),
+  onChanged: (
+    callback: (paths: string[]) => void,
+  ): (() => void) => {
+    openFolderListeners.add(callback)
+
+    return () => openFolderListeners.delete(callback)
+  },
+  // Reporting this tab's own paths never changes its *own* "open elsewhere" set,
+  // so it only persists and broadcasts — no local `emitOpenFolders`.
+  set: (paths: string[]): void => {
+    ownOpenPaths = [...paths]
+    persistOpenFolders()
+    queueChannel?.postMessage({
+      kind: "openFolders",
+      paths: ownOpenPaths,
+      tabId,
+    } satisfies QueueBroadcastMessage)
+  },
+}
+
+// Mirror of main's shared queue, now backed by the `localStorage` +
+// `BroadcastChannel` layer above so every tab sees the same live/saved queue.
+// The renderer tracks its own queue optimistically and reconciles via
+// `onChanged`, so echoing the stored list back is enough.
 let liveQueue: QueuedFolder[] = []
 let savedQueue: QueuedFolder[] | null = null
 const queueListeners = new Set<
@@ -264,13 +375,35 @@ const emitSaved = (): void => {
   }
 }
 
+// A local mutation, published everywhere: persist for fresh tabs, tell this
+// tab's subscribers, then tell the other tabs (which replay via the channel
+// handler onto THEIR subscribers). `BroadcastChannel` never echoes to the
+// sender, so there is no loop.
+const commitQueue = (): void => {
+  writeStored(QUEUE_STORAGE_KEY, liveQueue)
+  emitQueue()
+  queueChannel?.postMessage({
+    folders: liveQueue,
+    kind: "queue",
+  } satisfies QueueBroadcastMessage)
+}
+
+const commitSaved = (): void => {
+  writeStored(SAVED_QUEUE_STORAGE_KEY, savedQueue)
+  emitSaved()
+  queueChannel?.postMessage({
+    folders: savedQueue,
+    kind: "savedQueue",
+  } satisfies QueueBroadcastMessage)
+}
+
 const queue = {
   add: (folder: QueuedFolder): Promise<QueuedFolder> => {
     if (
       !liveQueue.some((entry) => entry.id === folder.id)
     ) {
       liveQueue = [...liveQueue, folder]
-      emitQueue()
+      commitQueue()
     }
 
     return Promise.resolve(folder)
@@ -285,18 +418,18 @@ const queue = {
 
     if (additions.length > 0) {
       liveQueue = [...liveQueue, ...additions]
-      emitQueue()
+      commitQueue()
     }
 
     return Promise.resolve([...liveQueue])
   },
   clear: (): void => {
     liveQueue = []
-    emitQueue()
+    commitQueue()
   },
   clearSaved: (): Promise<void> => {
     savedQueue = null
-    emitSaved()
+    commitSaved()
 
     return Promise.resolve()
   },
@@ -306,7 +439,7 @@ const queue = {
     Promise.resolve(savedQueue !== null),
   load: (): Promise<QueuedFolder[]> => {
     liveQueue = savedQueue ? [...savedQueue] : []
-    emitQueue()
+    commitQueue()
 
     return Promise.resolve([...liveQueue])
   },
@@ -328,14 +461,49 @@ const queue = {
     liveQueue = liveQueue.filter(
       (entry) => entry.id !== folderId,
     )
-    emitQueue()
+    commitQueue()
   },
   save: (): Promise<boolean> => {
     savedQueue = [...liveQueue]
-    emitSaved()
+    commitSaved()
 
     return Promise.resolve(true)
   },
+}
+
+// Replay another tab's update onto this tab: replace the mirrored state and fire
+// this tab's subscribers, the way an Electron `*:changed` broadcast would. The
+// channel never delivers a tab its own message, so `postMessage` above and this
+// handler can't loop.
+const handleQueueMessage = (
+  message: QueueBroadcastMessage,
+): void => {
+  switch (message.kind) {
+    case "queue": {
+      liveQueue = message.folders
+      emitQueue()
+
+      break
+    }
+    case "savedQueue": {
+      savedQueue = message.folders
+      emitSaved()
+
+      break
+    }
+    case "openFolders": {
+      // Track everyone else's paths; a tab's own report is "here", not
+      // "elsewhere" (and the channel wouldn't echo it anyway).
+      if (message.tabId === tabId) {
+        break
+      }
+
+      othersOpenPaths.set(message.tabId, message.paths)
+      emitOpenFolders()
+
+      break
+    }
+  }
 }
 
 // Assemble and install `window.api`. MUST run before the renderer bundle is
@@ -344,6 +512,53 @@ const queue = {
 export const installBrowserApi = (): void => {
   const fakeFileSystem = createFakeFileSystem({
     path: posixPath,
+  })
+
+  // Hydrate the shared queue + open-folders state from `localStorage` BEFORE the
+  // renderer's providers read `window.api` — a tab spawned via `window.open`
+  // boots with whatever the source tab last persisted rather than empty.
+  liveQueue = readStored<QueuedFolder[]>(
+    QUEUE_STORAGE_KEY,
+    [],
+  )
+  savedQueue = readStored<QueuedFolder[] | null>(
+    SAVED_QUEUE_STORAGE_KEY,
+    null,
+  )
+
+  const storedOpenFolders = readStored<
+    Record<string, string[]>
+  >(OPEN_FOLDERS_STORAGE_KEY, {})
+
+  for (const [storedTabId, paths] of Object.entries(
+    storedOpenFolders,
+  )) {
+    // Everyone else's entry is "open elsewhere"; a stale entry left by this same
+    // tabId (there is none on a fresh load) would wrongly count as elsewhere.
+    if (storedTabId !== tabId) {
+      othersOpenPaths.set(storedTabId, paths)
+    }
+  }
+
+  // Live cross-tab updates: another tab's mutation replays onto this one.
+  if (queueChannel) {
+    queueChannel.onmessage = (
+      event: MessageEvent<QueueBroadcastMessage>,
+    ) => {
+      handleQueueMessage(event.data)
+    }
+  }
+
+  // Drop this tab's open-folders entry when it closes, so a folder it had open
+  // does not linger as "open elsewhere" for the tabs that outlive it.
+  window.addEventListener("beforeunload", () => {
+    const stored = readStored<Record<string, string[]>>(
+      OPEN_FOLDERS_STORAGE_KEY,
+      {},
+    )
+
+    delete stored[tabId]
+    writeStored(OPEN_FOLDERS_STORAGE_KEY, stored)
   })
 
   // Keep the fullscreen flag in step with the real Fullscreen API, so leaving
