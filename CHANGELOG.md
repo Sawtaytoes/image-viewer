@@ -1,3 +1,12 @@
+# [2.8.0](https://github.com/Sawtaytoes/image-viewer/compare/v2.7.0...v2.8.0) (2026-08-05)
+
+
+### Features
+
+* replace native sort Select with a non-native Listbox ([#14](https://github.com/Sawtaytoes/image-viewer/issues/14)) ([9925194](https://github.com/Sawtaytoes/image-viewer/commit/99251949321aadff131ab55a4fdf9bd1f2427616))
+* sync the browser harness queue across tabs ([#16](https://github.com/Sawtaytoes/image-viewer/issues/16)) ([be2a831](https://github.com/Sawtaytoes/image-viewer/commit/be2a8310b5018ab7a9dfa9896f1e185c575bb0d9))
+* use Dank Mono as the mono from the machine's installed copy ([#10](https://github.com/Sawtaytoes/image-viewer/issues/10)) ([fe2bdee](https://github.com/Sawtaytoes/image-viewer/commit/fe2bdee204233b1d579dd1391e5c31dae8263437))
+
 # [2.7.0](https://github.com/Sawtaytoes/image-viewer/compare/v2.6.3...v2.7.0) (2026-08-05)
 
 
