@@ -1,3 +1,17 @@
+## [2.6.2](https://github.com/Sawtaytoes/image-viewer/compare/v2.6.1...v2.6.2) (2026-08-04)
+
+
+### Bug Fixes
+
+* adopt @charcuterie/ui@2.2.0 neutral-default switcher; drop the !important hover hack ([#9](https://github.com/Sawtaytoes/image-viewer/issues/9)) ([f6505f8](https://github.com/Sawtaytoes/image-viewer/commit/f6505f8af04078bfa2ccecfa28522793422fb5f1))
+
+## [2.6.1](https://github.com/Sawtaytoes/image-viewer/compare/v2.6.0...v2.6.1) (2026-08-04)
+
+
+### Bug Fixes
+
+* colour-scheme button hover + focus visible in the title bar ([#8](https://github.com/Sawtaytoes/image-viewer/issues/8)) ([49b67ce](https://github.com/Sawtaytoes/image-viewer/commit/49b67ce306efcb807c73126ded7343e6a51ccd65))
+
 # [2.6.0](https://github.com/Sawtaytoes/image-viewer/compare/v2.5.0...v2.6.0) (2026-08-03)
 
 

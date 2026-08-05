@@ -37,6 +37,16 @@ const colorSchemeIcons = {
 // the same `[-webkit-app-region:no-drag]` every other control in that strip
 // carries, plus `ml-auto` to start the right-aligned cluster. `size="sm"` matches
 // the bar's other icon controls (44px touch target at the kiosk density).
+//
+// No hover/active override anymore. Earlier the ghost switcher inherited the
+// `IconButton` *accent* intent, whose `hover:bg-intent-accent-surface` was
+// invisible against this app's `bg-surface-sunken` title bar, so an
+// `!`-important neutral override was needed. `@charcuterie/ui@2.2.0` gives
+// `ColorSchemeSwitcher` an `intent` prop that defaults to **neutral** — the hover
+// is now `bg-intent-neutral-surface` and the icon `text-intent-neutral-content`,
+// matching the sibling title-bar controls out of the box — so the hack is gone
+// and we rely on the default. The `focus-visible` ring the ghost `IconButton`
+// ships is untouched.
 const ColorSchemeControl = () => (
   <Tooltip label="Colour scheme: light, dark, or follow the system">
     <ColorSchemeSwitcher

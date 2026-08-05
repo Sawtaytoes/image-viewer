@@ -1,16 +1,17 @@
-import { Button, Modal } from "@charcuterie/ui"
+import { Button, Dialog } from "@charcuterie/ui"
 import { memo } from "react"
 
 import useKeyboardControls from "../convenience/useKeyboardControls"
 
-// `@charcuterie/ui`'s `Modal` is a real `<dialog>` opened with `showModal()`, so
-// the platform now owns the three things this file hand-rolled: the top layer
-// (no `z-[99999]`), the focus trap, and `::backdrop` (no full-viewport `<div>`).
-// The `isRendered` state that kept the old markup mounted through its close
-// animation is gone with them — see `src/styles/tailwind.css`, where a
-// `@starting-style` + `allow-discrete` transition animates the dialog both ways
-// off `[open]` itself, which is what the JS unmount-on-`animationend` was
-// simulating.
+// `@charcuterie/ui`'s `Dialog` (the chrome layer over its portalled `Modal`
+// base) owns the three things this file used to hand-roll: the stacking layer
+// (no `z-[99999]`), the focus trap, and the scrim (no full-viewport `<div>`).
+// M8 (`ui@2.0.0`) moved all of that off the native `<dialog>`/`showModal()` top
+// layer and onto a portal to `document.body`. The `isRendered` state that kept
+// the old markup mounted through a close animation is gone with it — and so is
+// the animation: Charcuterie's overlays do not transition (`OverlayPanel`
+// unmounts the frame it hides), so the confirm now appears and dismisses at
+// once, matching the fleet.
 //
 // The two buttons still splay to opposite ends. That is the mis-tap guard the
 // delete-confirmation decision asks for in layout form
@@ -26,7 +27,7 @@ export interface ConfirmationModalProps {
   closeButtonText: string
   confirmButtonText: string
   isVisible?: boolean
-  // Was `children`. `Modal` names its dialog from `heading`, which is a string
+  // Was `children`. `Dialog` names its dialog from `heading`, which is a string
   // — and the question *is* the name here, so putting it in the body and
   // inventing a shorter title would give a screen reader the invented one and
   // leave the question unread until it walked into the dialog.
@@ -43,11 +44,9 @@ const ConfirmationModal = ({
   onClose,
   onConfirm,
 }: ConfirmationModalProps) => {
-  // Escape and the outside click belong to `Modal` now (`onCancel`, and a
-  // target/currentTarget compare on the `<dialog>` — a press on a backdrop
-  // targets the dialog itself), so only the two keys the platform has no
-  // opinion about are left here. Backspace stays because this app's whole
-  // keyboard treats it as "back".
+  // Escape and the outside press belong to `Dialog` now, routed through
+  // `onClose`, so only the two keys the platform has no opinion about are left
+  // here. Backspace stays because this app's whole keyboard treats it as "back".
   useKeyboardControls((event: KeyboardEvent) => {
     if (!isVisible) {
       return
@@ -64,7 +63,7 @@ const ConfirmationModal = ({
   })
 
   return (
-    <Modal
+    <Dialog
       footer={
         <div className={footerClassName}>
           <Button

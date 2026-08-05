@@ -209,73 +209,13 @@
     }
   }
 
-  /* The confirmation modal's four `@keyframes` are gone in M6c phase 2. They
-     drove a hand-rolled backdrop `<div>` that stayed mounted on an `isRendered`
-     flag until `animationend`; the modal is `@charcuterie/ui`'s `Modal` — a real
-     `<dialog>` — now, and a `<dialog>` cannot be animated closed that way at all
-     (`close()` takes it out of the top layer on the spot). The replacement is
-     the `@starting-style` block below, which animates `[open]` itself. */
-}
-
-/* The confirmation modal's open AND close animation, which
-   `docs/decisions/2026-06-03-delete-needs-confirmation-and-guards-stray-delete-key.md`
-   asks for by name.
-
-   It cannot be a utility and it cannot be `@keyframes`. `@charcuterie/ui`'s
-   `Modal` calls `close()` the moment `isVisible` goes false, which drops the
-   `<dialog>` out of the top layer in the same frame — an exit *animation* has
-   nothing left to play on. `transition-behavior: allow-discrete` on `display`
-   and `overlay` is the platform's answer: the browser holds both discrete
-   properties at their old value for the transition's duration, so the dialog
-   stays displayed and stays in the top layer while `opacity`/`transform` run.
-   `@starting-style` supplies the "before it was open" value the entry needs,
-   because an element that did not exist a frame ago has nothing to transition
-   from — this is the `<dialog>` equivalent of `Toast`'s enter-frame comment.
-
-   Unlayered and on the bare `dialog` selector (0,0,1) on purpose: `Modal`'s own
-   classes set neither `opacity` nor `transform`, so nothing here competes with
-   a utility, and putting it in `@layer base` would lose to Preflight's reset. */
-dialog {
-  opacity: 0;
-  transform: scale(0.9);
-  transition:
-    opacity 200ms ease,
-    transform 200ms ease,
-    overlay 200ms ease allow-discrete,
-    display 200ms ease allow-discrete;
-}
-
-dialog[open] {
-  opacity: 1;
-  transform: scale(1);
-}
-
-@starting-style {
-  dialog[open] {
-    opacity: 0;
-    transform: scale(0.9);
-  }
-}
-
-/* The scrim fades with it. `::backdrop` is a separate box with its own
-   transition — without this rule the dialog scales away over a scrim that
-   vanishes instantly. */
-dialog::backdrop {
-  opacity: 0;
-  transition:
-    opacity 200ms ease,
-    overlay 200ms ease allow-discrete,
-    display 200ms ease allow-discrete;
-}
-
-dialog[open]::backdrop {
-  opacity: 1;
-}
-
-@starting-style {
-  dialog[open]::backdrop {
-    opacity: 0;
-  }
+  /* The confirmation modal's four `@keyframes` are gone (M6c phase 2), and the
+     `<dialog>` open/close transition that replaced them is gone too, with the
+     `@charcuterie/ui@2.0.0` overlay rebuild: the confirm is `Dialog` now, which
+     portals to the body rather than being a native `<dialog>`, so the `dialog`
+     selectors that lived here no longer matched anything. Charcuterie's overlays
+     do not animate — `OverlayPanel` unmounts the frame it hides — so the confirm
+     follows the fleet and appears/dismisses without a transition. */
 }
 
 /* Was `App.jsx`'s `<Global>` block. `box-sizing` is Tailwind Preflight's job
