@@ -1,8 +1,4 @@
-import {
-  IconButton,
-  Select,
-  Tooltip,
-} from "@charcuterie/ui"
+import { IconButton, Tooltip } from "@charcuterie/ui"
 import {
   Fragment,
   memo,
@@ -19,15 +15,15 @@ import SettingsContext from "../settings/SettingsContext"
 import {
   getFolderSortOrder,
   isSortOrder,
-  sortOrderOptions,
 } from "../settings/sortOrders"
 import DeleteFileModal from "../toolkit/DeleteFileModal"
 import FileSystemContext from "./FileSystemContext"
+import SortOrderSelect from "./SortOrderSelect"
 
 const pathApi = window.api.path
 
-// `Select`'s root is `w-full`, and the `className` it takes lands on the
-// `<select>` rather than that root — so the width belongs to this wrapper.
+// `SortOrderSelect`'s trigger is `w-full`, so the fixed width belongs to this
+// wrapper, which also holds the leading `SortIcon`.
 const sortPickerClassName =
   "flex w-[132px] flex-none items-center gap-1"
 
@@ -95,8 +91,8 @@ const DirectoryControls = () => {
     filePath,
   )
 
-  // `isSortOrder` narrows the `Select`'s raw string back to the union without a
-  // cast — see the matching handler in `PaneGallery`.
+  // `isSortOrder` narrows `SortOrderSelect`'s raw string back to the union
+  // without a cast — see the matching handler in `PaneGallery`.
   const changeFolderSortOrder = useCallback(
     (nextSortOrder: string) => {
       if (isSortOrder(nextSortOrder)) {
@@ -192,19 +188,15 @@ const DirectoryControls = () => {
         )}
       </div>
 
-      {/* Sort-order picker. `key={filePath}` re-seeds the uncontrolled
-          `<select>` because the order is stored per folder path — navigating is
-          a second writer, and without it the control would keep showing the
-          previous folder's choice. */}
+      {/* Sort-order picker. `SortOrderSelect` is controlled by `value`, so it
+          re-seeds itself when the per-folder order changes on navigation — no
+          `key` remount is needed the way the uncontrolled native `<select>`
+          required one. */}
       <div className={sortPickerClassName}>
         <SortIcon />
 
-        <Select
-          key={filePath}
-          label="Sort order"
+        <SortOrderSelect
           onChange={changeFolderSortOrder}
-          options={sortOrderOptions}
-          size="sm"
           value={sortOrder}
         />
       </div>
