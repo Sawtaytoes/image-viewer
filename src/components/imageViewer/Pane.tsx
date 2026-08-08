@@ -7,6 +7,7 @@ import {
   useState,
 } from "react"
 
+import FullScreenContext from "../convenience/FullScreenContext"
 import useFolderListing from "../fileBrowser/useFolderListing"
 import type { Pane as WorkspacePane } from "../workspace/WorkspaceContext"
 import WorkspaceContext from "../workspace/WorkspaceContext"
@@ -64,6 +65,10 @@ const Pane = ({
     setPaneIndex,
     suppressChromeReveal,
   } = useContext(WorkspaceContext)
+
+  const { isFullScreen, toggleFullScreen } = useContext(
+    FullScreenContext,
+  )
 
   const [isMenuOpen, setIsMenuOpen] = useState(false)
 
@@ -181,15 +186,17 @@ const Pane = ({
   }, [isElevated, suppressChromeReveal])
 
   // Only the active column owns the keyboard, and it's silenced while the menu
-  // or the in-pane gallery is open (each handles its own Esc) — so the first Esc
-  // closes that, and the next one leaves the viewer. The viewer deletes folders
-  // (from the menu's trashcan), not single images, so there's no `[Delete]` key
-  // action here.
+  // or the in-pane gallery is open (each handles its own Esc) — so Escape peels
+  // layers: menu/gallery → fullscreen → leave the viewer (`clearPanes`). The
+  // viewer deletes folders (from the menu's trashcan), not single images, so
+  // there's no `[Delete]` key action here.
   useViewerKeyboard({
     goToNextImage,
     goToPreviousImage,
     isEnabled: isActive && !isMenuOpen && !isGalleryOpen,
+    isFullScreen,
     onClose: clearPanes,
+    onExitFullScreen: toggleFullScreen,
     // `Q` opens this column's queue menu. Called with no point (no tap origin),
     // so `openMenu` skips the reveal-spawn and just selects + opens the menu.
     onOpenMenu: openMenu,
