@@ -71,4 +71,46 @@ describe("useViewerKeyboard", () => {
     expect(goToPreviousImage).toHaveBeenCalledTimes(1)
     expect(onClose).toHaveBeenCalledTimes(1)
   })
+
+  it("exits fullscreen on Escape without closing the viewer", () => {
+    const onExitFullScreen = vi.fn()
+    const { onClose } = setup({
+      isFullScreen: true,
+      onExitFullScreen,
+    })
+
+    pressKey("Escape")
+
+    expect(onExitFullScreen).toHaveBeenCalledTimes(1)
+    expect(onClose).not.toHaveBeenCalled()
+  })
+
+  it("closes the viewer on Escape once fullscreen is already off", () => {
+    const onExitFullScreen = vi.fn()
+    const { onClose } = setup({
+      isFullScreen: false,
+      onExitFullScreen,
+    })
+
+    pressKey("Escape")
+
+    expect(onClose).toHaveBeenCalledTimes(1)
+    expect(onExitFullScreen).not.toHaveBeenCalled()
+  })
+
+  it("still leaves the viewer on Enter/Backspace while fullscreen", () => {
+    // Only Escape is the layered dismiss key; Enter/Backspace keep their
+    // "leave the viewer" meaning even when the window is fullscreen.
+    const onExitFullScreen = vi.fn()
+    const { onClose } = setup({
+      isFullScreen: true,
+      onExitFullScreen,
+    })
+
+    pressKey("Enter")
+    pressKey("Backspace")
+
+    expect(onClose).toHaveBeenCalledTimes(2)
+    expect(onExitFullScreen).not.toHaveBeenCalled()
+  })
 })

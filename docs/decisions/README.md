@@ -123,3 +123,7 @@ to apply here); everything else is sourced from Image Viewer's own chats, commit
 
 - [2026-08-05 — No literal `<head>`/`<body>` tags inside index.html comments](2026-08-05-no-structural-tag-literals-in-index-html-comments.md) ← **Vite injects the HMR preamble at the first `<head>` — a commented one blanks the dev window**
 - [2026-08-05 — electron-forge is on a Vite 8 alpha; move to stable when it ships](2026-08-05-electron-forge-on-vite8-alpha-move-to-stable-when-available.md) ← **standing follow-up: bump `@electron-forge/*` off `8.0.0-alpha.10` every time we work here**
+
+### 2026-08-08 — Escape / fullscreen
+
+- [2026-08-08 — Escape exits fullscreen before closing the viewer](2026-08-08-escape-exits-fullscreen-before-closing-viewer.md) ← **Esc peels layers: menu/gallery → fullscreen → clear columns**

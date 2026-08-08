@@ -1,5 +1,6 @@
 import { memo, useCallback, useContext } from "react"
 
+import FullScreenContext from "../convenience/FullScreenContext"
 import ImageView from "./ImageView"
 import ImageViewerContext from "./ImageViewerContext"
 import type { TapPoint } from "./TapFeedback"
@@ -36,6 +37,10 @@ const LegacyImageColumn = ({
   const { imageFileName, imageFilePath, leaveImageViewer } =
     useContext(ImageViewerContext)
 
+  const { isFullScreen, toggleFullScreen } = useContext(
+    FullScreenContext,
+  )
+
   const {
     goToNextImage,
     goToPreviousImage,
@@ -59,13 +64,16 @@ const LegacyImageColumn = ({
   )
 
   // Only the active column owns the keyboard, so arrows don't drive a column
-  // the user isn't looking at. The viewer deletes folders, not single images,
-  // so there's no `[Delete]` action on the legacy single-image column either.
+  // the user isn't looking at. Escape peels fullscreen first (same stack as
+  // `Pane`), then leaves the viewer. The viewer deletes folders, not single
+  // images, so there's no `[Delete]` action on the legacy column either.
   useViewerKeyboard({
     goToNextImage,
     goToPreviousImage,
     isEnabled: isActive,
+    isFullScreen,
     onClose: close,
+    onExitFullScreen: toggleFullScreen,
   })
 
   return (
