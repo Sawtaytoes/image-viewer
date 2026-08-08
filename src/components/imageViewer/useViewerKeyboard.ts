@@ -4,8 +4,16 @@ export interface UseViewerKeyboardOptions {
   goToNextImage: () => void
   goToPreviousImage: () => void
   isEnabled: boolean
+  // When true, the first Escape peels off OS fullscreen and leaves the columns
+  // alone. Matches the menu/gallery layering: dismiss the outermost chrome
+  // before closing the viewer. See
+  // docs/decisions/2026-08-08-escape-exits-fullscreen-before-closing-viewer.md.
+  isFullScreen?: boolean
   onClose: () => void
   onDelete?: () => void
+  // Required whenever `isFullScreen` can be true; Escape calls this instead of
+  // `onClose` so multi-column layouts survive an accidental Esc in fullscreen.
+  onExitFullScreen?: () => void
   onOpenMenu?: () => void
 }
 
@@ -18,13 +26,28 @@ const useViewerKeyboard = ({
   goToNextImage,
   goToPreviousImage,
   isEnabled,
+  isFullScreen = false,
   onClose,
   onDelete,
+  onExitFullScreen,
   onOpenMenu,
 }: UseViewerKeyboardOptions) => {
   useEffect(() => {
     if (!isEnabled) {
       return undefined
+    }
+
+    // Escape peels one layer at a time. Fullscreen sits above "leave viewer"
+    // (menu/gallery own their own Esc while open and disable this hook). Enter
+    // and Backspace still leave the viewer even in fullscreen — only Escape is
+    // the layered dismiss key.
+    const onEscape = () => {
+      if (isFullScreen && onExitFullScreen) {
+        onExitFullScreen()
+        return
+      }
+
+      onClose()
     }
 
     // `KeyboardEvent.code` values, so a key a view doesn't handle is simply
@@ -41,7 +64,7 @@ const useViewerKeyboard = ({
       // no-op rather than mapped to anything destructive.
       Delete: onDelete,
       Enter: onClose,
-      Escape: onClose,
+      Escape: onEscape,
       // `Q` for "queue": pop this column's folder-picker menu without needing the
       // center-tap. Optional, like `onDelete` — a no-op when a view omits it.
       KeyQ: onOpenMenu,
@@ -70,8 +93,10 @@ const useViewerKeyboard = ({
     goToNextImage,
     goToPreviousImage,
     isEnabled,
+    isFullScreen,
     onClose,
     onDelete,
+    onExitFullScreen,
     onOpenMenu,
   ])
 }
