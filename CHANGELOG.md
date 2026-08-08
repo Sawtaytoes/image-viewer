@@ -1,3 +1,10 @@
+## [2.8.1](https://github.com/Sawtaytoes/image-viewer/compare/v2.8.0...v2.8.1) (2026-08-08)
+
+
+### Bug Fixes
+
+* Escape exits fullscreen before clearing viewer columns ([#17](https://github.com/Sawtaytoes/image-viewer/issues/17)) ([836e46c](https://github.com/Sawtaytoes/image-viewer/commit/836e46ce037a7b92b136b01731685c9cbfb3baff))
+
 # [2.8.0](https://github.com/Sawtaytoes/image-viewer/compare/v2.7.0...v2.8.0) (2026-08-05)
 
 
