@@ -127,3 +127,7 @@ to apply here); everything else is sourced from Image Viewer's own chats, commit
 ### 2026-08-08 — Escape / fullscreen
 
 - [2026-08-08 — Escape exits fullscreen before closing the viewer](2026-08-08-escape-exits-fullscreen-before-closing-viewer.md) ← **Esc peels layers: menu/gallery → fullscreen → clear columns**
+
+### 2026-08-08 — Rulesets vs Release (personal GitHub)
+
+- [2026-08-08 — On personal GitHub, release bots and “green CI before merge” cannot both be hard gates](2026-08-08-personal-github-rulesets-cannot-gate-and-release.md) ← **Master ruleset = linear history only; org move is the durable path, deferred**
