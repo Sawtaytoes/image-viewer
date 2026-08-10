@@ -4,7 +4,7 @@ import {
   screen,
 } from "@testing-library/react"
 import { createRef } from "react"
-import { describe, expect, it, vi } from "vitest"
+import { describe, expect, test, vi } from "vitest"
 
 import FullScreenContext from "../convenience/FullScreenContext"
 import FileSystemContext, {
@@ -131,7 +131,7 @@ const getChromeBar = () =>
     .parentElement as HTMLElement
 
 describe("RevealableChrome", () => {
-  it("anchors to the very top of the screen in fullscreen so its hitbox matches where it draws", () => {
+  test("anchors to the very top of the screen in fullscreen so its hitbox matches where it draws", () => {
     renderChrome({ isFullScreen: true })
 
     const bar = getChromeBar()
@@ -145,7 +145,7 @@ describe("RevealableChrome", () => {
     )
   })
 
-  it("sits below the custom title bar when windowed", () => {
+  test("sits below the custom title bar when windowed", () => {
     renderChrome({ isFullScreen: false })
 
     expect(getChromeBar().className).toContain(
@@ -153,7 +153,7 @@ describe("RevealableChrome", () => {
     )
   })
 
-  it("promotes the legacy single image into its own column before adding one, so it isn't dropped", () => {
+  test("promotes the legacy single image into its own column before adding one, so it isn't dropped", () => {
     const {
       addPane,
       addPaneAndFill,
@@ -178,7 +178,7 @@ describe("RevealableChrome", () => {
     expect(addPaneAndFill).toHaveBeenCalledTimes(1)
   })
 
-  it("adds a plain column (no promotion) once columns already exist", () => {
+  test("adds a plain column (no promotion) once columns already exist", () => {
     const {
       addPane,
       addPaneAndFill,
@@ -200,7 +200,7 @@ describe("RevealableChrome", () => {
     expect(addPaneAndFill).toHaveBeenCalledTimes(1)
   })
 
-  it("carries a fullscreen-exit control only in fullscreen (the title bar owns it windowed)", () => {
+  test("carries a fullscreen-exit control only in fullscreen (the title bar owns it windowed)", () => {
     const toggleFullScreen = vi.fn()
 
     const { rerender } = renderChrome({

@@ -1,10 +1,10 @@
 {
+  "extends": "@charcuterie/tsconfig/react",
   "compilerOptions": {
-    "target": "ESNext",
-    "module": "ESNext",
-    "moduleResolution": "bundler",
-    "lib": ["DOM", "DOM.Iterable", "ESNext"],
-    "jsx": "react-jsx",
+    // The shared preset supplies the invariants plus this app's exact
+    // renderer shape: ESNext target/module, bundler resolution, the DOM libs,
+    // `jsx: react-jsx` and `noEmit`. What stays here is Electron-specific.
+    //
     // No "jsxImportSource". It pointed at "@emotion/react" so the `css` prop
     // typechecked; there is no `css` prop any more, and leaving it would route
     // every JSX element in the app through a runtime the bundle no longer
@@ -19,15 +19,6 @@
     // half-finish. The two survivors, `src/main.js` and `src/preload.js`, are
     // the Node-side programs and are excluded below by name.
     "allowJs": false,
-    "strict": true,
-    "esModuleInterop": true,
-    "allowSyntheticDefaultImports": true,
-    "forceConsistentCasingInFileNames": true,
-    "isolatedModules": true,
-    "resolveJsonModule": true,
-    "skipLibCheck": true,
-    "noEmit": true,
-    "useDefineForClassFields": true,
     "types": [
       "vite/client",
       "node",

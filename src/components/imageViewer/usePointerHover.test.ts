@@ -4,7 +4,7 @@ import {
   beforeEach,
   describe,
   expect,
-  it,
+  test,
   vi,
 } from "vitest"
 import type { PointerHoverNotification } from "./usePointerHover"
@@ -67,7 +67,7 @@ describe("usePointerHover", () => {
     return lastCall[0].isHovering
   }
 
-  it("reports hovering on pointer enter", () => {
+  test("reports hovering on pointer enter", () => {
     const callback = renderPointerHover()
 
     domElement.dispatchEvent(
@@ -77,7 +77,7 @@ describe("usePointerHover", () => {
     expect(lastIsHovering(callback)).toBe(true)
   })
 
-  it("keeps hovering when a mouse releases over the element", () => {
+  test("keeps hovering when a mouse releases over the element", () => {
     const callback = renderPointerHover()
 
     domElement.dispatchEvent(
@@ -92,7 +92,7 @@ describe("usePointerHover", () => {
     expect(lastIsHovering(callback)).toBe(true)
   })
 
-  it("clears hovering when a touch lifts (no pointerout fires)", () => {
+  test("clears hovering when a touch lifts (no pointerout fires)", () => {
     const callback = renderPointerHover()
 
     domElement.dispatchEvent(
@@ -107,7 +107,7 @@ describe("usePointerHover", () => {
     expect(lastIsHovering(callback)).toBe(false)
   })
 
-  it("does not engage hover from pointer movement alone", () => {
+  test("does not engage hover from pointer movement alone", () => {
     const callback = renderPointerHover()
 
     // An image opening under a stationary cursor must not light up the nav edge
@@ -121,7 +121,7 @@ describe("usePointerHover", () => {
     expect(callback).not.toHaveBeenCalled()
   })
 
-  it("clears hovering on pointer cancel", () => {
+  test("clears hovering on pointer cancel", () => {
     const callback = renderPointerHover()
 
     domElement.dispatchEvent(
@@ -136,7 +136,7 @@ describe("usePointerHover", () => {
     expect(lastIsHovering(callback)).toBe(false)
   })
 
-  it("clears hovering when the window loses focus (stuck-edge fix)", () => {
+  test("clears hovering when the window loses focus (stuck-edge fix)", () => {
     const callback = renderPointerHover()
 
     domElement.dispatchEvent(

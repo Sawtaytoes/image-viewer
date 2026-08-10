@@ -3,7 +3,7 @@ import {
   render,
   screen,
 } from "@testing-library/react"
-import { describe, expect, it, vi } from "vitest"
+import { describe, expect, test, vi } from "vitest"
 
 import type { QueuedFolder } from "../../types"
 import type { Pane } from "../workspace/WorkspaceContext"
@@ -61,7 +61,7 @@ const renderPopover = ({
 }
 
 describe("FolderPickerPopover (per-column menu)", () => {
-  it("assigns a tapped queued folder to the pane and closes", () => {
+  test("assigns a tapped queued folder to the pane and closes", () => {
     const { actions, onClose } = renderPopover({
       queuedFolders: [
         { id: "folder-1", name: "Cats", path: "/cats" },
@@ -82,7 +82,7 @@ describe("FolderPickerPopover (per-column menu)", () => {
     expect(onClose).toHaveBeenCalled()
   })
 
-  it("opens the gallery view for this column", () => {
+  test("opens the gallery view for this column", () => {
     const { onOpenGallery } = renderPopover()
 
     fireEvent.click(screen.getByText("Gallery view"))
@@ -90,7 +90,7 @@ describe("FolderPickerPopover (per-column menu)", () => {
     expect(onOpenGallery).toHaveBeenCalled()
   })
 
-  it("closes the column from the menu", () => {
+  test("closes the column from the menu", () => {
     const { actions } = renderPopover()
 
     fireEvent.click(screen.getByText("Close column"))
@@ -98,7 +98,7 @@ describe("FolderPickerPopover (per-column menu)", () => {
     expect(actions.removePane).toHaveBeenCalledWith(PANE_ID)
   })
 
-  it("shows an empty-queue message but still offers the escape hatches", () => {
+  test("shows an empty-queue message but still offers the escape hatches", () => {
     renderPopover({ queuedFolders: [] })
 
     expect(
@@ -112,7 +112,7 @@ describe("FolderPickerPopover (per-column menu)", () => {
     ).toBeInTheDocument()
   })
 
-  it("flags a queued folder that's open in another column", () => {
+  test("flags a queued folder that's open in another column", () => {
     renderPopover({
       currentFolderId: "folder-1",
       panes: [
@@ -172,7 +172,7 @@ describe("FolderPickerPopover (per-column menu)", () => {
     ).not.toBeInTheDocument()
   })
 
-  it("removes a queued folder from the queue via the ✕ (no confirm, no disk)", () => {
+  test("removes a queued folder from the queue via the ✕ (no confirm, no disk)", () => {
     const { actions } = renderPopover({
       queuedFolders: [
         { id: "folder-1", name: "Cats", path: "/cats" },
@@ -190,7 +190,7 @@ describe("FolderPickerPopover (per-column menu)", () => {
     expect(actions.deleteFolder).not.toHaveBeenCalled()
   })
 
-  it("deletes the current column's folder from disk only after the confirm", () => {
+  test("deletes the current column's folder from disk only after the confirm", () => {
     const { actions } = renderPopover({
       currentFolderId: "folder-1",
       queuedFolders: [
@@ -211,7 +211,7 @@ describe("FolderPickerPopover (per-column menu)", () => {
     )
   })
 
-  it("offers no folder-delete action when the column has no folder loaded", () => {
+  test("offers no folder-delete action when the column has no folder loaded", () => {
     renderPopover({
       currentFolderId: null,
       queuedFolders: [
@@ -229,7 +229,7 @@ describe("FolderPickerPopover (per-column menu)", () => {
     ).toBeInTheDocument()
   })
 
-  it("no longer offers a single-image delete action", () => {
+  test("no longer offers a single-image delete action", () => {
     renderPopover({
       currentFolderId: "folder-1",
       queuedFolders: [
@@ -242,7 +242,7 @@ describe("FolderPickerPopover (per-column menu)", () => {
     ).not.toBeInTheDocument()
   })
 
-  it("closes on Escape", () => {
+  test("closes on Escape", () => {
     const { onClose } = renderPopover()
 
     fireEvent.keyDown(document.body, { code: "Escape" })

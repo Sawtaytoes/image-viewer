@@ -1,4 +1,4 @@
-import { defineConfig } from "vite"
+import { createViteConfig } from "@charcuterie/vite-config"
 
 // Main process build. The Electron Forge Vite plugin injects the
 // `MAIN_WINDOW_VITE_*` constants and externalizes electron + node builtins,
@@ -11,4 +11,4 @@ import { defineConfig } from "vite"
 // WASM as base64 (no sidecar `.wasm` file to load), so it bundles cleanly. See
 // docs/workers/feature-heic-support.md.
 // https://vitejs.dev/config
-export default defineConfig({})
+export default createViteConfig()

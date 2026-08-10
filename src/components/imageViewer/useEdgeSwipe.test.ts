@@ -4,7 +4,7 @@ import {
   beforeEach,
   describe,
   expect,
-  it,
+  test,
   vi,
 } from "vitest"
 import type { UseEdgeSwipeOptions } from "./useEdgeSwipe"
@@ -62,7 +62,7 @@ describe("useEdgeSwipe", () => {
     )
   }
 
-  it("reveals on a downward swipe that starts in the top edge", () => {
+  test("reveals on a downward swipe that starts in the top edge", () => {
     const onReveal = vi.fn()
 
     renderEdgeSwipe({
@@ -88,7 +88,7 @@ describe("useEdgeSwipe", () => {
     expect(onReveal).toHaveBeenCalledTimes(1)
   })
 
-  it("does not reveal when the swipe starts below the edge", () => {
+  test("does not reveal when the swipe starts below the edge", () => {
     const onReveal = vi.fn()
 
     renderEdgeSwipe({
@@ -114,7 +114,7 @@ describe("useEdgeSwipe", () => {
     expect(onReveal).not.toHaveBeenCalled()
   })
 
-  it("dismisses on an upward swipe past the threshold", () => {
+  test("dismisses on an upward swipe past the threshold", () => {
     const onDismiss = vi.fn()
 
     renderEdgeSwipe({ onDismiss, thresholdPx: 60 })

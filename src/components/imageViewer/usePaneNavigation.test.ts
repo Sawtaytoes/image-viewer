@@ -1,5 +1,5 @@
 import { renderHook } from "@testing-library/react"
-import { describe, expect, it, vi } from "vitest"
+import { describe, expect, test, vi } from "vitest"
 
 import usePaneNavigation from "./usePaneNavigation"
 
@@ -10,7 +10,7 @@ const imageFiles = [
 ]
 
 describe("usePaneNavigation", () => {
-  it("advances and clamps at the end", () => {
+  test("advances and clamps at the end", () => {
     const setCurrentIndex = vi.fn()
 
     const { result } = renderHook(() =>
@@ -26,7 +26,7 @@ describe("usePaneNavigation", () => {
     expect(setCurrentIndex).toHaveBeenCalledWith(2)
   })
 
-  it("does not advance past the last image", () => {
+  test("does not advance past the last image", () => {
     const setCurrentIndex = vi.fn()
 
     const { result } = renderHook(() =>
@@ -44,7 +44,7 @@ describe("usePaneNavigation", () => {
     expect(result.current.isAtBeginning).toBe(false)
   })
 
-  it("retreats and clamps at the beginning", () => {
+  test("retreats and clamps at the beginning", () => {
     const setCurrentIndex = vi.fn()
 
     const { result } = renderHook(() =>

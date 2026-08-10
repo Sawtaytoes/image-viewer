@@ -1,7 +1,7 @@
 import { readFileSync } from "node:fs"
 import { resolve } from "node:path"
 
-import { describe, expect, it } from "vitest"
+import { describe, expect, test } from "vitest"
 
 import TITLE_BAR_HEIGHT from "./titleBarHeight"
 
@@ -24,7 +24,7 @@ const readRepoFile = (relativePath: string) =>
   readFileSync(resolve(REPO_ROOT, relativePath), "utf8")
 
 describe("TITLE_BAR_HEIGHT", () => {
-  it("matches --title-bar-height in the stylesheet", () => {
+  test("matches --title-bar-height in the stylesheet", () => {
     const declaration = readRepoFile(
       "src/styles/tailwind.css",
     ).match(/--title-bar-height:\s*(\d+)px/)
@@ -36,7 +36,7 @@ describe("TITLE_BAR_HEIGHT", () => {
     )
   })
 
-  it("matches titleBarOverlay.height in the main process", () => {
+  test("matches titleBarOverlay.height in the main process", () => {
     // Read the `titleBarOverlay` block first, then the height out of
     // it — `main.js` is 800 lines and a bare /height:\s*(\d+)/ would
     // happily match the window's own dimensions.

@@ -1,5 +1,5 @@
 import { renderHook } from "@testing-library/react"
-import { describe, expect, it } from "vitest"
+import { describe, expect, test } from "vitest"
 
 import type { DirectoryEntry } from "../../types"
 import useImageFiles from "./useImageFiles"
@@ -19,7 +19,7 @@ const entry = (
 })
 
 describe("useImageFiles", () => {
-  it("keeps only image files, sorted naturally, mapped to { name, path }", () => {
+  test("keeps only image files, sorted naturally, mapped to { name, path }", () => {
     const directoryContents = [
       entry("b.png", true),
       entry("a10.jpg", true),
@@ -43,7 +43,7 @@ describe("useImageFiles", () => {
     })
   })
 
-  it("matches extensions case-insensitively", () => {
+  test("matches extensions case-insensitively", () => {
     // NOTE: the array must be a stable reference — useImageFiles keys its
     // effect on `directoryContents` identity (the provider passes a stable
     // value). A fresh literal each render would loop.
@@ -56,7 +56,7 @@ describe("useImageFiles", () => {
     expect(result.current).toHaveLength(1)
   })
 
-  it("includes HEIC/HEIF photos (transcoded later, but listed here)", () => {
+  test("includes HEIC/HEIF photos (transcoded later, but listed here)", () => {
     const directoryContents = [
       entry("iphone.heic", true),
       entry("iphone.HEIF", true),

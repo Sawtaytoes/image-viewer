@@ -1,6 +1,6 @@
 import path from "node:path"
 
-import { describe, expect, it } from "vitest"
+import { describe, expect, test } from "vitest"
 
 import {
   createBmp,
@@ -13,7 +13,7 @@ import {
 const rootPath = path.sep === "\\" ? "C:\\" : "/"
 
 describe("createBmp", () => {
-  it("produces a valid 24-bit BMP of the requested size", () => {
+  test("produces a valid 24-bit BMP of the requested size", () => {
     const width = 4
     const height = 3
     const buffer = createBmp(width, height, [255, 0, 0])
@@ -38,7 +38,7 @@ describe("createBmp", () => {
 describe("createFakeFileSystem", () => {
   const setup = () => createFakeFileSystem({ path })
 
-  it("opens at the fake root and lists it as a single drive", () => {
+  test("opens at the fake root and lists it as a single drive", () => {
     const fakeFileSystem = setup()
 
     expect(fakeFileSystem.cliFilePath).toBe(rootPath)
@@ -53,7 +53,7 @@ describe("createFakeFileSystem", () => {
     )
   })
 
-  it("reports missing paths as nonexistent", () => {
+  test("reports missing paths as nonexistent", () => {
     const fakeFileSystem = setup()
 
     expect(
@@ -67,7 +67,7 @@ describe("createFakeFileSystem", () => {
     })
   })
 
-  it("lists the spec's folders plus loose images at the root", async () => {
+  test("lists the spec's folders plus loose images at the root", async () => {
     const fakeFileSystem = setup()
 
     const entries =
@@ -88,7 +88,7 @@ describe("createFakeFileSystem", () => {
     expect(files).toHaveLength(fakeTreeSpec.looseImageCount)
   })
 
-  it("lists each folder's generated images", async () => {
+  test("lists each folder's generated images", async () => {
     const fakeFileSystem = setup()
 
     const cats = fakeTreeSpec.folders.find(
@@ -111,7 +111,7 @@ describe("createFakeFileSystem", () => {
     )
   })
 
-  it("returns decodable BMP bytes for an image", async () => {
+  test("returns decodable BMP bytes for an image", async () => {
     const fakeFileSystem = setup()
 
     const [firstImage] = await fakeFileSystem.readDirectory(
@@ -130,7 +130,7 @@ describe("createFakeFileSystem", () => {
     expect(view.getUint8(1)).toBe(0x4d)
   })
 
-  it("finds a folder's first image (name-ascending) for its thumbnail", async () => {
+  test("finds a folder's first image (name-ascending) for its thumbnail", async () => {
     const fakeFileSystem = setup()
 
     const image = await fakeFileSystem.findFirstImage(
@@ -140,7 +140,7 @@ describe("createFakeFileSystem", () => {
     expect(image).toMatchObject({ name: "cats-01.bmp" })
   })
 
-  it("descends into subfolders when a folder has no direct images", async () => {
+  test("descends into subfolders when a folder has no direct images", async () => {
     const fakeFileSystem = setup()
 
     const landscapesPath = path.join(rootPath, "Landscapes")
@@ -166,7 +166,7 @@ describe("createFakeFileSystem", () => {
     })
   })
 
-  it("returns null for a folder with no images at any depth", async () => {
+  test("returns null for a folder with no images at any depth", async () => {
     const fakeFileSystem = setup()
 
     const dogsPath = path.join(rootPath, "Dogs")
@@ -186,7 +186,7 @@ describe("createFakeFileSystem", () => {
     ).toBeNull()
   })
 
-  it("virtually deletes a file so it leaves its folder listing", async () => {
+  test("virtually deletes a file so it leaves its folder listing", async () => {
     const fakeFileSystem = setup()
 
     const catsPath = path.join(rootPath, "Cats")
@@ -208,7 +208,7 @@ describe("createFakeFileSystem", () => {
     ).toBe(false)
   })
 
-  it("virtually deletes a folder along with its whole subtree", async () => {
+  test("virtually deletes a folder along with its whole subtree", async () => {
     const fakeFileSystem = setup()
 
     const landscapesPath = path.join(rootPath, "Landscapes")
