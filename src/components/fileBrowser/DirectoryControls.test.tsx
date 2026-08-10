@@ -5,7 +5,13 @@ import {
   render,
   screen,
 } from "@testing-library/react"
-import { beforeAll, describe, expect, it, vi } from "vitest"
+import {
+  beforeAll,
+  describe,
+  expect,
+  test,
+  vi,
+} from "vitest"
 
 import FileSystemContext, {
   type FileSystemContextValue,
@@ -51,7 +57,7 @@ const renderControls = ({
 }
 
 describe("DirectoryControls breadcrumb", () => {
-  it("renders an ancestor trail with the drive root stripped of its separator", () => {
+  test("renders an ancestor trail with the drive root stripped of its separator", () => {
     renderControls({ filePath: "C:\\Pictures\\Vacation" })
 
     // Drive root shown as `C:` (trailing `\` stripped), then each ancestor.
@@ -60,7 +66,7 @@ describe("DirectoryControls breadcrumb", () => {
     expect(screen.getByText("Vacation")).toBeInTheDocument()
   })
 
-  it("makes ancestors clickable and navigates to the clicked segment", () => {
+  test("makes ancestors clickable and navigates to the clicked segment", () => {
     const { setFilePath } = renderControls({
       filePath: "C:\\Pictures\\Vacation",
     })
@@ -70,7 +76,7 @@ describe("DirectoryControls breadcrumb", () => {
     expect(setFilePath).toHaveBeenCalledWith("C:\\Pictures")
   })
 
-  it("leaves the current folder as non-interactive 'you are here'", () => {
+  test("leaves the current folder as non-interactive 'you are here'", () => {
     const { setFilePath } = renderControls({
       filePath: "C:\\Pictures\\Vacation",
     })
@@ -85,7 +91,7 @@ describe("DirectoryControls breadcrumb", () => {
     expect(setFilePath).not.toHaveBeenCalled()
   })
 
-  it("renders no breadcrumb at the drive list (empty path)", () => {
+  test("renders no breadcrumb at the drive list (empty path)", () => {
     renderControls({ filePath: "" })
 
     expect(screen.queryByText("C:")).not.toBeInTheDocument()

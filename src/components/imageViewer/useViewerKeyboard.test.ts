@@ -1,5 +1,5 @@
 import { renderHook } from "@testing-library/react"
-import { describe, expect, it, vi } from "vitest"
+import { describe, expect, test, vi } from "vitest"
 import type { UseViewerKeyboardOptions } from "./useViewerKeyboard"
 import useViewerKeyboard from "./useViewerKeyboard"
 
@@ -27,7 +27,7 @@ const setup = (
 }
 
 describe("useViewerKeyboard", () => {
-  it("fires onDelete when [Delete] is pressed while enabled", () => {
+  test("fires onDelete when [Delete] is pressed while enabled", () => {
     const { onDelete } = setup()
 
     pressKey("Delete")
@@ -35,7 +35,7 @@ describe("useViewerKeyboard", () => {
     expect(onDelete).toHaveBeenCalledTimes(1)
   })
 
-  it("ignores keys (including Delete) while disabled", () => {
+  test("ignores keys (including Delete) while disabled", () => {
     const { onClose, onDelete, goToNextImage } = setup({
       isEnabled: false,
     })
@@ -49,7 +49,7 @@ describe("useViewerKeyboard", () => {
     expect(goToNextImage).not.toHaveBeenCalled()
   })
 
-  it("treats [Delete] as a no-op when no onDelete is supplied", () => {
+  test("treats [Delete] as a no-op when no onDelete is supplied", () => {
     // No assertion target — the point is that dispatching doesn't throw when
     // the optional handler is absent (a view that doesn't support delete).
     setup({ onDelete: undefined })
@@ -59,7 +59,7 @@ describe("useViewerKeyboard", () => {
     }).not.toThrow()
   })
 
-  it("still wires the existing nav/close keys", () => {
+  test("still wires the existing nav/close keys", () => {
     const { goToNextImage, goToPreviousImage, onClose } =
       setup()
 
@@ -72,7 +72,7 @@ describe("useViewerKeyboard", () => {
     expect(onClose).toHaveBeenCalledTimes(1)
   })
 
-  it("exits fullscreen on Escape without closing the viewer", () => {
+  test("exits fullscreen on Escape without closing the viewer", () => {
     const onExitFullScreen = vi.fn()
     const { onClose } = setup({
       isFullScreen: true,
@@ -85,7 +85,7 @@ describe("useViewerKeyboard", () => {
     expect(onClose).not.toHaveBeenCalled()
   })
 
-  it("closes the viewer on Escape once fullscreen is already off", () => {
+  test("closes the viewer on Escape once fullscreen is already off", () => {
     const onExitFullScreen = vi.fn()
     const { onClose } = setup({
       isFullScreen: false,
@@ -98,7 +98,7 @@ describe("useViewerKeyboard", () => {
     expect(onExitFullScreen).not.toHaveBeenCalled()
   })
 
-  it("still leaves the viewer on Enter/Backspace while fullscreen", () => {
+  test("still leaves the viewer on Enter/Backspace while fullscreen", () => {
     // Only Escape is the layered dismiss key; Enter/Backspace keep their
     // "leave the viewer" meaning even when the window is fullscreen.
     const onExitFullScreen = vi.fn()

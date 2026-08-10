@@ -4,7 +4,7 @@ import {
   render,
   screen,
 } from "@testing-library/react"
-import { afterEach, describe, expect, it } from "vitest"
+import { afterEach, describe, expect, test } from "vitest"
 
 import ColorSchemeControl from "./ColorSchemeControl"
 
@@ -17,7 +17,7 @@ afterEach(() => {
 })
 
 describe("ColorSchemeControl", () => {
-  it("defaults to system and resolves data-scheme from the nativeTheme bridge", () => {
+  test("defaults to system and resolves data-scheme from the nativeTheme bridge", () => {
     // The stubbed `window.api.colorScheme.get()` returns "dark" (the OS answer),
     // and with nothing persisted the mode is `system`, so it resolves to dark.
     render(<ColorSchemeControl />)
@@ -33,7 +33,7 @@ describe("ColorSchemeControl", () => {
     ).toBe("dark")
   })
 
-  it("cycles system → light and persists the pick", () => {
+  test("cycles system → light and persists the pick", () => {
     render(<ColorSchemeControl />)
 
     fireEvent.click(

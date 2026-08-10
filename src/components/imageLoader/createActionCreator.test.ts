@@ -1,9 +1,9 @@
-import { describe, expect, it } from "vitest"
+import { describe, expect, test } from "vitest"
 
 import createActionCreator from "./createActionCreator"
 
 describe("createActionCreator", () => {
-  it("exposes the action type", () => {
+  test("exposes the action type", () => {
     const doThing = createActionCreator({
       actionType: "doThing",
     })
@@ -11,7 +11,7 @@ describe("createActionCreator", () => {
     expect(doThing.type).toBe("doThing")
   })
 
-  it("builds a { payload, type } action", () => {
+  test("builds a { payload, type } action", () => {
     const doThing = createActionCreator({
       actionType: "doThing",
     })

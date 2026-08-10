@@ -2,7 +2,7 @@ import { readFileSync } from "node:fs"
 import { resolve } from "node:path"
 
 import { render } from "@testing-library/react"
-import { describe, expect, it } from "vitest"
+import { describe, expect, test } from "vitest"
 
 import DeleteForeverIcon from "./DeleteForeverIcon"
 
@@ -22,7 +22,7 @@ import DeleteForeverIcon from "./DeleteForeverIcon"
 const REPO_ROOT = resolve(import.meta.dirname, "../../..")
 
 describe("render pipeline", () => {
-  it("renders an inline SVG icon", () => {
+  test("renders an inline SVG icon", () => {
     const { container } = render(<DeleteForeverIcon />)
 
     const svg = container.querySelector("svg")
@@ -32,7 +32,7 @@ describe("render pipeline", () => {
     expect(container.querySelector("path")).toBeTruthy()
   })
 
-  it("puts static Tailwind utilities on the class attribute", () => {
+  test("puts static Tailwind utilities on the class attribute", () => {
     const StyledBox = () => (
       <div className="bg-surface-raised text-content-primary">
         hello
@@ -47,7 +47,7 @@ describe("render pipeline", () => {
     )
   })
 
-  it("renders without Emotion's runtime classes", () => {
+  test("renders without Emotion's runtime classes", () => {
     const { container } = render(<DeleteForeverIcon />)
 
     expect(
@@ -55,7 +55,7 @@ describe("render pipeline", () => {
     ).toBeNull()
   })
 
-  it("wires the one stylesheet into the renderer entry", () => {
+  test("wires the one stylesheet into the renderer entry", () => {
     // The other half of the pipeline is a build step no jsdom render can
     // observe: if `renderer.tsx` stops importing the stylesheet, or the
     // stylesheet stops importing Tailwind, every utility above silently

@@ -1,6 +1,6 @@
+import { createViteConfig } from "@charcuterie/vite-config"
 import tailwindcss from "@tailwindcss/vite"
 import react from "@vitejs/plugin-react"
-import { defineConfig } from "vite"
 
 // Renderer build: React Fast Refresh + Tailwind v4.
 //
@@ -22,6 +22,6 @@ import { defineConfig } from "vite"
 // from the registry, add `resolve: { dedupe: ["react", "react-dom"] }` here and
 // in `vitest.config.ts`.
 // https://vitejs.dev/config
-export default defineConfig({
+export default createViteConfig({
   plugins: [react(), tailwindcss()],
 })

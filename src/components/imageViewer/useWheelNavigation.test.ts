@@ -4,7 +4,7 @@ import {
   beforeEach,
   describe,
   expect,
-  it,
+  test,
   vi,
 } from "vitest"
 
@@ -65,7 +65,7 @@ describe("useWheelNavigation", () => {
     return { goToNextImage, goToPreviousImage }
   }
 
-  it("steps to the next image on a downward wheel notch", () => {
+  test("steps to the next image on a downward wheel notch", () => {
     const { goToNextImage, goToPreviousImage } =
       renderWheelNavigation()
 
@@ -77,7 +77,7 @@ describe("useWheelNavigation", () => {
     expect(goToPreviousImage).not.toHaveBeenCalled()
   })
 
-  it("steps to the previous image on an upward wheel notch", () => {
+  test("steps to the previous image on an upward wheel notch", () => {
     const { goToNextImage, goToPreviousImage } =
       renderWheelNavigation()
 
@@ -89,7 +89,7 @@ describe("useWheelNavigation", () => {
     expect(goToNextImage).not.toHaveBeenCalled()
   })
 
-  it("accumulates small deltas and steps once past the threshold", () => {
+  test("accumulates small deltas and steps once past the threshold", () => {
     const { goToNextImage } = renderWheelNavigation()
 
     // Each below the 24px threshold; the third crosses it.
@@ -109,7 +109,7 @@ describe("useWheelNavigation", () => {
     expect(goToNextImage).toHaveBeenCalledTimes(1)
   })
 
-  it("steps only once for one large notch", () => {
+  test("steps only once for one large notch", () => {
     const { goToNextImage } = renderWheelNavigation()
 
     // A single notch is one intent regardless of its pixel magnitude — it must
@@ -121,7 +121,7 @@ describe("useWheelNavigation", () => {
     expect(goToNextImage).toHaveBeenCalledTimes(1)
   })
 
-  it("drops opposite-direction leftover on reversal", () => {
+  test("drops opposite-direction leftover on reversal", () => {
     const { goToNextImage, goToPreviousImage } =
       renderWheelNavigation()
 
@@ -140,7 +140,7 @@ describe("useWheelNavigation", () => {
     expect(goToNextImage).not.toHaveBeenCalled()
   })
 
-  it("scales line-mode deltas into the pixel budget", () => {
+  test("scales line-mode deltas into the pixel budget", () => {
     const { goToNextImage } = renderWheelNavigation()
 
     // 2 lines * 16px = 32px ≥ threshold.
@@ -151,7 +151,7 @@ describe("useWheelNavigation", () => {
     expect(goToNextImage).toHaveBeenCalledTimes(1)
   })
 
-  it("ignores horizontal-dominant wheels", () => {
+  test("ignores horizontal-dominant wheels", () => {
     const { goToNextImage, goToPreviousImage } =
       renderWheelNavigation()
 

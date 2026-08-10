@@ -4,7 +4,13 @@ import {
   screen,
 } from "@testing-library/react"
 import { Observable } from "rxjs"
-import { afterEach, describe, expect, it, vi } from "vitest"
+import {
+  afterEach,
+  describe,
+  expect,
+  test,
+  vi,
+} from "vitest"
 
 import type { DirectoryEntry } from "../../types"
 import type { ImageLoaderContextValue } from "../imageLoader/ImageLoaderContext"
@@ -141,7 +147,7 @@ describe("PaneGallery (in-pane gallery)", () => {
     window.api.path.dirname = originalDirname
   })
 
-  it("opens the tapped image in this column at its index", async () => {
+  test("opens the tapped image in this column at its index", async () => {
     const { onOpenImage } = renderGallery()
 
     // The second image tile (index 1 within the folder's image listing).
@@ -153,7 +159,7 @@ describe("PaneGallery (in-pane gallery)", () => {
     expect(onOpenImage).toHaveBeenCalledWith(FOLDER_PATH, 1)
   })
 
-  it("drills into a subfolder when its tile is tapped", async () => {
+  test("drills into a subfolder when its tile is tapped", async () => {
     renderGallery()
 
     // Wait for the cats listing, then drill into the subfolder; the subfolder's
@@ -170,7 +176,7 @@ describe("PaneGallery (in-pane gallery)", () => {
     ).not.toBeInTheDocument()
   })
 
-  it("climbs past the drive root to the all-drives list instead of locking to the drive", async () => {
+  test("climbs past the drive root to the all-drives list instead of locking to the drive", async () => {
     // POSIX `dirname` where a drive root ("/") is its own parent — the case that
     // used to disable the up button and strand a queued gallery on one drive.
     window.api.path.dirname = (targetPath: string) => {
@@ -234,7 +240,7 @@ describe("PaneGallery (in-pane gallery)", () => {
     ).toBeDisabled()
   })
 
-  it("leaves the gallery via the close control", async () => {
+  test("leaves the gallery via the close control", async () => {
     const { onClose } = renderGallery()
 
     // By role, not by `title`: the close control is an `IconButton` inside a

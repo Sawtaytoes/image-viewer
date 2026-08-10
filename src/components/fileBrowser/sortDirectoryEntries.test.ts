@@ -1,4 +1,4 @@
-import { describe, expect, it } from "vitest"
+import { describe, expect, test } from "vitest"
 
 import { sortOrders } from "../settings/sortOrders"
 import sortDirectoryEntries from "./sortDirectoryEntries"
@@ -10,7 +10,7 @@ const entries = [
 ]
 
 describe("sortDirectoryEntries", () => {
-  it("sorts by natural name for the name order", () => {
+  test("sorts by natural name for the name order", () => {
     expect(
       sortDirectoryEntries(entries, sortOrders.name).map(
         (entry) => entry.name,
@@ -18,7 +18,7 @@ describe("sortDirectoryEntries", () => {
     ).toEqual(["apple.jpg", "banana.jpg", "cherry.jpg"])
   })
 
-  it("sorts newest-first for the modified-desc order", () => {
+  test("sorts newest-first for the modified-desc order", () => {
     expect(
       sortDirectoryEntries(
         entries,
@@ -27,7 +27,7 @@ describe("sortDirectoryEntries", () => {
     ).toEqual(["apple.jpg", "banana.jpg", "cherry.jpg"])
   })
 
-  it("breaks modified-time ties by natural name", () => {
+  test("breaks modified-time ties by natural name", () => {
     const sameTime = [
       { modifiedTime: 500, name: "bravo.jpg" },
       { modifiedTime: 500, name: "alpha.jpg" },
@@ -41,7 +41,7 @@ describe("sortDirectoryEntries", () => {
     ).toEqual(["alpha.jpg", "bravo.jpg"])
   })
 
-  it("does not mutate the input array", () => {
+  test("does not mutate the input array", () => {
     const original = entries.slice()
 
     sortDirectoryEntries(entries, sortOrders.modifiedDesc)

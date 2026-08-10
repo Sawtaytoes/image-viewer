@@ -1,4 +1,4 @@
-import { describe, expect, it } from "vitest"
+import { describe, expect, test } from "vitest"
 
 import {
   getDateGroupBoundaries,
@@ -19,7 +19,7 @@ const daysAgo = (days: number): number =>
 describe("getDateGroupKey", () => {
   const boundaries = getDateGroupBoundaries(now)
 
-  it("assigns each offset to the matching Explorer bucket", () => {
+  test("assigns each offset to the matching Explorer bucket", () => {
     expect(getDateGroupKey(daysAgo(0), boundaries)).toBe(
       "today",
     )
@@ -46,14 +46,14 @@ describe("getDateGroupKey", () => {
     )
   })
 
-  it("treats a missing/zero mtime as the oldest bucket", () => {
+  test("treats a missing/zero mtime as the oldest bucket", () => {
     expect(getDateGroupKey(0, boundaries)).toBe("longAgo")
     expect(getDateGroupKey(undefined, boundaries)).toBe(
       "longAgo",
     )
   })
 
-  it("puts a future time in today", () => {
+  test("puts a future time in today", () => {
     expect(getDateGroupKey(daysAgo(-1), boundaries)).toBe(
       "today",
     )
@@ -61,7 +61,7 @@ describe("getDateGroupKey", () => {
 })
 
 describe("groupEntriesByDate", () => {
-  it("returns only non-empty buckets in Explorer's display order", () => {
+  test("returns only non-empty buckets in Explorer's display order", () => {
     const entries = [
       { modifiedTime: daysAgo(0), name: "alpha" },
       { modifiedTime: daysAgo(4), name: "bravo" },
@@ -82,7 +82,7 @@ describe("groupEntriesByDate", () => {
     ])
   })
 
-  it("collects every entry that falls in the same bucket", () => {
+  test("collects every entry that falls in the same bucket", () => {
     const entries = [
       { modifiedTime: daysAgo(0), name: "alpha" },
       { modifiedTime: daysAgo(0), name: "bravo" },

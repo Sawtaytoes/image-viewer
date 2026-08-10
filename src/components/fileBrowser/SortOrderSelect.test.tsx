@@ -3,12 +3,12 @@ import {
   render,
   screen,
 } from "@testing-library/react"
-import { describe, expect, it, vi } from "vitest"
+import { describe, expect, test, vi } from "vitest"
 
 import SortOrderSelect from "./SortOrderSelect"
 
 describe("SortOrderSelect", () => {
-  it("shows the current order on the trigger, which carries the accessible name", () => {
+  test("shows the current order on the trigger, which carries the accessible name", () => {
     render(
       <SortOrderSelect
         onChange={vi.fn()}
@@ -25,7 +25,7 @@ describe("SortOrderSelect", () => {
     expect(trigger).toHaveTextContent("Newest")
   })
 
-  it("keeps the listbox closed until the trigger opens it, then lists both orders", () => {
+  test("keeps the listbox closed until the trigger opens it, then lists both orders", () => {
     render(
       <SortOrderSelect onChange={vi.fn()} value="name" />,
     )
@@ -48,7 +48,7 @@ describe("SortOrderSelect", () => {
     ).toBeInTheDocument()
   })
 
-  it("reports the chosen order's value and closes the listbox on select", () => {
+  test("reports the chosen order's value and closes the listbox on select", () => {
     const onChange = vi.fn()
 
     render(
@@ -70,7 +70,7 @@ describe("SortOrderSelect", () => {
     ).not.toBeInTheDocument()
   })
 
-  it("marks the current order as the selected option", () => {
+  test("marks the current order as the selected option", () => {
     render(
       <SortOrderSelect
         onChange={vi.fn()}

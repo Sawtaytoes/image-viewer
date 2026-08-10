@@ -1,5 +1,5 @@
 import { filter, tap } from "rxjs/operators"
-import { beforeEach, describe, expect, it } from "vitest"
+import { beforeEach, describe, expect, test } from "vitest"
 
 import {
   addFilePath,
@@ -67,7 +67,7 @@ describe("referenceCountEpic", () => {
     store = createTestStore()
   })
 
-  it("keeps the entry while holders remain and evicts on the final release", () => {
+  test("keeps the entry while holders remain and evicts on the final release", () => {
     store.dispatch(retainFilePath({ filePath }))
     store.dispatch(retainFilePath({ filePath }))
 
@@ -86,7 +86,7 @@ describe("referenceCountEpic", () => {
     ])
   })
 
-  it("never turns a retain into a load (downloads stay lazy)", () => {
+  test("never turns a retain into a load (downloads stay lazy)", () => {
     store.dispatch(retainFilePath({ filePath }))
 
     expect(store.typesFor(addFilePath.type)).toHaveLength(0)
@@ -95,7 +95,7 @@ describe("referenceCountEpic", () => {
     ).toHaveLength(0)
   })
 
-  it("scopes counts per filePath", () => {
+  test("scopes counts per filePath", () => {
     const otherFilePath = "/photos/b.png"
 
     store.dispatch(retainFilePath({ filePath }))

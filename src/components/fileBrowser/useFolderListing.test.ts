@@ -3,7 +3,13 @@ import {
   renderHook,
   waitFor,
 } from "@testing-library/react"
-import { afterEach, describe, expect, it, vi } from "vitest"
+import {
+  afterEach,
+  describe,
+  expect,
+  test,
+  vi,
+} from "vitest"
 
 import useFolderListing from "./useFolderListing"
 
@@ -14,7 +20,7 @@ afterEach(() => {
 })
 
 describe("useFolderListing", () => {
-  it("reads the folder on mount and again on refresh()", async () => {
+  test("reads the folder on mount and again on refresh()", async () => {
     // Typed with the bridge's own signature so the call assertions below check
     // the arguments the real `readDirectory` takes, not a bare `() => …`.
     const readDirectory = vi.fn<
@@ -47,7 +53,7 @@ describe("useFolderListing", () => {
     )
   })
 
-  it("does not read when there is no folder path", () => {
+  test("does not read when there is no folder path", () => {
     const readDirectory = vi.fn<
       Window["api"]["readDirectory"]
     >(() => Promise.resolve([]))

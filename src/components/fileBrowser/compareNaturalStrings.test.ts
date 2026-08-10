@@ -1,9 +1,9 @@
-import { describe, expect, it } from "vitest"
+import { describe, expect, test } from "vitest"
 
 import compareNaturalStrings from "./compareNaturalStrings"
 
 describe("compareNaturalStrings", () => {
-  it("orders embedded numbers numerically, not lexically", () => {
+  test("orders embedded numbers numerically, not lexically", () => {
     const sorted = [
       "img10.png",
       "img2.png",
@@ -17,7 +17,7 @@ describe("compareNaturalStrings", () => {
     ])
   })
 
-  it("compares case-insensitively", () => {
+  test("compares case-insensitively", () => {
     expect(compareNaturalStrings("Apple", "apple")).toBe(0)
   })
 })
