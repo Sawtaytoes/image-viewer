@@ -1,9 +1,9 @@
-import { describe, expect, it } from "vitest"
+import { describe, expect, test } from "vitest"
 
 import getImageMimeType from "./imageMimeTypes"
 
 describe("getImageMimeType", () => {
-  it("maps common image extensions to their MIME type", () => {
+  test("maps common image extensions to their MIME type", () => {
     expect(getImageMimeType(".png")).toBe("image/png")
     expect(getImageMimeType(".jpg")).toBe("image/jpeg")
     expect(getImageMimeType(".jpeg")).toBe("image/jpeg")
@@ -11,28 +11,28 @@ describe("getImageMimeType", () => {
     expect(getImageMimeType(".svg")).toBe("image/svg+xml")
   })
 
-  it("collapses the jpeg-family extensions to image/jpeg", () => {
+  test("collapses the jpeg-family extensions to image/jpeg", () => {
     expect(getImageMimeType(".jfif")).toBe("image/jpeg")
     expect(getImageMimeType(".pjp")).toBe("image/jpeg")
     expect(getImageMimeType(".pjpeg")).toBe("image/jpeg")
   })
 
-  it("maps icon extensions to image/x-icon", () => {
+  test("maps icon extensions to image/x-icon", () => {
     expect(getImageMimeType(".ico")).toBe("image/x-icon")
     expect(getImageMimeType(".cur")).toBe("image/x-icon")
   })
 
-  it("maps HEIC/HEIF to their source MIME type (transcoded to JPEG in main)", () => {
+  test("maps HEIC/HEIF to their source MIME type (transcoded to JPEG in main)", () => {
     expect(getImageMimeType(".heic")).toBe("image/heic")
     expect(getImageMimeType(".heif")).toBe("image/heif")
   })
 
-  it("is case-insensitive", () => {
+  test("is case-insensitive", () => {
     expect(getImageMimeType(".PNG")).toBe("image/png")
     expect(getImageMimeType(".JPeG")).toBe("image/jpeg")
   })
 
-  it("falls back to application/octet-stream for unknown extensions", () => {
+  test("falls back to application/octet-stream for unknown extensions", () => {
     expect(getImageMimeType(".xyz")).toBe(
       "application/octet-stream",
     )

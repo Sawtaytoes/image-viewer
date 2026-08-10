@@ -1,5 +1,5 @@
+import { createVitestConfig } from "@charcuterie/vitest-config"
 import react from "@vitejs/plugin-react"
-import { defineConfig } from "vitest/config"
 
 // Vitest uses the same React transform as the renderer build so JSX behaves
 // identically in tests.
@@ -9,7 +9,7 @@ import { defineConfig } from "vitest/config"
 // Tailwind pass per run and prove nothing: a `className` assertion reads the
 // attribute, which is present with or without the CSS. The gate that CAN see a
 // missing utility is `yarn build:renderer`, and that runs the real plugin.
-export default defineConfig({
+export default createVitestConfig({
   plugins: [react()],
   test: {
     environment: "jsdom",

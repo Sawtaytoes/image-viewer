@@ -4,7 +4,7 @@ import {
   render,
   screen,
 } from "@testing-library/react"
-import { describe, expect, it, vi } from "vitest"
+import { describe, expect, test, vi } from "vitest"
 
 import ImageViewerContext, {
   type ImageViewerContextValue,
@@ -81,7 +81,7 @@ const getBar = () =>
     .parentElement as HTMLElement
 
 describe("TitleBar", () => {
-  it("stands the bar down in fullscreen while the viewer is open, so only the viewer chrome is the one summonable bar", () => {
+  test("stands the bar down in fullscreen while the viewer is open, so only the viewer chrome is the one summonable bar", () => {
     const { container } = renderTitleBar({
       imageFilePath: "C:\\pics\\photo.jpg",
       isFullScreen: true,
@@ -99,7 +99,7 @@ describe("TitleBar", () => {
     ).toBeNull()
   })
 
-  it("stays slid up in fullscreen while the viewer is open, no matter what pointer events arrive", () => {
+  test("stays slid up in fullscreen while the viewer is open, no matter what pointer events arrive", () => {
     renderTitleBar({
       imageFilePath: "C:\\pics\\photo.jpg",
       isFullScreen: true,
@@ -123,7 +123,7 @@ describe("TitleBar", () => {
     )
   })
 
-  it("pins the bar open in the fullscreen file browser and mounts no reveal strip, so it never covers the directory controls", () => {
+  test("pins the bar open in the fullscreen file browser and mounts no reveal strip, so it never covers the directory controls", () => {
     const { container } = renderTitleBar({
       isFullScreen: true,
     })
@@ -142,7 +142,7 @@ describe("TitleBar", () => {
     ).toBeNull()
   })
 
-  it("keeps the bar pinned open when windowed regardless of the viewer", () => {
+  test("keeps the bar pinned open when windowed regardless of the viewer", () => {
     renderTitleBar({
       imageFilePath: "C:\\pics\\photo.jpg",
       isFullScreen: false,
@@ -188,7 +188,7 @@ const renderTitleBarWithWorkspace = (
   )
 
 describe("TitleBar 'Delete saved'", () => {
-  it("shows the button when a saved queue exists and clears the saved slot on click", () => {
+  test("shows the button when a saved queue exists and clears the saved slot on click", () => {
     const clearSavedQueue = vi.fn()
 
     renderTitleBarWithWorkspace({
@@ -205,7 +205,7 @@ describe("TitleBar 'Delete saved'", () => {
     expect(clearSavedQueue).toHaveBeenCalledTimes(1)
   })
 
-  it("hides the button when there is no saved queue", () => {
+  test("hides the button when there is no saved queue", () => {
     renderTitleBarWithWorkspace({ hasSavedQueue: false })
 
     expect(

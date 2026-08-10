@@ -1,4 +1,4 @@
-import { describe, expect, it } from "vitest"
+import { describe, expect, test } from "vitest"
 
 import createReducer from "./createReducer"
 
@@ -8,15 +8,15 @@ describe("createReducer", () => {
     0,
   )
 
-  it("falls back to the initial state", () => {
+  test("falls back to the initial state", () => {
     expect(reducer(undefined, { type: "noop" })).toBe(0)
   })
 
-  it("runs the handler for a matching action type", () => {
+  test("runs the handler for a matching action type", () => {
     expect(reducer(5, { type: "increment" })).toBe(6)
   })
 
-  it("returns the current state for unknown action types", () => {
+  test("returns the current state for unknown action types", () => {
     expect(reducer(5, { type: "unknown" })).toBe(5)
   })
 })

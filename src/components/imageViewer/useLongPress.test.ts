@@ -4,7 +4,7 @@ import {
   beforeEach,
   describe,
   expect,
-  it,
+  test,
   vi,
 } from "vitest"
 import type { UseLongPressOptions } from "./useLongPress"
@@ -67,7 +67,7 @@ describe("useLongPress", () => {
     )
   }
 
-  it("fires onComplete after the hold duration", () => {
+  test("fires onComplete after the hold duration", () => {
     const onCancel = vi.fn()
     const onComplete = vi.fn()
 
@@ -85,7 +85,7 @@ describe("useLongPress", () => {
     expect(onCancel).not.toHaveBeenCalled()
   })
 
-  it("cancels (no completion) when the pointer moves past the threshold", () => {
+  test("cancels (no completion) when the pointer moves past the threshold", () => {
     const onCancel = vi.fn()
     const onComplete = vi.fn()
 
@@ -117,7 +117,7 @@ describe("useLongPress", () => {
     expect(onComplete).not.toHaveBeenCalled()
   })
 
-  it("never emits a non-zero progress for a quick tap", () => {
+  test("never emits a non-zero progress for a quick tap", () => {
     const onProgress = vi.fn<(fraction: number) => void>()
 
     renderLongPress({
@@ -145,7 +145,7 @@ describe("useLongPress", () => {
     ).toBe(true)
   })
 
-  it("fires onCancel when the press is released early", () => {
+  test("fires onCancel when the press is released early", () => {
     const onCancel = vi.fn()
     const onComplete = vi.fn()
 

@@ -4,7 +4,13 @@ import {
   render,
   screen,
 } from "@testing-library/react"
-import { afterEach, describe, expect, it, vi } from "vitest"
+import {
+  afterEach,
+  describe,
+  expect,
+  test,
+  vi,
+} from "vitest"
 
 import type { Display } from "../../types"
 import useDisplayMenuItems from "./useDisplayMenuItems"
@@ -69,7 +75,7 @@ describe("useDisplayMenuItems", () => {
     vi.restoreAllMocks()
   })
 
-  it("offers one menu item per connected display", async () => {
+  test("offers one menu item per connected display", async () => {
     await renderMenu([
       buildDisplay(1, "Built-in", true),
       buildDisplay(2, "Dell U2720Q"),
@@ -84,7 +90,7 @@ describe("useDisplayMenuItems", () => {
     expect(items[1]).toHaveTextContent("Dell U2720Q")
   })
 
-  it("names the menu from its trigger rather than a label prop", async () => {
+  test("names the menu from its trigger rather than a label prop", async () => {
     await renderMenu([buildDisplay(1, "Built-in")])
 
     // `Menu` has no `label` prop: `useRole` points `aria-labelledby` at the
@@ -94,7 +100,7 @@ describe("useDisplayMenuItems", () => {
     ).toBeInTheDocument()
   })
 
-  it("lights the physical display while a row is pointed at, and puts it out again", async () => {
+  test("lights the physical display while a row is pointed at, and puts it out again", async () => {
     await renderMenu([
       buildDisplay(1, "Built-in"),
       buildDisplay(2, "Dell U2720Q"),
@@ -123,7 +129,7 @@ describe("useDisplayMenuItems", () => {
     ).toHaveBeenCalled()
   })
 
-  it("keeps the whole row hot, including the glyph", async () => {
+  test("keeps the whole row hot, including the glyph", async () => {
     await renderMenu([buildDisplay(2, "Dell U2720Q")])
 
     const [item] = await screen.findAllByRole("menuitem")
@@ -144,7 +150,7 @@ describe("useDisplayMenuItems", () => {
     )
   })
 
-  it("spawns a window on the chosen display and stops identifying first", async () => {
+  test("spawns a window on the chosen display and stops identifying first", async () => {
     const { onSpawn } = await renderMenu([
       buildDisplay(1, "Built-in"),
       buildDisplay(2, "Dell U2720Q"),
@@ -168,7 +174,7 @@ describe("useDisplayMenuItems", () => {
     expect(onSpawn).toHaveBeenCalled()
   })
 
-  it("says so with a disabled row when no display is detected", async () => {
+  test("says so with a disabled row when no display is detected", async () => {
     await renderMenu([])
 
     const item = await screen.findByRole("menuitem")

@@ -7,7 +7,7 @@ import {
   daylight,
   resolveTokens,
 } from "@charcuterie/tokens"
-import { describe, expect, it } from "vitest"
+import { describe, expect, test } from "vitest"
 
 // `index.html` no longer pins a scheme. It carries the inline first-paint script
 // from `@charcuterie/tokens` — `buildFirstPaintScript(daylight)` — which runs
@@ -28,7 +28,7 @@ const INDEX_HTML_PATH = resolve(
 )
 
 describe("index.html's first-paint script", () => {
-  it("contains the exact buildFirstPaintScript(daylight) snippet, un-drifted", () => {
+  test("contains the exact buildFirstPaintScript(daylight) snippet, un-drifted", () => {
     const markup = readFileSync(INDEX_HTML_PATH, "utf8")
 
     expect(markup).toContain(
@@ -36,7 +36,7 @@ describe("index.html's first-paint script", () => {
     )
   })
 
-  it("uses the shared storage key so pre-paint and runtime agree", () => {
+  test("uses the shared storage key so pre-paint and runtime agree", () => {
     const markup = readFileSync(INDEX_HTML_PATH, "utf8")
 
     // The runtime `localStoragePersistence` default is this same key; if they
@@ -46,7 +46,7 @@ describe("index.html's first-paint script", () => {
     )
   })
 
-  it("branches the fallback hex on both schemes' surface.base", () => {
+  test("branches the fallback hex on both schemes' surface.base", () => {
     const markup = readFileSync(INDEX_HTML_PATH, "utf8")
 
     const dark = resolveTokens({
@@ -63,7 +63,7 @@ describe("index.html's first-paint script", () => {
     expect(markup).toContain(light.colour.surface.base)
   })
 
-  it("no longer pins a scheme in the <html> tag", () => {
+  test("no longer pins a scheme in the <html> tag", () => {
     const markup = readFileSync(INDEX_HTML_PATH, "utf8")
 
     // The `<html …>` open tag must carry no `data-scheme` — the first-paint

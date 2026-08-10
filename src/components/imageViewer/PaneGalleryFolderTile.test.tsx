@@ -6,7 +6,7 @@ import {
   beforeEach,
   describe,
   expect,
-  it,
+  test,
   vi,
 } from "vitest"
 
@@ -133,7 +133,7 @@ describe("PaneGalleryFolderTile", () => {
     window.api.findFirstImage = () => Promise.resolve(null)
   })
 
-  it("shows a thumbnail for a folder that contains images", async () => {
+  test("shows a thumbnail for a folder that contains images", async () => {
     window.api.findFirstImage = () =>
       Promise.resolve({
         name: "photo.jpg",
@@ -147,7 +147,7 @@ describe("PaneGalleryFolderTile", () => {
     ).toBeInTheDocument()
   })
 
-  it("shows no thumbnail for a folder with no images at any depth", async () => {
+  test("shows no thumbnail for a folder with no images at any depth", async () => {
     window.api.findFirstImage = () => Promise.resolve(null)
 
     renderTile()

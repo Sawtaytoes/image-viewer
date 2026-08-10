@@ -1,7 +1,13 @@
 import { act, renderHook } from "@testing-library/react"
 import type { ReactNode } from "react"
 import { useContext } from "react"
-import { afterEach, describe, expect, it, vi } from "vitest"
+import {
+  afterEach,
+  describe,
+  expect,
+  test,
+  vi,
+} from "vitest"
 
 import WorkspaceContext from "./WorkspaceContext"
 import WorkspaceProvider from "./WorkspaceProvider"
@@ -21,14 +27,14 @@ const renderWorkspace = () => {
 }
 
 describe("WorkspaceProvider", () => {
-  it("starts with no panes", () => {
+  test("starts with no panes", () => {
     const { result } = renderWorkspace()
 
     expect(result.current.panes).toHaveLength(0)
     expect(result.current.activePaneId).toBe(null)
   })
 
-  it("dedupes addFoldersToQueue by path", () => {
+  test("dedupes addFoldersToQueue by path", () => {
     const { result } = renderWorkspace()
 
     act(() => {
@@ -51,7 +57,7 @@ describe("WorkspaceProvider", () => {
     ).toEqual(["/a", "/b", "/c"])
   })
 
-  it("nulls every pane that referenced a removed folder", () => {
+  test("nulls every pane that referenced a removed folder", () => {
     const { result } = renderWorkspace()
 
     act(() => {
@@ -103,7 +109,7 @@ describe("WorkspaceProvider", () => {
     ).toBe(true)
   })
 
-  it("clearQueue empties the queue and severs every referencing pane", () => {
+  test("clearQueue empties the queue and severs every referencing pane", () => {
     const { result } = renderWorkspace()
 
     act(() => {
@@ -139,7 +145,7 @@ describe("WorkspaceProvider", () => {
     expect(result.current.panes[0].folderId).toBe(null)
   })
 
-  it("resets currentIndex to 0 when assigning a folder to a pane", () => {
+  test("resets currentIndex to 0 when assigning a folder to a pane", () => {
     const { result } = renderWorkspace()
 
     act(() => {
@@ -190,7 +196,7 @@ describe("WorkspaceProvider", () => {
     expect(pane?.currentIndex).toBe(0)
   })
 
-  it("clearPanes drops every pane back to the gallery", () => {
+  test("clearPanes drops every pane back to the gallery", () => {
     const { result } = renderWorkspace()
 
     act(() => {
@@ -208,7 +214,7 @@ describe("WorkspaceProvider", () => {
     expect(result.current.activePaneId).toBe(null)
   })
 
-  it("assignFolderPathToPane queues a new folder and fills the named pane", () => {
+  test("assignFolderPathToPane queues a new folder and fills the named pane", () => {
     const { result } = renderWorkspace()
 
     let firstPaneId = ""
@@ -248,7 +254,7 @@ describe("WorkspaceProvider", () => {
     expect(firstPane?.folderId).toBe(null)
   })
 
-  it("assignFolderPathToPane reuses an already-queued folder instead of duplicating it", () => {
+  test("assignFolderPathToPane reuses an already-queued folder instead of duplicating it", () => {
     const { result } = renderWorkspace()
 
     act(() => {
@@ -282,7 +288,7 @@ describe("WorkspaceProvider", () => {
     ).toBe(existingFolderId)
   })
 
-  it("assignFolderPathToPane opens at a given image index when provided", () => {
+  test("assignFolderPathToPane opens at a given image index when provided", () => {
     const { result } = renderWorkspace()
 
     let paneId = ""
@@ -306,7 +312,7 @@ describe("WorkspaceProvider", () => {
     expect(pane?.currentIndex).toBe(4)
   })
 
-  it("auto-loads the next not-already-open queued folder into an emptied pane", () => {
+  test("auto-loads the next not-already-open queued folder into an emptied pane", () => {
     const { result } = renderWorkspace()
 
     act(() => {
@@ -354,7 +360,7 @@ describe("WorkspaceProvider", () => {
     expect(firstPane?.currentIndex).toBe(0)
   })
 
-  it("leaves an emptied pane empty when no other queued folder is free", () => {
+  test("leaves an emptied pane empty when no other queued folder is free", () => {
     const { result } = renderWorkspace()
 
     act(() => {
@@ -394,7 +400,7 @@ describe("WorkspaceProvider", () => {
         Promise.resolve(null)
     })
 
-    it("records a folder-backed pane's new index by path", () => {
+    test("records a folder-backed pane's new index by path", () => {
       const setFolderLastIndex = vi.fn()
 
       window.api.setFolderLastIndex = setFolderLastIndex
@@ -432,7 +438,7 @@ describe("WorkspaceProvider", () => {
       )
     })
 
-    it("does not record an index for a pane with no folder", () => {
+    test("does not record an index for a pane with no folder", () => {
       const setFolderLastIndex = vi.fn()
 
       window.api.setFolderLastIndex = setFolderLastIndex
@@ -452,7 +458,7 @@ describe("WorkspaceProvider", () => {
       expect(setFolderLastIndex).not.toHaveBeenCalled()
     })
 
-    it("resumes a pane to the folder's stored index on assign", async () => {
+    test("resumes a pane to the folder's stored index on assign", async () => {
       window.api.getFolderLastIndex = vi.fn(() =>
         Promise.resolve(6),
       )
@@ -496,7 +502,7 @@ describe("WorkspaceProvider", () => {
   })
 
   describe("addPaneAndFill", () => {
-    it("opens a new column on the next not-already-open queued folder", () => {
+    test("opens a new column on the next not-already-open queued folder", () => {
       const { result } = renderWorkspace()
 
       act(() => {
@@ -527,7 +533,7 @@ describe("WorkspaceProvider", () => {
       )
     })
 
-    it("leaves the new column empty when the queue is exhausted", () => {
+    test("leaves the new column empty when the queue is exhausted", () => {
       const { result } = renderWorkspace()
 
       act(() => {
@@ -557,7 +563,7 @@ describe("WorkspaceProvider", () => {
         Promise.resolve(true)
     })
 
-    it("trashes the folder, then dequeues it and severs its panes", async () => {
+    test("trashes the folder, then dequeues it and severs its panes", async () => {
       const deleteFilePath = vi.fn(() =>
         Promise.resolve(true),
       )
@@ -603,7 +609,7 @@ describe("WorkspaceProvider", () => {
       ).toBe(null)
     })
 
-    it("leaves the queue untouched when the trash op fails", async () => {
+    test("leaves the queue untouched when the trash op fails", async () => {
       window.api.deleteFilePath = () =>
         Promise.resolve(false)
 
