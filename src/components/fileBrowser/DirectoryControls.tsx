@@ -172,8 +172,14 @@ const DirectoryControls = () => {
                     {label}
                   </span>
                 ) : (
+                  // An ancestor rung — clickable to jump straight to that
+                  // folder. Carry a persistent link affordance
+                  // (`text-intent-accent-content`) so it *reads* as a link at
+                  // rest, not just on hover; #11 had dropped it to `text-inherit`
+                  // + a hover-only background, which left the ancestors looking
+                  // like plain text even though they were still buttons.
                   <button
-                    className={`${breadcrumbSegmentClassName} cursor-pointer border-0 bg-transparent text-inherit hover:bg-intent-neutral-surface-hover`}
+                    className={`${breadcrumbSegmentClassName} cursor-pointer border-0 bg-transparent text-intent-accent-content hover:bg-intent-neutral-surface-hover hover:underline`}
                     onClick={() => {
                       setFilePath(path)
                     }}
