@@ -4,6 +4,7 @@
 - **Date:** 2026-06-02
 - **Deciders:** Kevin (owner) + agent
 - **Source:** Migrated from `docs/research/0003-linting-and-formatting.md` (Phase 1 modernization)
+- **Superseded in part by:** [2026-08-11 — An action creator's `toString` is an OWN property](2026-08-11-action-creator-tostring-is-an-own-property-not-prototype.md) — only the `complexity/useArrowFunction` bullet below. The rule is back **on**; the `.prototype.toString` it was protecting turned out to be a no-op. Everything else here stands.
 
 ## Decision (the rule)
 

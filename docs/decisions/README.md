@@ -131,3 +131,7 @@ to apply here); everything else is sourced from Image Viewer's own chats, commit
 ### 2026-08-08 — Rulesets vs Release (personal GitHub)
 
 - [2026-08-08 — On personal GitHub, release bots and “green CI before merge” cannot both be hard gates](2026-08-08-personal-github-rulesets-cannot-gate-and-release.md) ← **Master ruleset = linear history only; org move is the durable path, deferred**
+
+### 2026-08-11 — Action creators
+
+- [2026-08-11 — An action creator's `toString` is an OWN property; `complexity/useArrowFunction` is back on](2026-08-11-action-creator-tostring-is-an-own-property-not-prototype.md) ← **partly supersedes the 2026-06-02 lint decision: `.prototype.toString` never affected `String(fn)`, so the `function` expressions were guarding a no-op**
