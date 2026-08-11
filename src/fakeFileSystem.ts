@@ -651,6 +651,7 @@ const createFakeFileSystem = ({
 
   const readImageData = (
     filePath: string,
+    onProgress?: (downloadPercentage: number) => void,
   ): Promise<ImageBytes> => {
     const node = nodesByPath.get(filePath)
 
@@ -659,6 +660,10 @@ const createFakeFileSystem = ({
         new Error(`Fake file not found: ${filePath}`),
       )
     }
+
+    // In-memory bytes are instant — there's no read to stream, so report a
+    // single 100% to match the real preload's final tick.
+    onProgress?.(100)
 
     return Promise.resolve({
       data: createBmp(node.width, node.height, node.color),

@@ -342,9 +342,11 @@ const searchFolders = async (rootPath, query, onBatch) => {
 
 // Reads an image off disk and hands the renderer the raw bytes (as a
 // cloneable ArrayBuffer) plus a MIME type, replacing the old custom-scheme XHR
-// fetch. `fs.promises.readFile` returns a Buffer that may be a view into a
-// shared pool, so slice out exactly this file's bytes before crossing the
-// bridge.
+// fetch. Streamed in chunks so the caller's `onProgress` can drive the loading
+// bar the way the old XHR `progress` events did — big files (multi-MB photos)
+// tick up as bytes arrive; small files read in a single chunk and jump to 100.
+// `Buffer.concat` gives a standalone buffer, but slice out exactly its bytes
+// anyway before crossing the bridge (structured clone carries only this file).
 // Extensions Chromium can't decode itself — transcoded to JPEG in main (via
 // libheif WASM) rather than read straight off disk. Keep in sync with the HEIC
 // handling in main.js / the extension list in useImageFiles.js.
@@ -353,10 +355,58 @@ const transcodedImageExtensions = new Set([
   ".heif",
 ])
 
-const readImageData = (filePath) => {
+// Stream a file off disk, reporting byte-level progress as it goes. Resolves
+// with the same `{ data, mimeType }` shape the renderer already expects.
+const readImageDataStreamed = (filePath, onProgress) =>
+  new Promise((resolve, reject) => {
+    fs.stat(filePath, (statError, stats) => {
+      if (statError) {
+        reject(statError)
+        return
+      }
+
+      const totalBytes = stats.size
+      const chunks = []
+      let bytesRead = 0
+
+      const stream = fs.createReadStream(filePath)
+
+      stream.on("data", (chunk) => {
+        chunks.push(chunk)
+        bytesRead += chunk.length
+
+        // 0-byte files have no meaningful fraction; the `end` handler still
+        // resolves them and the caller emits a final 100%.
+        if (onProgress && totalBytes > 0) {
+          onProgress(
+            Math.round((bytesRead / totalBytes) * 100),
+          )
+        }
+      })
+
+      stream.on("error", reject)
+
+      stream.on("end", () => {
+        const buffer = Buffer.concat(chunks)
+
+        resolve({
+          data: buffer.buffer.slice(
+            buffer.byteOffset,
+            buffer.byteOffset + buffer.byteLength,
+          ),
+          mimeType: getImageMimeType(
+            path.extname(filePath),
+          ),
+        })
+      })
+    })
+  })
+
+const readImageData = (filePath, onProgress) => {
   // HEIC/HEIF can't be rendered by Chromium, so hand them to main for a JPEG
-  // transcode (cached there by path+mtime). Everything else is read straight
-  // off disk here — the fast path, no IPC round-trip.
+  // transcode (cached there by path+mtime). No mid-read progress for these —
+  // the WASM decode, not the byte read, is the cost. Everything else is read
+  // straight off disk here — the fast path, no IPC round-trip.
   if (
     transcodedImageExtensions.has(
       path.extname(filePath).toLowerCase(),
@@ -367,13 +417,7 @@ const readImageData = (filePath) => {
     })
   }
 
-  return fs.promises.readFile(filePath).then((buffer) => ({
-    data: buffer.buffer.slice(
-      buffer.byteOffset,
-      buffer.byteOffset + buffer.byteLength,
-    ),
-    mimeType: getImageMimeType(path.extname(filePath)),
-  }))
+  return readImageDataStreamed(filePath, onProgress)
 }
 
 contextBridge.exposeInMainWorld("api", {

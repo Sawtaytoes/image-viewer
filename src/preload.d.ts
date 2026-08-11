@@ -129,6 +129,9 @@ declare global {
       ) => Promise<DirectoryEntry[]>
       readImageData: (
         filePath: string,
+        // Streams byte-level read progress (0–100) as the file loads; omitted
+        // for the fake FS and the HEIC transcode path, which resolve in one go.
+        onProgress?: (downloadPercentage: number) => void,
       ) => Promise<ImageBytes>
       // Recursive folder-name search under `rootPath` (folders only, every
       // depth, bounded). `onBatch` streams each directory level's matches as
