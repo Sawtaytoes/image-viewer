@@ -194,3 +194,36 @@ component; this replaces them. Full write-up:
 - **Owed (human/GUI):** the accent hue is still open from phase 1 and **was not touched here**.
   `ProgressBar`'s loading state is the one surface that could not be driven — the fake FS resolves
   reads in-tick and `contextBridge` freezes `window.api`, so it cannot be stalled.
+
+## 2026-08-11 — `@charcuterie/*` to latest (branch `chore/charcuterie-latest`)
+
+Mechanical dependency bump: `tokens` 1.1.0 → **1.5.0**, `ui` 2.2.0 → **2.10.2**, `logic`
+1.1.0 → **1.2.0**. The five `@charcuterie/*` dev configs (`biome-config`, `eslint-config`,
+`tsconfig`, `vite-config`, `vitest-config`) were already at their latest published versions,
+so nothing moved there.
+
+- **No source change was needed.** `Menu` still takes a plain `MenuItem[]`: 2.6.0 widened
+  `items` into a discriminated union (`MenuItem | MenuSeparator | MenuGroup`) but kept the
+  bare item shape assignable, so `useDisplayMenuItems`' `MenuItem[]` return type still
+  type-checks. The overlay layer was already portalled — this app adopted that in 2.0.0.
+- **Two visual changes come with it, both intended upstream.** `ui@2.9.0` rebuilt the type
+  ramp around a 17px body (`15 · 16 · 17 · 19 · 24 · 30px`), so text is larger everywhere;
+  `tokens@1.5.0` strengthened `content.muted` so it clears AA on a highlighted row, so fine
+  print (the display menu's resolution lines) reads stronger.
+- **Nothing reflowed badly.** Before/after was measured, not eyeballed: at 900x700,
+  1400x900 and 1920x1080, in both schemes, `documentElement.scrollWidth` equals
+  `clientWidth`, no text-bearing element overflows its clipping box, and nothing lands
+  off-viewport — an identical result to the pre-bump build. Control heights are unchanged
+  (`Sort order` stays 44px; the colour-scheme button's 2px overhang of the 40px title bar
+  predates this bump). The display menu panel grows 192x188 → 216x219 and the chrome bar's
+  folder tab 43 → 47px, both inside their bars.
+- **The display overflow menu is unaffected.** It opens, portals to `document.body`, does
+  roving focus with Arrow/Home/End (wrapping at both ends), dismisses on Escape and Tab,
+  and returns focus to its trigger — byte-for-byte the same behaviour as before the bump.
+- **Verified:** `tsc --noEmit`, `biome check` (174 files), `eslint .`, `vite build` (renderer),
+  and `vitest run` — 142 pass. The two failures in `ColorSchemeControl.test.tsx` are
+  **pre-existing and unrelated**: this container's jsdom leaves `window.localStorage`
+  undefined, so the suite's `afterEach` throws. They fail identically on `master`.
+- **Still open upstream:** `Menu` and `Tooltip` sharing a trigger (see the comment in
+  `RevealableChrome.tsx`) was not re-tested against 2.10.2 — worth a look now that
+  `slotWiring` shares `mergeRefs` with `@charcuterie/logic` (2.5.0).

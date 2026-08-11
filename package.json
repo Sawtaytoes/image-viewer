@@ -28,9 +28,9 @@
     "node": ">=20.18.0"
   },
   "dependencies": {
-    "@charcuterie/logic": "^1.1.0",
-    "@charcuterie/tokens": "^1.1.0",
-    "@charcuterie/ui": "^2.2.0",
+    "@charcuterie/logic": "^1.2.0",
+    "@charcuterie/tokens": "^1.5.0",
+    "@charcuterie/ui": "^2.11.0",
     "electron-squirrel-startup": "^1.0.1",
     "heic-convert": "^2.1.0",
     "react": "^19.2.0",
@@ -43,7 +43,7 @@
     "@charcuterie/biome-config": "^1.0.0",
     "@charcuterie/eslint-config": "^1.1.0",
     "@charcuterie/tsconfig": "^1.0.0",
-    "@charcuterie/vite-config": "^1.0.1",
+    "@charcuterie/vite-config": "^1.0.2",
     "@charcuterie/vitest-config": "^1.0.1",
     "@electron-forge/cli": "8.0.0-alpha.10",
     "@electron-forge/maker-deb": "8.0.0-alpha.10",
