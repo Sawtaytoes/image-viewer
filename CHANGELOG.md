@@ -1,3 +1,15 @@
+# [2.9.0](https://github.com/Sawtaytoes/image-viewer/compare/v2.8.2...v2.9.0) (2026-08-11)
+
+
+### Bug Fixes
+
+* restore the breadcrumb ancestor link affordance ([#24](https://github.com/Sawtaytoes/image-viewer/issues/24)) ([e583eea](https://github.com/Sawtaytoes/image-viewer/commit/e583eea0ae4b917752c75ff35ac0d8a7eb60ff06)), closes [#11](https://github.com/Sawtaytoes/image-viewer/issues/11)
+
+
+### Features
+
+* restore advancing image-load progress via streamed reads ([#25](https://github.com/Sawtaytoes/image-viewer/issues/25)) ([925c323](https://github.com/Sawtaytoes/image-viewer/commit/925c3230a7396a4e26d921b2e4209b0a35e49623))
+
 ## [2.8.2](https://github.com/Sawtaytoes/image-viewer/compare/v2.8.1...v2.8.2) (2026-08-11)
 
 
