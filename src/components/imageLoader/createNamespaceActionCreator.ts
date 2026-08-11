@@ -34,31 +34,27 @@ const createNamespaceActionCreator = <
   actionType: string
   namespaceIdentifier?: NamespaceKey
 }): NamespaceActionCreator<Payload> => {
-  // Must stay a `function` (not an arrow): it needs its own `.prototype`
-  // for the `.toString` below, which lets the action creator be used as a
-  // computed object key that stringifies to its action type.
-  const actionCreator = function (
+  const actionCreator = (
     payload: Payload,
-  ): NamespaceAction<Payload> {
-    return {
-      // Without a `namespaceIdentifier` the untyped version read
-      // `payload[undefined]`, which is always `undefined`; this spells that
-      // out so the index is a real key.
-      namespace:
-        namespaceIdentifier === undefined
-          ? undefined
-          : payload[namespaceIdentifier],
-      payload,
-      type: actionType,
-    }
-  }
+  ): NamespaceAction<Payload> => ({
+    // Without a `namespaceIdentifier` the untyped version read
+    // `payload[undefined]`, which is always `undefined`; this spells that
+    // out so the index is a real key.
+    namespace:
+      namespaceIdentifier === undefined
+        ? undefined
+        : payload[namespaceIdentifier],
+    payload,
+    type: actionType,
+  })
 
-  actionCreator.prototype.toString = () => actionType
-
-  // `Object.assign` augments the function with its static `.type` while keeping
-  // the call signature, so the result satisfies `NamespaceActionCreator`
-  // without a cast.
+  // `Object.assign` augments the function with its statics while keeping the
+  // call signature, so the result satisfies `NamespaceActionCreator` without a
+  // cast. `toString` must be an own property — see the note in
+  // `createActionCreator`, where the old `.prototype.toString` assignment is
+  // explained.
   return Object.assign(actionCreator, {
+    toString: () => actionType,
     type: actionType,
   })
 }
