@@ -1,3 +1,10 @@
+## [2.8.2](https://github.com/Sawtaytoes/image-viewer/compare/v2.8.1...v2.8.2) (2026-08-11)
+
+
+### Bug Fixes
+
+* action creators stringify to their action type — the .prototype hack never did ([#22](https://github.com/Sawtaytoes/image-viewer/issues/22)) ([85bbac1](https://github.com/Sawtaytoes/image-viewer/commit/85bbac135ae23c6b032d901d5d92257099e7f7ce))
+
 ## [2.8.1](https://github.com/Sawtaytoes/image-viewer/compare/v2.8.0...v2.8.1) (2026-08-08)
 
 
