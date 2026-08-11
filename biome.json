@@ -23,9 +23,6 @@
         "useKeyWithClickEvents": "off",
         "noStaticElementInteractions": "off"
       },
-      "complexity": {
-        "useArrowFunction": "off"
-      },
       "performance": {
         "noAccumulatingSpread": "off"
       }

@@ -18,24 +18,27 @@ const createActionCreator = <Payload>({
 }: {
   actionType: string
 }): ActionCreator<Payload> => {
-  // Must stay a `function` (not an arrow): it needs its own `.prototype` for
-  // the `.toString` below, which lets the action creator be used as a computed
-  // object key that stringifies to its action type.
-  const actionCreator = function (
+  const actionCreator = (
     payload: Payload,
-  ): Action<Payload> {
-    return {
-      payload,
-      type: actionType,
-    }
-  }
+  ): Action<Payload> => ({
+    payload,
+    type: actionType,
+  })
 
-  actionCreator.prototype.toString = () => actionType
-
-  // `Object.assign` augments the function with its static `.type` while keeping
-  // the call signature, so the result satisfies `ActionCreator<Payload>`
-  // without a cast.
+  // `Object.assign` augments the function with its statics while keeping the
+  // call signature, so the result satisfies `ActionCreator<Payload>` without a
+  // cast.
+  //
+  // `toString` has to be an OWN property here. It used to be assigned to
+  // `actionCreator.prototype.toString`, which never ran: `.prototype` is only
+  // consulted for objects built with `new actionCreator()`, and stringifying
+  // the function itself resolves `toString` up the *function's* chain to
+  // `Function.prototype.toString` — so `${doThing}` returned the source text,
+  // not "doThing". That line's only real effect was requiring a `function`
+  // expression (arrows have no `.prototype`, so the assignment threw at module
+  // load), which is why `complexity/useArrowFunction` had to be disabled.
   return Object.assign(actionCreator, {
+    toString: () => actionType,
     type: actionType,
   })
 }
