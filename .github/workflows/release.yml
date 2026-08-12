@@ -5,6 +5,16 @@ on:
     branches:
       - master
 
+# Two Release runs on the same branch must never overlap: semantic-release
+# pushes a version-bump commit and a tag, so a second run racing the first
+# fails with "local branch master is behind the remote" (it happened on
+# 2026-08-11, two runs 3s apart). Queue instead of cancelling —
+# cancel-in-progress would abandon a release mid-publish, possibly after the
+# tag exists but before the installers are uploaded.
+concurrency:
+  group: release-${{ github.ref }}
+  cancel-in-progress: false
+
 # semantic-release needs to push the version-bump commit/tag and create releases.
 permissions:
   contents: write
@@ -54,12 +64,28 @@ jobs:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
           set -o pipefail
-          yarn semantic-release --dry-run 2>&1 | tee sr-dry.log
+          # semantic-release exits 1 when it decides no release is due, and
+          # `shell: bash` runs with -e, so the step died before ever reaching
+          # the branch below — six red runs on commits where nothing was wrong.
+          # Capture the status instead of ignoring it: a "no relevant changes"
+          # exit is a success, and every OTHER non-zero exit still fails.
+          status=0
+          yarn semantic-release --dry-run 2>&1 | tee sr-dry.log || status=$?
+          # `|| true`: "no match" is a grep exit of 1, which under -e/pipefail
+          # kills the step before the empty `next` can be interpreted. An empty
+          # `next` is the signal here, not an error.
           next="$(grep -oiE 'next release version is [0-9]+\.[0-9]+\.[0-9]+' sr-dry.log \
-                  | grep -oE '[0-9]+\.[0-9]+\.[0-9]+' | head -n1)"
+                  | grep -oE '[0-9]+\.[0-9]+\.[0-9]+' | head -n1 || true)"
           if [ -z "$next" ]; then
+            if ! grep -qiF 'no relevant changes, so no new version is released' sr-dry.log; then
+              echo "::error::semantic-release dry run failed (exit ${status}) without deciding a version."
+              exit $(( status == 0 ? 1 : status ))
+            fi
             echo "No release is due for these commits."
             echo "release=false" >> "$GITHUB_OUTPUT"
+          elif [ "$status" -ne 0 ]; then
+            echo "::error::semantic-release dry run determined ${next} but exited ${status}."
+            exit "$status"
           else
             echo "Next version: $next"
             echo "release=true" >> "$GITHUB_OUTPUT"
