@@ -5,6 +5,16 @@ on:
     branches:
       - master
 
+# Two Release runs on the same branch must never overlap: semantic-release
+# pushes a version-bump commit and a tag, so a second run racing the first
+# fails with "local branch master is behind the remote" (it happened on
+# 2026-08-11, two runs 3s apart). Queue instead of cancelling —
+# cancel-in-progress would abandon a release mid-publish, possibly after the
+# tag exists but before the installers are uploaded.
+concurrency:
+  group: release-${{ github.ref }}
+  cancel-in-progress: false
+
 # semantic-release needs to push the version-bump commit/tag and create releases.
 permissions:
   contents: write
