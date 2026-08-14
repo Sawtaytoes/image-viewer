@@ -21,11 +21,11 @@
         "assets": [
           {
             "path": "out/make/zip/win32/x64/*.zip",
-            "label": "Image Viewer ${nextRelease.version} (Windows ZIP)"
+            "label": "Image-Viewer ${nextRelease.version} (Windows ZIP)"
           },
           {
             "path": "out/make/squirrel.windows/x64/*Setup.exe",
-            "label": "Image Viewer ${nextRelease.version} Setup (Windows)"
+            "label": "Image-Viewer ${nextRelease.version} Setup (Windows)"
           },
           {
             "path": "out/make/squirrel.windows/x64/*.nupkg"

@@ -10,7 +10,7 @@
 - `yarn make` (Electron Forge) produces Windows artifacts under `out/make/`:
   a **Squirrel** installer (`*-Setup.exe` + `.nupkg` + `RELEASES`) and a `.zip` (see makers in
   [`forge.config.ts`](../../forge.config.ts)). `yarn package` produces the raw runnable
-  `out/Image Viewer-win32-x64/Image Viewer.exe`.
+  `out/Image-Viewer-win32-x64/Image-Viewer.exe`.
 - Electron Forge has a **publish** step (`electron-forge publish`) + publishers.
 
 ## Recommended approach

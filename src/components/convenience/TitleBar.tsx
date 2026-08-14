@@ -112,7 +112,7 @@ const TitleBar = () => {
         )
       : folderName
 
-    document.title = `${leadingText} | ${parentPath} | Image Viewer`
+    document.title = `${leadingText} | ${parentPath} | Image-Viewer`
   }, [filePath, imageFilePath])
 
   const hasQueue = queuedFolders.length > 0
@@ -164,7 +164,7 @@ const TitleBar = () => {
 
   return (
     <div className={titleBarClassName} style={barStyle}>
-      <span className={appNameClassName}>Image Viewer</span>
+      <span className={appNameClassName}>Image-Viewer</span>
 
       {isAnyActionShown && (
         <div className={separatorClassName} />

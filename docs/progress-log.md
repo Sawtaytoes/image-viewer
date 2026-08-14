@@ -62,7 +62,7 @@ Chronological record of what changed and how it was verified. Newest entries app
   4 dead SSR files.
 - `yarn test:run` — **11/11 pass** (a test-only infinite-loop bug from passing an unstable array to
   `useImageFiles` was fixed).
-- `yarn package` — **builds and packages** `out/Image Viewer-win32-x64/Image Viewer.exe` (main +
+- `yarn package` — **builds and packages** `out/Image-Viewer-win32-x64/Image-Viewer.exe` (main +
   preload + renderer Vite bundles, Fuses hardening applied; `@electron/fuses` v2 works with the Forge
   plugin despite the cosmetic peer warning).
 
@@ -81,7 +81,7 @@ package and smoke-testing the installed app.
 ## 2026-06-02 — First live run (owner, packaged app, Windows 11 / G:\Pictures)
 
 - PR #1 **merged** to `master`; Gitea repo set **public**. GitHub `origin` left untouched (owner pushes
-  there after verifying). Built `out/Image Viewer-win32-x64/Image Viewer.exe` via `yarn package`.
+  there after verifying). Built `out/Image-Viewer-win32-x64/Image-Viewer.exe` via `yarn package`.
 - **Startup is noticeably faster** (owner confirmed) — a Phase-1 win.
 - **Folder browsing works** — directories/navigation/title-bar all correct (proves the `window.api`
   bridge + drive enumeration).

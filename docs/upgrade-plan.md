@@ -5,7 +5,7 @@
 
 ## Goal
 
-Get Image Viewer **building, running, and packaging on the latest stack with behavior parity** — plus
+Get Image-Viewer **building, running, and packaging on the latest stack with behavior parity** — plus
 the secure Electron model, modern tooling, a test harness, and these docs. **No new product features.**
 
 | From | To |
