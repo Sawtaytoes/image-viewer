@@ -77,7 +77,7 @@ const renderTitleBar = ({
 // The bar div is the element carrying the inline slide transform; its first
 // child is the app-name span.
 const getBar = () =>
-  screen.getByText("Image Viewer")
+  screen.getByText("Image-Viewer")
     .parentElement as HTMLElement
 
 describe("TitleBar", () => {
