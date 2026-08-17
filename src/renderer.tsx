@@ -1,6 +1,8 @@
 import { createRoot } from "react-dom/client"
+import { Navigate, Route, Routes } from "react-router"
 
 import ReactRoot from "./components/ReactRoot"
+import { AppRouter } from "./routing/AppRouter"
 // The renderer's one stylesheet — Tailwind, the Charcuterie tokens, and the
 // self-hosted Source Sans Pro. Imported HERE and nowhere else: this module is
 // the only entry `index.html` loads, so this is the single point that decides
@@ -20,4 +22,23 @@ if (!rootElement) {
   )
 }
 
-createRoot(rootElement).render(<ReactRoot />)
+// One route today. It is a router anyway, per the fleet decision
+// `2026-08-16-owned-web-apps-use-react-router-with-path-urls`, which covers
+// single-view apps deliberately — the next view should be a route rather than a
+// `useState` fork bolted on later.
+//
+// `AppRouter` is the one place this app differs from the rest of the fleet, and
+// it differs in its HISTORY only: `file://` under Electron cannot do path URLs,
+// so it gets a hash history there and `BrowserRouter` when served over http.
+// Route table and `<Link>`s are identical either way. See `routing/AppRouter`.
+createRoot(rootElement).render(
+  <AppRouter>
+    <Routes>
+      <Route element={<ReactRoot />} path="/" />
+      <Route
+        element={<Navigate replace to="/" />}
+        path="*"
+      />
+    </Routes>
+  </AppRouter>,
+)
