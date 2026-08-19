@@ -87,6 +87,50 @@ server must keep serving `index.html`, since that window has the **real** preloa
 bridge — and `yarn build:renderer` / the packaged build, where `index.html` is
 the entry Electron `loadFile`s. `apply: "serve"` keeps it out of builds as well.
 
+## Open: item 4 of the fleet decision (real `<Link>`/`<a href>`) is NOT satisfied
+
+The fleet decision has four parts. This change delivers 1–3 (react-router, a
+`<Routes>` table, path URLs under http). **Item 4 — "navigation is a real
+`<Link>`/`<a href>` so middle-click, ⌘-click and 'copy link address' keep
+working" — is not met, and saying so is the point of this section.**
+
+Measured 2026-08-19 in browser mode, not inferred: entering a folder gives the
+URL `/?filePath=%2FCats`, so folder navigation **is** addressable — and yet the
+page has **zero** `a[href]` elements. Every control is a `<button>` with no
+`href`. Ctrl+clicking an ancestor breadcrumb rung opens no tab (1 page before,
+1 after). The breadcrumb ancestors are the sharpest case: they were deliberately
+given a persistent link affordance so they *read* as links
+(`2026-08-11`, `text-intent-accent-content` + hover underline), and they are not
+links.
+
+This is **pre-existing**, not introduced here — this change touches no component
+at all (`git diff … -- src/components/` is empty). Recording it because
+"the router landed" must not be mistaken for "item 4 is done".
+
+Why it is not fixed in the same change, unlike the rest of item 3's fallback:
+
+- **It is the route-#2 decision wearing a different hat.** Folder position lives
+  in a `?filePath=` query owned by `FileSystemProvider`'s raw `replaceState`, not
+  in the route table, which has exactly one route. Giving the rungs a real `href`
+  means first deciding whether a folder is a route (`/browse/*`) or router-owned
+  search state — the same call as the follow-up below, and the owner has not been
+  asked it.
+- **The Electron half cannot be tested here.** `src/main.js` has no
+  `setWindowOpenHandler` and no `will-navigate` guard, so a `file://` renderer
+  has nothing catching a link click that escapes `preventDefault` — it would
+  navigate the window to a path with no file behind it. Verifying that needs the
+  packaged app, and `electron-forge package` cannot download the Electron binary
+  in this sandbox. Shipping anchors provable in only one of the two origins is
+  the exact mistake that produced the blank-page bug above.
+
+When it is taken up: `@charcuterie/ui` (this app is on 2.11.0) already exports
+`ButtonLink` and `RouterLinkProvider`, so `<RouterLinkProvider link={Link}>` at
+the root is the wiring. Use react-router's `<Link>` rather than a hand-rolled
+`<a onClick>`: it calls `preventDefault` **only** for unmodified left clicks, so
+ctrl/⌘/middle clicks fall through to the browser. A hand-rolled handler that
+calls `preventDefault()` on every click renders pixel-identically and still fails
+the ctrl+click test — screenshots cannot catch this, only ctrl+click can.
+
 ## Known follow-up: `FileSystemProvider` writes history behind the router's back
 
 `src/components/fileBrowser/FileSystemProvider.tsx` syncs the current folder into
