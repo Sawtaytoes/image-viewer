@@ -135,3 +135,13 @@ to apply here); everything else is sourced from Image Viewer's own chats, commit
 ### 2026-08-11 — Action creators
 
 - [2026-08-11 — An action creator's `toString` is an OWN property; `complexity/useArrowFunction` is back on](2026-08-11-action-creator-tostring-is-an-own-property-not-prototype.md) ← **partly supersedes the 2026-06-02 lint decision: `.prototype.toString` never affected `String(fn)`, so the `function` expressions were guarding a no-op**
+
+### 2026-08-16 — Routing
+
+- [2026-08-16 — Router everywhere, history per origin](2026-08-16-router-everywhere-history-per-origin.md)
+  — the renderer routes with react-router like the rest of the fleet, but picks its
+  history from `location.protocol`: `BrowserRouter` over http (browser mode), a hash
+  history under Electron's `file://`, where there is no server to answer a path and no
+  file behind it either. Same route table and same `<Link>`s either way; only
+  `src/routing/AppRouter.tsx` knows. Rejected: `BrowserRouter` everywhere — it fails
+  *silently* under `file://` rather than at mount.

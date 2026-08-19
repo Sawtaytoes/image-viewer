@@ -10,7 +10,7 @@
   "scripts": {
     "start": "electron-forge start",
     "start:fake": "IMAGE_VIEWER_FAKE_FS=1 electron-forge start",
-    "dev:browser": "vite --config vite.renderer.config.ts --port 5175 --strictPort",
+    "dev:browser": "IMAGE_VIEWER_BROWSER_MODE=1 vite --config vite.renderer.config.ts --port 5175 --strictPort",
     "package": "electron-forge package",
     "make": "electron-forge make",
     "publish": "electron-forge publish",
@@ -35,6 +35,7 @@
     "heic-convert": "^2.1.0",
     "react": "^19.2.0",
     "react-dom": "^19.2.0",
+    "react-router": "^8.3.0",
     "rxjs": "^7.8.2",
     "string-natural-compare": "^3.0.1"
   },

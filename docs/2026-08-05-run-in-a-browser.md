@@ -14,9 +14,20 @@ Playwright checks; use (3) when you need the *real* window chrome / OS fullscree
 
 ## Browser mode
 
-`yarn dev:browser` serves the app on <http://localhost:5175/index.browser.html>.
+`yarn dev:browser` serves the app on <http://localhost:5175/> — **any** path works,
+including <http://localhost:5175/index.browser.html> and a deep link you paste cold.
 
 Moving parts:
+
+- **`vite.browserModeSpaFallback.ts`** — the SPA fallback that makes those paths
+  work. The renderer routes with react-router and a path history under http
+  (`src/routing/AppRouter.tsx`), so the server has to answer an unknown path with
+  the app's HTML. Vite's built-in fallback serves `index.html`, which is the
+  *Electron* entry and comes up blank in a browser (no `window.api`), so this
+  plugin rewrites navigations to `index.browser.html` instead. It is gated on
+  `IMAGE_VIEWER_BROWSER_MODE`, which only `dev:browser` sets — `electron-forge
+  start` must keep serving `index.html`. See
+  `docs/decisions/2026-08-16-router-everywhere-history-per-origin.md`.
 
 - **`index.browser.html`** — a copy of `index.html` whose only difference is the
   module script: it loads `/src/browserEntry.tsx` instead of `/src/renderer.tsx`.
@@ -49,7 +60,7 @@ From a container agent, `devshare` the port rather than exposing it:
 ```bash
 devshare 5175 "image-viewer-browser"
 # -> https://image-viewer-browser-XXXX.temp.t3code.octen.dev
-# open .../index.browser.html
+# open it at the root — the SPA fallback serves the browser entry on any path
 ```
 
 Vite 8's dev server accepts the proxied Host as-is (no `allowedHosts` tweak
