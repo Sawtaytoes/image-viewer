@@ -1,3 +1,10 @@
+# [2.10.0](https://github.com/Sawtaytoes/image-viewer/compare/v2.9.0...v2.10.0) (2026-08-19)
+
+
+### Features
+
+* route with react-router, history chosen per origin ([#28](https://github.com/Sawtaytoes/image-viewer/issues/28)) ([6951bcc](https://github.com/Sawtaytoes/image-viewer/commit/6951bcc01f62c53bc5a406b213be94480c0fcb24)), closes [#2](https://github.com/Sawtaytoes/image-viewer/issues/2)
+
 # [2.9.0](https://github.com/Sawtaytoes/image-viewer/compare/v2.8.2...v2.9.0) (2026-08-11)
 
 
