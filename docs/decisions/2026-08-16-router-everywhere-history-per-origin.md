@@ -54,9 +54,32 @@ next reload on `/` served the Electron document: the app came up **blank** with
 no status code betrays it.
 
 `vite.browserModeSpaFallback.ts` rewrites navigations (`Accept: text/html`, GET
-or HEAD) to `/index.browser.html`. Module and asset requests ask for `*/*` and
-are left alone, which matters because the rewritten document immediately asks
-for `/src/browserEntry.tsx`.
+or HEAD) to `/index.browser.html`.
+
+**A fallback must not swallow the rest of the server.** This middleware has to run
+*before* Vite's static/transform middlewares — that is the only way to beat Vite's
+own html-fallback to the request — and that ordering is the hazard. A browser's
+top-level navigation `Accept` is
+`text/html,…,image/avif,image/webp,…,*/*;q=0.8`, so "rewrite everything that
+accepts `text/html`" also matches images, source modules and JSON. The first cut
+of this plugin did exactly that, and navigating to `/src/browserEntry.tsx`
+returned the *app* instead of the file. **A path that used to return a file and
+now returns HTML is a regression even though it still answers 200** — no status
+code betrays it, which is the same trap as the original bug.
+
+So the fallback only claims paths that could plausibly be a route. It skips
+Vite's `/@…` namespace (`/@vite/client`, `/@fs/…`, `/@id/…`), its `/__…`
+internal endpoints (`/__vite_ping`, `/__open-in-editor`), and **anything with a
+file extension** — the last-segment-contains-a-dot rule
+`connect-history-api-fallback` uses. That last one is what keeps every static
+file, every source module and `/index.html` itself reachable.
+
+The gate is not "does a deep link 200". It is "does every non-route path still
+return what it used to". Verified by enumerating every path the dev server
+mounts with a real navigation `Accept` header and diffing status + content-type +
+body with the fallback off vs on: exactly four paths change (`/`, `/settings`,
+`/deep/link/test`, `/q/42` — all genuine routes) and everything else is
+byte-identical. `vite.browserModeSpaFallback.test.ts` pins that list.
 
 It is gated on `IMAGE_VIEWER_BROWSER_MODE`, set only by `yarn dev:browser`,
 because `vite.renderer.config.ts` also drives `electron-forge start` — whose dev

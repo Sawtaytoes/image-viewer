@@ -20,18 +20,35 @@ import type { Plugin } from "vite"
  * `Cannot read properties of undefined (reading 'fullScreen')`. Nothing 404s,
  * which is why this had to be caught by hand rather than by a status code.
  *
- * Only navigations are rewritten. Module and asset requests ask for `*​/*`;
- * navigations ask for `text/html`. That keeps `/src/…`, `/@vite/…`,
- * `/node_modules/…` and every asset resolving normally, which matters because
- * the rewritten document immediately asks for `/src/browserEntry.tsx`.
+ * ## What must NOT be swallowed
+ *
+ * This middleware runs BEFORE Vite's static/transform middlewares, which is the
+ * only way to beat Vite's own html-fallback to the request. That ordering is
+ * also the hazard: an unguarded "rewrite every `text/html` request" shadows
+ * every real path on the server, because a browser's top-level navigation Accept
+ * header (`text/html,…,image/avif,…,*​/*;q=0.8`) matches images, source modules
+ * and JSON alike. A path that used to return a file and now returns the app is a
+ * regression even though it still answers 200.
+ *
+ * So the fallback only claims paths that could plausibly be a ROUTE:
+ *
+ * - **`/@…`** — Vite's own namespace (`/@vite/client`, `/@fs/…`, `/@id/…`).
+ * - **`/__…`** — Vite's internal endpoints (`/__vite_ping`, `/__open-in-editor`),
+ *   plus anything a plugin mounts under the same reserved prefix.
+ * - **anything with a file extension** — `/src/browserEntry.tsx`,
+ *   `/assets/index.css`, `/favicon.ico`, and `/index.html` itself, which must
+ *   keep serving the Electron entry rather than being quietly swapped. This is
+ *   the same last-segment-contains-a-dot rule `connect-history-api-fallback`
+ *   uses, and it is what keeps every static file reachable.
+ *
+ * Everything left — `/`, `/settings`, `/deep/link` — is a route, and gets the
+ * browser entry.
  */
 export const browserModeSpaFallback = (): Plugin => ({
   apply: "serve",
   configureServer: (server) => {
-    // Registered from the body of `configureServer`, not from its returned
-    // callback, so it runs BEFORE Vite's own html-fallback middleware and wins.
     server.middlewares.use((request, _response, next) => {
-      if (isNavigationRequest(request)) {
+      if (isAppRouteRequest(request)) {
         request.url = browserEntryUrl
       }
 
@@ -43,12 +60,40 @@ export const browserModeSpaFallback = (): Plugin => ({
 
 export const browserEntryUrl = "/index.browser.html"
 
-export const isNavigationRequest = ({
+const reservedPrefixes = ["/@", "/__"]
+
+export const isAppRouteRequest = ({
   headers,
   method,
+  url,
 }: {
   headers: { accept?: string }
   method?: string
-}) =>
-  (method === "GET" || method === "HEAD") &&
-  Boolean(headers.accept?.includes("text/html"))
+  url?: string
+}) => {
+  if (method !== "GET" && method !== "HEAD") {
+    return false
+  }
+
+  if (!headers.accept?.includes("text/html")) {
+    return false
+  }
+
+  // Query/hash are not part of the path decision: `/?filePath=%2F` is the root
+  // route, and `/a.png?v=2` is still a file.
+  const pathname = (url ?? "").split(/[?#]/)[0]
+
+  if (
+    reservedPrefixes.some((prefix) =>
+      pathname.startsWith(prefix),
+    )
+  ) {
+    return false
+  }
+
+  const lastSegment = pathname.slice(
+    pathname.lastIndexOf("/") + 1,
+  )
+
+  return !lastSegment.includes(".")
+}
