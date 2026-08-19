@@ -2,6 +2,8 @@ import { createViteConfig } from "@charcuterie/vite-config"
 import tailwindcss from "@tailwindcss/vite"
 import react from "@vitejs/plugin-react"
 
+import { browserModeSpaFallback } from "./vite.browserModeSpaFallback"
+
 // Renderer build: React Fast Refresh + Tailwind v4.
 //
 // `jsxImportSource: "@emotion/react"` is gone. Emotion's `css` prop needed JSX
@@ -21,7 +23,18 @@ import react from "@vitejs/plugin-react"
 // PHASE 2 adds `@charcuterie/ui`; if it is ever linked rather than installed
 // from the registry, add `resolve: { dedupe: ["react", "react-dom"] }` here and
 // in `vitest.config.ts`.
+// `browserModeSpaFallback` is gated on `IMAGE_VIEWER_BROWSER_MODE`, which only
+// `yarn dev:browser` sets, because this same config file also drives
+// `electron-forge start` — whose dev server MUST keep serving `index.html`,
+// since that window has the real preload bridge — and `yarn build:renderer` /
+// the packaged build, where `index.html` is the entry Electron `loadFile`s.
 // https://vitejs.dev/config
 export default createViteConfig({
-  plugins: [react(), tailwindcss()],
+  plugins: [
+    react(),
+    tailwindcss(),
+    ...(process.env.IMAGE_VIEWER_BROWSER_MODE
+      ? [browserModeSpaFallback()]
+      : []),
+  ],
 })
