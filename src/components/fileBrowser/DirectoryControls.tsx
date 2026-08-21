@@ -18,11 +18,11 @@ import {
 } from "../settings/sortOrders"
 import DeleteFileModal from "../toolkit/DeleteFileModal"
 import FileSystemContext from "./FileSystemContext"
-import SortOrderSelect from "./SortOrderSelect"
+import SortOrderPicker from "./SortOrderPicker"
 
 const pathApi = window.api.path
 
-// `SortOrderSelect`'s trigger is `w-full`, so the fixed width belongs to this
+// `SortOrderPicker`'s trigger is `w-full`, so the fixed width belongs to this
 // wrapper, which also holds the leading `SortIcon`.
 const sortPickerClassName =
   "flex w-[132px] flex-none items-center gap-1"
@@ -91,7 +91,7 @@ const DirectoryControls = () => {
     filePath,
   )
 
-  // `isSortOrder` narrows `SortOrderSelect`'s raw string back to the union
+  // `isSortOrder` narrows `SortOrderPicker`'s raw string back to the union
   // without a cast — see the matching handler in `PaneGallery`.
   const changeFolderSortOrder = useCallback(
     (nextSortOrder: string) => {
@@ -194,14 +194,14 @@ const DirectoryControls = () => {
         )}
       </div>
 
-      {/* Sort-order picker. `SortOrderSelect` is controlled by `value`, so it
-          re-seeds itself when the per-folder order changes on navigation — no
-          `key` remount is needed the way the uncontrolled native `<select>`
-          required one. */}
+      {/* Sort-order picker. `Listbox`'s `selectedValue` is a seed rather than a
+          controlled prop, so `OptionPicker` keys the listbox on the committed
+          value — that is what makes drilling into a folder with a different
+          stored order move the panel's checkmark, not just the label. */}
       <div className={sortPickerClassName}>
         <SortIcon />
 
-        <SortOrderSelect
+        <SortOrderPicker
           onChange={changeFolderSortOrder}
           value={sortOrder}
         />
