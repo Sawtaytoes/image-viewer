@@ -37,22 +37,21 @@ const isSortOrder = (value: string): value is SortOrder =>
   value === sortOrders.name ||
   value === sortOrders.modifiedDesc
 
-// The two orders as `@charcuterie/ui` `Select` options — one array, so the file
-// browser's picker and the in-pane gallery's are literally the same control
-// with the same labels rather than two `Record<SortOrder, string>` maps that
-// have to be kept in step by hand.
+// The two orders as `@charcuterie/ui` `Listbox` options — one array, so the
+// file browser's picker and the in-pane gallery's are literally the same
+// control with the same labels rather than two `Record<SortOrder, string>` maps
+// that have to be kept in step by hand.
 //
-// `value` keeps its `SortOrder` literal type (`SelectOption.value` is a
+// `value` keeps its `SortOrder` literal type (`ListboxItem.value` is a
 // `string`, and `SortOrder` is assignable to it), so adding a third order to
 // the union and forgetting this array is a type error at the annotation.
 //
-// Not `readonly`, and that is the library's call rather than ours: `SelectProps`
-// declares `options: SelectItem[]`, so a `readonly` array is rejected outright
-// (TS4104) and the only ways to pass one are a spread — a fresh array every
-// render, which defeats the `memo` on both call sites — or a cast. A mutable
-// annotation is the honest third option until `@charcuterie/ui` widens the prop
-// to `readonly SelectItem[]`, which costs it nothing.
-const sortOrderOptions: {
+// `readonly`, which `ListboxProps` accepts (`options: readonly ListboxItem[]`)
+// where the demoted `SelectProps` did not — the old mutable annotation existed
+// only because a `readonly` array was rejected outright (TS4104) and the
+// workarounds were a fresh array every render, defeating the `memo` on both
+// call sites, or a cast.
+const sortOrderOptions: readonly {
   label: string
   value: SortOrder
 }[] = [
