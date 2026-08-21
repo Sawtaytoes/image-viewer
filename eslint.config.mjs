@@ -10,6 +10,8 @@
 // the type-aware rules activate on .ts/.tsx.
 
 import {
+  COMPONENT_CHOICE_NAMESPACE,
+  componentChoicePlugin,
   createReactRules,
   createTestRules,
   createTypedRules,
@@ -63,6 +65,32 @@ export default defineConfig(
   createTestRules({
     files: ["src/**/*.test.{ts,tsx}"],
   }),
+  {
+    // Every picker is a `Listbox`, never a native `Select` — the OS widget is
+    // not stylable and looks wrong on Windows, which is the whole objection.
+    // See the fleet decision (`agentic`,
+    // `docs/decisions/2026-08-20-listbox-is-the-picker-in-every-owned-app-and-native-select-is-a-hatch-we-have-never-needed.md`)
+    // and the library's own (`charcuterie`,
+    // `docs/decisions/2026-08-10-listbox-and-combobox-are-the-default-and-select-is-demoted.md`).
+    //
+    // Two rules, hand-picked rather than `createComponentChoiceRules()`. That
+    // helper turns on the whole component-choice block — `no-raw-button`,
+    // `no-raw-anchor`, `no-clickable-non-interactive` — and this app still has
+    // raw `<button>`s in the tab strip and the gallery tiles, so the block
+    // would go red on adoption day and get reverted rather than migrated. The
+    // two picker rules are already green, so they can be locked in now and the
+    // rest of the block adopted when those call sites are converted.
+    files: ["src/**/*.tsx"],
+    plugins: {
+      [COMPONENT_CHOICE_NAMESPACE]: componentChoicePlugin,
+    },
+    rules: {
+      [`${COMPONENT_CHOICE_NAMESPACE}/no-raw-select`]:
+        "error",
+      [`${COMPONENT_CHOICE_NAMESPACE}/prefer-listbox-over-select`]:
+        "error",
+    },
+  },
   {
     // Hooks rules are this app's own — the shared config does not carry
     // eslint-plugin-react-hooks.

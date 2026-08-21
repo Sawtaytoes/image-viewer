@@ -20,7 +20,7 @@ import groupEntriesByDate from "../fileBrowser/dateGroups"
 import driveDirectories from "../fileBrowser/driveDirectories"
 import type { MultiSelectContextValue } from "../fileBrowser/MultiSelectContext"
 import MultiSelectContext from "../fileBrowser/MultiSelectContext"
-import SortOrderSelect from "../fileBrowser/SortOrderSelect"
+import SortOrderPicker from "../fileBrowser/SortOrderPicker"
 import sortDirectoryEntries from "../fileBrowser/sortDirectoryEntries"
 import useFolderListing from "../fileBrowser/useFolderListing"
 import ArrowUpwardIcon from "../icons/ArrowUpwardIcon"
@@ -39,7 +39,7 @@ import PaneGalleryImageTile from "./PaneGalleryImageTile"
 
 const pathApi = window.api.path
 
-// Sort-order picker: the shared `SortOrderSelect` beside the sort glyph,
+// Sort-order picker: the shared `SortOrderPicker` beside the sort glyph,
 // mirroring the file browser's DirectoryControls so the gallery sorts the same
 // folder the same way. Its trigger is `w-full`, so the fixed width lives on this
 // wrapper alongside the leading glyph.
@@ -133,7 +133,7 @@ const PaneGallery = ({
     browsePath,
   )
 
-  // `SortOrderSelect` hands back the raw `value` string, and `isSortOrder` is
+  // `SortOrderPicker` hands back the raw `value` string, and `isSortOrder` is
   // the type predicate that turns it back into a `SortOrder` without a cast. The
   // guard is not ceremony: the options come from this app, but the value crosses
   // through the DOM and the narrowing has to happen somewhere real.
@@ -364,16 +364,16 @@ const PaneGallery = ({
           {/* Was a click-to-cycle `<button>` whose only statement of its own
               state was the word on its face — nothing announced "Name, 1 of 2",
               and the two orders were reachable only by pressing until the label
-              changed. It is a non-native `Listbox` now (`SortOrderSelect`).
+              changed. It is a non-native `Listbox` now (`SortOrderPicker`).
 
-              No `key` remount: `SortOrderSelect` is controlled by `value`, so
-              drilling into a folder with a different per-path order re-seeds the
-              picker on its own — the remount the uncontrolled native `<select>`
-              needed is gone. */}
+              `Listbox`'s `selectedValue` is a seed, not a controlled prop, so
+              `OptionPicker` keys the listbox on the committed value: drilling
+              into a folder with a different per-path order moves the panel's
+              checkmark rather than leaving it on the previous folder's. */}
           <div className={SORT_PICKER_CLASSES}>
             <SortIcon />
 
-            <SortOrderSelect
+            <SortOrderPicker
               onChange={changeFolderSortOrder}
               value={sortOrder}
             />
