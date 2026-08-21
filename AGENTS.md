@@ -146,10 +146,26 @@ The short version:
   Tailwind scans source *text*, so `` className={`w-[${size}px]`} `` generates no CSS and the
   element has no width, with no error and no failing test. Computed values go in an inline
   `style`, or in a CSS custom property a utility reads.
+- **Every picker is a `Listbox`, never a native `Select`** — and never a raw `<select>`. Reach
+  for [`src/components/toolkit/OptionPicker.tsx`](src/components/toolkit/OptionPicker.tsx), this
+  app's one picker (Listbox + trigger + open state); `SortOrderPicker` is a call site, not a
+  second pattern. Native `Select` is a compatibility hatch nobody in the fleet has ever needed:
+  it renders as the OS widget, which is ugly on Windows and cannot be restyled, and "plain
+  string options" was never the dividing line. Two things to know if you write a new picker:
+  the trigger is `appearance="outline"` (solid neutral reads as a filled button — a dark slab in
+  a pale toolbar), and `Listbox`'s `selectedValue` is a **mount-time seed**, so `OptionPicker`
+  keys the listbox on the committed value or the checkmark goes stale the moment the value
+  changes from outside. Enforced by `charcuterie/no-raw-select` and
+  `charcuterie/prefer-listbox-over-select` in `eslint.config.mjs`. Decisions:
+  [fleet](../agentic/docs/decisions/2026-08-20-listbox-is-the-picker-in-every-owned-app-and-native-select-is-a-hatch-we-have-never-needed.md),
+  [library](../charcuterie/docs/decisions/2026-08-10-listbox-and-combobox-are-the-default-and-select-is-demoted.md).
 - **Formatting/linting:** Biome is primary (`biome.json`); a minimal ESLint flat config
-  (`eslint.config.mjs`) adds four rules Biome cannot express, all scoped to `.ts`/`.tsx`:
+  (`eslint.config.mjs`) adds five rules Biome cannot express, all scoped to `.ts`/`.tsx`:
   `id-length` (min 2 — no `(e) =>`), the `is`/`has` boolean-name rule, `react/no-multi-comp`
-  (one component per file), and the react-hooks pair. Run `yarn lint` before committing.
+  (one component per file), the react-hooks pair, and the two picker rules above. The rest of
+  `@charcuterie/eslint-config`'s component-choice block (`no-raw-button`, `no-raw-anchor`,
+  `no-clickable-non-interactive`) is **not** on yet — the tab strip and gallery tiles would go
+  red. Run `yarn lint` before committing.
 - **Entry points** referenced by `forge.config.ts`: `src/main.js`, `src/preload.js`, and the root
   `index.html` → `/src/renderer.tsx`. Don't move these without updating the config.
 - **`window.api` is fully typed** by [`src/preload.d.ts`](src/preload.d.ts), with the payload
