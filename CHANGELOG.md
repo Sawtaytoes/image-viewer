@@ -1,3 +1,10 @@
+## [2.10.1](https://github.com/Sawtaytoes/image-viewer/compare/v2.10.0...v2.10.1) (2026-08-24)
+
+
+### Bug Fixes
+
+* the display name is Image Viewer, no hyphen ([#30](https://github.com/Sawtaytoes/image-viewer/issues/30)) ([0874b7d](https://github.com/Sawtaytoes/image-viewer/commit/0874b7dbf94a44a456cfd6c1474bf48605dac510))
+
 # [2.10.0](https://github.com/Sawtaytoes/image-viewer/compare/v2.9.0...v2.10.0) (2026-08-19)
 
 
