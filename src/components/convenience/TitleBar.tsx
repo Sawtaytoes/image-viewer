@@ -2,6 +2,7 @@ import { Tooltip } from "@charcuterie/ui"
 import type { CSSProperties } from "react"
 import { useCallback, useContext, useEffect } from "react"
 
+import { version as appVersion } from "../../../package.json"
 import FileSystemContext from "../fileBrowser/FileSystemContext"
 import FullscreenExitIcon from "../icons/FullscreenExitIcon"
 import FullscreenIcon from "../icons/FullscreenIcon"
@@ -42,7 +43,7 @@ const titleBarClassName =
   "[-webkit-app-region:drag] fixed top-0 right-0 left-0 z-[10000] flex h-(--title-bar-height) items-center gap-1.5 bg-surface-sunken px-[10px] text-content-primary select-none transition-transform duration-[220ms] ease-[ease]"
 
 const appNameClassName =
-  "flex-none text-sm font-semibold whitespace-nowrap text-content-secondary"
+  "[-webkit-app-region:no-drag] flex-none cursor-help text-sm font-semibold whitespace-nowrap text-content-secondary"
 
 // Everything the two kinds of button share EXCEPT the horizontal padding, which
 // differs between them. Two `px-*` utilities on one element would be resolved by
@@ -164,7 +165,14 @@ const TitleBar = () => {
 
   return (
     <div className={titleBarClassName} style={barStyle}>
-      <span className={appNameClassName}>Image Viewer</span>
+      <Tooltip
+        label={`Image Viewer ${appVersion}`}
+        placement="bottom"
+      >
+        <span className={appNameClassName}>
+          Image Viewer
+        </span>
+      </Tooltip>
 
       {isAnyActionShown && (
         <div className={separatorClassName} />

@@ -19,6 +19,7 @@
     // half-finish. The two survivors, `src/main.js` and `src/preload.js`, are
     // the Node-side programs and are excluded below by name.
     "allowJs": false,
+    "resolveJsonModule": true,
     "types": [
       "vite/client",
       "node",

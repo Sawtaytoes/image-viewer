@@ -6,6 +6,7 @@ import {
 } from "@testing-library/react"
 import { describe, expect, test, vi } from "vitest"
 
+import { version as appVersion } from "../../../package.json"
 import ImageViewerContext, {
   type ImageViewerContextValue,
 } from "../imageViewer/ImageViewerContext"
@@ -81,6 +82,19 @@ const getBar = () =>
     .parentElement as HTMLElement
 
 describe("TitleBar", () => {
+  test("shows the installed version from the package metadata when the app title is hovered", async () => {
+    renderTitleBar({ isFullScreen: false })
+
+    const appTitle = screen.getByText("Image Viewer")
+
+    fireEvent.mouseEnter(appTitle)
+    fireEvent.mouseMove(appTitle)
+
+    expect(
+      await screen.findByRole("tooltip"),
+    ).toHaveTextContent(`Image Viewer ${appVersion}`)
+  })
+
   test("stands the bar down in fullscreen while the viewer is open, so only the viewer chrome is the one summonable bar", () => {
     const { container } = renderTitleBar({
       imageFilePath: "C:\\pics\\photo.jpg",
