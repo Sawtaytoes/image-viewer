@@ -1,3 +1,10 @@
+# [2.11.0](https://github.com/Sawtaytoes/image-viewer/compare/v2.10.1...v2.11.0) (2026-09-08)
+
+
+### Features
+
+* show version from the app title ([#35](https://github.com/Sawtaytoes/image-viewer/issues/35)) ([cd56c33](https://github.com/Sawtaytoes/image-viewer/commit/cd56c33351f6d1bf1c85bf5018204d5a91b7e57c))
+
 ## [2.10.1](https://github.com/Sawtaytoes/image-viewer/compare/v2.10.0...v2.10.1) (2026-08-24)
 
 
