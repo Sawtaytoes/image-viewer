@@ -18,6 +18,7 @@ import {
 } from "../settings/sortOrders"
 import DeleteFileModal from "../toolkit/DeleteFileModal"
 import FileSystemContext from "./FileSystemContext"
+import MultiSelectContext from "./MultiSelectContext"
 import SortOrderPicker from "./SortOrderPicker"
 
 const pathApi = window.api.path
@@ -85,6 +86,10 @@ const DirectoryControls = () => {
 
   const { setSortOrder, sortOrdersByFolder } =
     useContext(SettingsContext)
+
+  const { isMultiSelectMode } = useContext(
+    MultiSelectContext,
+  )
 
   const sortOrder = getFolderSortOrder(
     sortOrdersByFolder,
@@ -210,17 +215,19 @@ const DirectoryControls = () => {
       {/* The other bare `<div onClick>`, and the worse of the two: it deletes
           the current folder and had no name, no focus and no keyboard path at
           all. */}
-      <Tooltip label="Delete this folder">
-        <IconButton
-          appearance="ghost"
-          intent="danger"
-          label="Delete this folder"
-          onClick={openDeleteFileModal}
-          size="sm"
-        >
-          <DeleteForeverIcon />
-        </IconButton>
-      </Tooltip>
+      {!isMultiSelectMode && (
+        <Tooltip label="Delete this folder">
+          <IconButton
+            appearance="ghost"
+            intent="danger"
+            label="Delete this folder"
+            onClick={openDeleteFileModal}
+            size="sm"
+          >
+            <DeleteForeverIcon />
+          </IconButton>
+        </Tooltip>
+      )}
 
       <DeleteFileModal
         isVisible={isDeleteFileModalVisible}

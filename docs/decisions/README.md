@@ -145,3 +145,7 @@ to apply here); everything else is sourced from Image Viewer's own chats, commit
   file behind it either. Same route table and same `<Link>`s either way; only
   `src/routing/AppRouter.tsx` knows. Rejected: `BrowserRouter` everywhere — it fails
   *silently* under `file://` rather than at mount.
+
+### 2026-09-19 — touch selection
+
+- [2026-09-19 — Touch selection preserves the scroll position](2026-09-19-touch-selection-preserves-scroll-position.md)

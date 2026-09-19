@@ -88,10 +88,29 @@ const VirtualizedList = ({
         `${containerHeight}px`,
       )
 
-      setViewData({
-        itemSize,
-        numberOfChildren,
-        numberOfItemsInView,
+      setViewData((previousViewData) => {
+        // Parent state changes rebuild the `children` React nodes even when the
+        // grid's measurements are identical. Replacing this object in that
+        // case retriggered the selected-index scroll effect below. A touch
+        // long-press therefore selected an off-screen folder, rerendered the
+        // list, and scrolled back to keyboard index 0. Keep the existing state
+        // when no measured value changed so pointer selection preserves the
+        // viewport.
+        if (
+          previousViewData.itemSize === itemSize &&
+          previousViewData.numberOfChildren ===
+            numberOfChildren &&
+          previousViewData.numberOfItemsInView ===
+            numberOfItemsInView
+        ) {
+          return previousViewData
+        }
+
+        return {
+          itemSize,
+          numberOfChildren,
+          numberOfItemsInView,
+        }
       })
     }
 

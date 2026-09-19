@@ -27,6 +27,7 @@ import type {
 import FullScreenContext from "../convenience/FullScreenContext"
 import useKeyboardControls from "../convenience/useKeyboardControls"
 import CloseIcon from "../icons/CloseIcon"
+import DeleteForeverIcon from "../icons/DeleteForeverIcon"
 import PlayArrowIcon from "../icons/PlayArrowIcon"
 import ImageLoaderContext from "../imageLoader/ImageLoaderContext"
 import ImageViewerContext from "../imageViewer/ImageViewerContext"
@@ -85,15 +86,25 @@ const initialSelectedFolderPaths: ReadonlySet<string> =
 
 const initialSubfolderResults: FolderMatch[] = []
 
+interface DeleteTarget {
+  filePath: string
+  isDirectory: boolean
+}
+
 const FileBrowser = () => {
   const animationFrameIdRef = useRef<number | null>(null)
   const virtualizedListContainerRef =
     useRef<HTMLDivElement>(null)
 
-  const [
-    isDeleteFileModalVisible,
-    setIsDeleteFileModalVisible,
-  ] = useState(false)
+  // Capture the paths when the confirmation opens. The browser has two kinds
+  // of selection: the keyboard's single `selectedIndex`, and the folder paths
+  // chosen by press-and-hold. A modal that derives its target later from only
+  // `selectedIndex` cannot represent the held-folder selection at all.
+  const [deleteTargets, setDeleteTargets] = useState<
+    readonly DeleteTarget[]
+  >([])
+
+  const isDeleteFileModalVisible = deleteTargets.length > 0
 
   const [isMultiSelectMode, setIsMultiSelectMode] =
     useState(false)
@@ -358,12 +369,33 @@ const FileBrowser = () => {
   )
 
   const closeDeleteFileModal = useCallback(() => {
-    setIsDeleteFileModalVisible(false)
+    setDeleteTargets([])
   }, [])
 
-  const openDeleteFileModal = useCallback(() => {
-    setIsDeleteFileModalVisible(true)
-  }, [])
+  const openSelectedItemDeleteModal = useCallback(() => {
+    const numberOfDirectories = directories.length
+    const isDirectory = selectedIndex < numberOfDirectories
+    const selectedItem = isDirectory
+      ? directories[selectedIndex]
+      : imageFiles[selectedIndex - numberOfDirectories]
+
+    if (!selectedItem) {
+      return
+    }
+
+    setDeleteTargets([
+      { filePath: selectedItem.path, isDirectory },
+    ])
+  }, [directories, imageFiles, selectedIndex])
+
+  const openSelectedFoldersDeleteModal = useCallback(() => {
+    setDeleteTargets(
+      [...selectedFolderPaths].map((folderPath) => ({
+        filePath: folderPath,
+        isDirectory: true,
+      })),
+    )
+  }, [selectedFolderPaths])
 
   const enterMultiSelect = useCallback(() => {
     setIsMultiSelectMode(true)
@@ -447,19 +479,14 @@ const FileBrowser = () => {
   ])
 
   const deleteFileOrFolder = useCallback(() => {
-    const numberOfDirectories = directories.length
-
-    const isDirectory = selectedIndex < numberOfDirectories
-
-    window.api
-      .deleteFilePath({
-        filePath: isDirectory
-          ? directories[selectedIndex].path
-          : imageFiles[selectedIndex - numberOfDirectories]
-              .path,
-        isDirectory,
-      })
+    Promise.all(
+      deleteTargets.map((target) =>
+        window.api.deleteFilePath(target),
+      ),
+    )
       .then(() => {
+        clearMultiSelect()
+
         setFilePath("")
       })
       .then(() => {
@@ -468,10 +495,9 @@ const FileBrowser = () => {
       .then(closeDeleteFileModal)
   }, [
     closeDeleteFileModal,
-    directories,
+    clearMultiSelect,
+    deleteTargets,
     filePath,
-    imageFiles,
-    selectedIndex,
     setFilePath,
   ])
 
@@ -641,7 +667,7 @@ const FileBrowser = () => {
       }
 
     if (code === "Delete") {
-      openDeleteFileModal()
+      openSelectedItemDeleteModal()
     } else if (code === "Backspace" || code === "Escape") {
       navigateUpFolderTree()
     } else if (code === "Enter") {
@@ -926,6 +952,15 @@ const FileBrowser = () => {
             onRemove={clearMultiSelect}
             title={`${selectedCount} folders selected`}
           >
+            <Button
+              iconStart={<DeleteForeverIcon />}
+              intent="danger"
+              onClick={openSelectedFoldersDeleteModal}
+              size="lg"
+            >
+              Delete selected
+            </Button>
+
             <Button
               iconStart={<PlayArrowIcon />}
               intent="success"
