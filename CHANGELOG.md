@@ -1,3 +1,10 @@
+## [2.11.1](https://github.com/Sawtaytoes/image-viewer/compare/v2.11.0...v2.11.1) (2026-09-19)
+
+
+### Bug Fixes
+
+* target held folders for delete ([cc80552](https://github.com/Sawtaytoes/image-viewer/commit/cc8055211b6e5d995770e224d320505ef89aabd4))
+
 # [2.11.0](https://github.com/Sawtaytoes/image-viewer/compare/v2.10.1...v2.11.0) (2026-09-08)
 
 
