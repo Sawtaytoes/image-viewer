@@ -16,6 +16,8 @@ import {
 import FileSystemContext, {
   type FileSystemContextValue,
 } from "./FileSystemContext"
+import type { MultiSelectContextValue } from "./MultiSelectContext"
+import MultiSelectContext from "./MultiSelectContext"
 
 // DirectoryControls captures `window.api.path` at module-load, so swap in real
 // Windows path semantics (drive roots like `C:\` are exactly the fiddly case
@@ -32,8 +34,10 @@ beforeAll(async () => {
 
 const renderControls = ({
   filePath,
+  isMultiSelectMode = false,
 }: {
   filePath: string
+  isMultiSelectMode?: boolean
 }) => {
   const setFilePath = vi.fn()
 
@@ -47,9 +51,18 @@ const renderControls = ({
     setFilePath,
   }
 
+  const multiSelectValue: MultiSelectContextValue = {
+    enterMultiSelect: vi.fn(),
+    isMultiSelectMode,
+    selectedFolderPaths: new Set(),
+    toggleFolder: vi.fn(),
+  }
+
   render(
     <FileSystemContext.Provider value={contextValue}>
-      <DirectoryControls />
+      <MultiSelectContext.Provider value={multiSelectValue}>
+        <DirectoryControls />
+      </MultiSelectContext.Provider>
     </FileSystemContext.Provider>,
   )
 
@@ -95,5 +108,18 @@ describe("DirectoryControls breadcrumb", () => {
     renderControls({ filePath: "" })
 
     expect(screen.queryByText("C:")).not.toBeInTheDocument()
+  })
+
+  test("hides current-folder delete while child folders are selected", () => {
+    renderControls({
+      filePath: "C:\\Pictures\\B",
+      isMultiSelectMode: true,
+    })
+
+    expect(
+      screen.queryByRole("button", {
+        name: "Delete this folder",
+      }),
+    ).not.toBeInTheDocument()
   })
 })
