@@ -1,3 +1,4 @@
+import { ReactRouterAdapter } from "@charcuterie/ui/react-router"
 import type { ReactNode } from "react"
 import { BrowserRouter, HashRouter } from "react-router"
 
@@ -21,6 +22,12 @@ import { BrowserRouter, HashRouter } from "react-router"
  * per-origin". Same library, same route table, same `<Link>`s everywhere in the
  * app; only which history backs them differs, and only here.
  *
+ * `ReactRouterAdapter` sits INSIDE whichever router is chosen, so it wraps both
+ * histories. It is the one component at the root carrying every Charcuterie seam
+ * of its kind: the link seam, and the scroll memory `@charcuterie/ui` 4.0 moved
+ * off `Main`'s `scrollKey` prop onto a context. An app that renders no adapter
+ * gets no memory, silently, which is why it goes here rather than being left.
+ *
  * The check is `protocol`, not a build flag or `window.api`, because the thing
  * that actually decides is what the window was loaded from. A packaged build
  * served over http would want `BrowserRouter` and would get it; a dev build
@@ -37,5 +44,9 @@ export const AppRouter = ({
 }) => {
   const Router = isFileOrigin() ? HashRouter : BrowserRouter
 
-  return <Router>{children}</Router>
+  return (
+    <Router>
+      <ReactRouterAdapter>{children}</ReactRouterAdapter>
+    </Router>
+  )
 }
