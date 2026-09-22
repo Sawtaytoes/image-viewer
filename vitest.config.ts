@@ -12,6 +12,9 @@ import react from "@vitejs/plugin-react"
 export default createVitestConfig({
   plugins: [react()],
   test: {
+    // jsdom, not a real browser: the comment above says why. The shared
+    // config turns browser mode on by default, so this suite opts out.
+    browser: { enabled: false },
     environment: "jsdom",
     globals: true,
     setupFiles: ["./vitest.setup.ts"],
