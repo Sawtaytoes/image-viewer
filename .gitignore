@@ -12,6 +12,13 @@
 /out
 *.log
 
+# Visual regression — shots, the browser build they are taken from, and
+# reg-suit's working files (the shared `vrt` job writes its own config)
+/.vrt-actual
+/.vrt-build
+/.reg
+/.regconfig.json
+
 # Playwright/ad-hoc screenshots — scratch, not deliverables (fleet-wide rule)
 __screenshots__/
 
