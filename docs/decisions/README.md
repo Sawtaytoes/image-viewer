@@ -149,3 +149,7 @@ to apply here); everything else is sourced from Image Viewer's own chats, commit
 ### 2026-09-19 — touch selection
 
 - [2026-09-19 — Touch selection preserves the scroll position](2026-09-19-touch-selection-preserves-scroll-position.md)
+
+### 2026-09-25 — Visual regression
+
+- [2026-09-25 — VRT shoots the browser build over the fake filesystem](2026-09-25-vrt-shoots-the-browser-build-over-the-fake-filesystem.md) ← **no Storybook here: `scripts/vrtCapture.mjs` shoots 7 scenes x Wide/Narrow x light/dark into the shared `vrt` job**

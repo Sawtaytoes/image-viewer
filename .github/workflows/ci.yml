@@ -63,3 +63,22 @@ jobs:
       # This runs the real Tailwind pass over the real source.
       - name: Build renderer
         run: yarn build:renderer
+
+  # Visual regression — the SHARED workflow, imported by tag like the two
+  # above. This app has no Storybook, so every shot comes from
+  # `scripts/vrtCapture.mjs`: the real renderer's browser build over the fake
+  # filesystem, seven scenes x Wide/Narrow View x light/dark. The capture
+  # builds its own bundle, so there is no `buildCommand`. It runs on the LAN
+  # runner, which the shared workflow keeps away from fork pull requests.
+  # A red `vrt` is diagnosed in its own pull request, never re-run into green.
+  # GitHub only, like `ci`: the shared workflow resolves on this host alone.
+  vrt:
+    needs: [changes]
+    if: ${{ needs.changes.outputs.isDocsOnly != 'true' && (github.server_url == 'https://github.com') }}
+    permissions: { contents: read, statuses: write, pull-requests: write }
+    uses: Sawtaytoes/charcuterie/.github/workflows/shared-vrt.yml@workflows-v1
+    with:
+      # No Electron binary: the capture shoots the browser build only.
+      setupCommand: ELECTRON_SKIP_BINARY_DOWNLOAD=1 yarn install --immutable
+      captureCommand: node scripts/vrtCapture.mjs
+    secrets: inherit
