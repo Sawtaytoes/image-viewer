@@ -82,7 +82,12 @@ const useEdgeSwipe = ({
     }
 
     const onPointerDown = (event: PointerEvent) => {
-      if (pointerId !== null) {
+      // A second finger during a gesture is ignored. A new *primary* pointer is
+      // a new gesture, though, even while an old one is still tracked: a
+      // gesture whose `pointerup`/`pointercancel` never reached this element
+      // (its target unmounted mid-touch) used to leave `pointerId` set for
+      // good, and every later swipe was dropped until the viewer remounted.
+      if (pointerId !== null && !event.isPrimary) {
         return
       }
 

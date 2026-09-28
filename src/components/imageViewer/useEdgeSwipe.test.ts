@@ -15,6 +15,7 @@ import useEdgeSwipe from "./useEdgeSwipe"
 interface FakePointerEventOptions {
   clientX?: number
   clientY?: number
+  isPrimary?: boolean
   pointerId?: number
 }
 
@@ -23,6 +24,7 @@ const createPointerEvent = (
   {
     clientX = 0,
     clientY = 0,
+    isPrimary = true,
     pointerId = 1,
   }: FakePointerEventOptions = {},
 ) => {
@@ -34,6 +36,10 @@ const createPointerEvent = (
 
   Object.defineProperty(event, "pointerId", {
     value: pointerId,
+  })
+
+  Object.defineProperty(event, "isPrimary", {
+    value: isPrimary,
   })
 
   return event
@@ -134,5 +140,73 @@ describe("useEdgeSwipe", () => {
     )
 
     expect(onDismiss).toHaveBeenCalledTimes(1)
+  })
+
+  test("a new touch still reveals after an earlier gesture never reported its end", () => {
+    const onReveal = vi.fn()
+
+    renderEdgeSwipe({
+      edgePx: 32,
+      onReveal,
+      thresholdPx: 60,
+    })
+
+    // A gesture whose pointerup went somewhere else: it is never ended here.
+    domElement.dispatchEvent(
+      createPointerEvent("pointerdown", {
+        clientY: 300,
+        pointerId: 7,
+      }),
+    )
+
+    domElement.dispatchEvent(
+      createPointerEvent("pointerdown", {
+        clientY: 10,
+        pointerId: 8,
+      }),
+    )
+
+    domElement.dispatchEvent(
+      createPointerEvent("pointermove", {
+        clientY: 80,
+        pointerId: 8,
+      }),
+    )
+
+    expect(onReveal).toHaveBeenCalledOnce()
+  })
+
+  test("ignores a second finger that lands during a gesture", () => {
+    const onReveal = vi.fn()
+
+    renderEdgeSwipe({
+      edgePx: 32,
+      onReveal,
+      thresholdPx: 60,
+    })
+
+    domElement.dispatchEvent(
+      createPointerEvent("pointerdown", {
+        clientY: 300,
+        pointerId: 1,
+      }),
+    )
+
+    domElement.dispatchEvent(
+      createPointerEvent("pointerdown", {
+        clientY: 10,
+        isPrimary: false,
+        pointerId: 2,
+      }),
+    )
+
+    domElement.dispatchEvent(
+      createPointerEvent("pointermove", {
+        clientY: 80,
+        pointerId: 2,
+      }),
+    )
+
+    expect(onReveal).not.toHaveBeenCalled()
   })
 })

@@ -3,7 +3,11 @@ import {
   render,
   screen,
 } from "@testing-library/react"
-import { createRef } from "react"
+import {
+  createRef,
+  type Dispatch,
+  type SetStateAction,
+} from "react"
 import { describe, expect, test, vi } from "vitest"
 
 import FullScreenContext from "../convenience/FullScreenContext"
@@ -98,9 +102,13 @@ const renderLegacyChrome = (
 
 const renderChrome = ({
   isFullScreen,
+  isVisible = true,
+  setIsVisible = vi.fn(),
   toggleFullScreen = vi.fn(),
 }: {
   isFullScreen: boolean
+  isVisible?: boolean
+  setIsVisible?: Dispatch<SetStateAction<boolean>>
   toggleFullScreen?: () => void
 }) => {
   const viewerRef = createRef<HTMLDivElement>()
@@ -112,8 +120,8 @@ const renderChrome = ({
           value={{ isFullScreen, toggleFullScreen }}
         >
           <RevealableChrome
-            isVisible
-            setIsVisible={vi.fn()}
+            isVisible={isVisible}
+            setIsVisible={setIsVisible}
             spawn={vi.fn()}
             viewerRef={viewerRef}
           />
@@ -130,7 +138,87 @@ const getChromeBar = () =>
   screen.getByRole("button", { name: /folders/i })
     .parentElement as HTMLElement
 
+// jsdom has no `PointerEvent`, so the pointer fields ride on a `MouseEvent`.
+const firePointer = (
+  element: Element,
+  type: "pointerdown" | "pointerup",
+  {
+    clientX = 100,
+    clientY = 10,
+    pointerType,
+  }: {
+    clientX?: number
+    clientY?: number
+    pointerType: string
+  },
+) => {
+  const event = new MouseEvent(type, {
+    bubbles: true,
+    clientX,
+    clientY,
+  })
+
+  Object.defineProperty(event, "pointerType", {
+    value: pointerType,
+  })
+
+  fireEvent(element, event)
+}
+
 describe("RevealableChrome", () => {
+  test("a touch tap on the top strip reveals the hidden bar", () => {
+    const setIsVisible = vi.fn()
+
+    const { container } = renderChrome({
+      isFullScreen: true,
+      isVisible: false,
+      setIsVisible,
+    })
+
+    const hitStrip = container.firstElementChild as Element
+
+    firePointer(hitStrip, "pointerdown", {
+      pointerType: "touch",
+    })
+    firePointer(hitStrip, "pointerup", {
+      clientX: 104,
+      clientY: 13,
+      pointerType: "touch",
+    })
+
+    expect(setIsVisible).toHaveBeenCalledWith(true)
+  })
+
+  test("a touch drag on the top strip is not a tap, and a mouse click is not a touch reveal", () => {
+    const setIsVisible = vi.fn()
+
+    const { container } = renderChrome({
+      isFullScreen: true,
+      isVisible: false,
+      setIsVisible,
+    })
+
+    // The mount itself schedules the auto-hide, so only a `true` would be a reveal.
+    const hitStrip = container.firstElementChild as Element
+
+    firePointer(hitStrip, "pointerdown", {
+      pointerType: "touch",
+    })
+    firePointer(hitStrip, "pointerup", {
+      clientY: 90,
+      pointerType: "touch",
+    })
+
+    firePointer(hitStrip, "pointerdown", {
+      pointerType: "mouse",
+    })
+    firePointer(hitStrip, "pointerup", {
+      pointerType: "mouse",
+    })
+
+    expect(setIsVisible).not.toHaveBeenCalledWith(true)
+  })
+
   test("anchors to the very top of the screen in fullscreen so its hitbox matches where it draws", () => {
     renderChrome({ isFullScreen: true })
 

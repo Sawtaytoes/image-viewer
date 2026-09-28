@@ -53,12 +53,16 @@ import MultiSelectContext, {
 import sortDirectoryEntries from "./sortDirectoryEntries"
 import VirtualizedList from "./VirtualizedList"
 
+// The one column is `minmax(0,1fr)`, not the implicit `auto`: an `auto` column
+// grows to its widest row's content, so one wide row (a long queue) made the
+// whole page scroll sideways.
+//
 // The title-bar strip is `--title-bar-height` in `src/styles/tailwind.css`, the
 // same value `titleBarHeight.ts` and `main.js` carry — reading the custom
 // property here is what lets the browser sit below the bar without an arbitrary
 // pixel literal in the markup.
 const fileBrowserClassName =
-  "grid w-full grid-rows-[auto_auto_auto_1fr] bg-surface-base text-content-primary"
+  "grid w-full grid-cols-[minmax(0,1fr)] grid-rows-[auto_auto_auto_1fr] bg-surface-base text-content-primary"
 
 // Windowed AND the fullscreen file browser: the title bar is pinned at the top,
 // so the browser sits below it. In fullscreen the bar no longer auto-hides
