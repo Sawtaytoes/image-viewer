@@ -6,7 +6,13 @@
 // build never sees it. See `docs/2026-08-05-run-in-a-browser.md`.
 
 import { createFakeFileSystem } from "./fakeFileSystem"
-import type { Display, QueuedFolder } from "./types"
+import normalizeSavedQueue from "./savedQueue"
+import type {
+  Display,
+  QueuedFolder,
+  SavedQueue,
+  SavedQueueLayout,
+} from "./types"
 
 // Pure POSIX `path`. The fake tree is built with "/" semantics (its root is "/"
 // whenever `sep === "/"`), so the renderer's `path.*` calls must agree.
@@ -282,7 +288,7 @@ const writeStored = (key: string, value: unknown): void => {
 // an environment without `BroadcastChannel` degrades to per-tab silently.
 type QueueBroadcastMessage =
   | { folders: QueuedFolder[]; kind: "queue" }
-  | { folders: QueuedFolder[] | null; kind: "savedQueue" }
+  | { kind: "savedQueue"; saved: SavedQueue | null }
   | { kind: "openFolders"; paths: string[]; tabId: string }
 
 const queueChannel: BroadcastChannel | null = (() => {
@@ -357,7 +363,7 @@ const openFolders = {
 // The renderer tracks its own queue optimistically and reconciles via
 // `onChanged`, so echoing the stored list back is enough.
 let liveQueue: QueuedFolder[] = []
-let savedQueue: QueuedFolder[] | null = null
+let savedQueue: SavedQueue | null = null
 const queueListeners = new Set<
   (folders: QueuedFolder[]) => void
 >()
@@ -392,8 +398,8 @@ const commitSaved = (): void => {
   writeStored(SAVED_QUEUE_STORAGE_KEY, savedQueue)
   emitSaved()
   queueChannel?.postMessage({
-    folders: savedQueue,
     kind: "savedQueue",
+    saved: savedQueue,
   } satisfies QueueBroadcastMessage)
 }
 
@@ -437,11 +443,18 @@ const queue = {
     Promise.resolve([...liveQueue]),
   hasSaved: (): Promise<boolean> =>
     Promise.resolve(savedQueue !== null),
-  load: (): Promise<QueuedFolder[]> => {
-    liveQueue = savedQueue ? [...savedQueue] : []
+  // Mirrors main: a missing slot leaves the live queue alone and resolves null.
+  // The "where I left off" seeding happens in `installBrowserApi`, which owns
+  // the fake filesystem that store lives in.
+  load: (): Promise<SavedQueue | null> => {
+    if (!savedQueue) {
+      return Promise.resolve(null)
+    }
+
+    liveQueue = [...savedQueue.folders]
     commitQueue()
 
-    return Promise.resolve([...liveQueue])
+    return Promise.resolve(savedQueue)
   },
   onChanged: (
     callback: (folders: QueuedFolder[]) => void,
@@ -463,8 +476,11 @@ const queue = {
     )
     commitQueue()
   },
-  save: (): Promise<boolean> => {
-    savedQueue = [...liveQueue]
+  save: (layout: SavedQueueLayout): Promise<boolean> => {
+    savedQueue = normalizeSavedQueue({
+      ...layout,
+      folders: liveQueue,
+    })
     commitSaved()
 
     return Promise.resolve(true)
@@ -486,7 +502,7 @@ const handleQueueMessage = (
       break
     }
     case "savedQueue": {
-      savedQueue = message.folders
+      savedQueue = message.saved
       emitSaved()
 
       break
@@ -521,9 +537,10 @@ export const installBrowserApi = (): void => {
     QUEUE_STORAGE_KEY,
     [],
   )
-  savedQueue = readStored<QueuedFolder[] | null>(
-    SAVED_QUEUE_STORAGE_KEY,
-    null,
+  // Read through the same normalizer main uses, so a slot stored before
+  // positions were saved (a bare folder array) still loads.
+  savedQueue = normalizeSavedQueue(
+    readStored<unknown>(SAVED_QUEUE_STORAGE_KEY, null),
   )
 
   const storedOpenFolders = readStored<
@@ -584,7 +601,22 @@ export const installBrowserApi = (): void => {
     isSpawnedViewer,
     openFolders,
     path: posixPath,
-    queue,
+    queue: {
+      ...queue,
+      load: () =>
+        queue.load().then((saved) => {
+          for (const [folderPath, index] of Object.entries(
+            saved?.lastIndexByPath ?? {},
+          )) {
+            fakeFileSystem.setFolderLastIndex(
+              folderPath,
+              index,
+            )
+          }
+
+          return saved
+        }),
+    },
     stopIdentifyDisplay: () => {},
   }
 

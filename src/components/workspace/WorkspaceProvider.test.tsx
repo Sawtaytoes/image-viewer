@@ -630,4 +630,156 @@ describe("WorkspaceProvider", () => {
       expect(result.current.queuedFolders).toHaveLength(1)
     })
   })
+
+  describe("saved queue", () => {
+    const originalQueue = window.api.queue
+    const originalGetFolderLastIndex =
+      window.api.getFolderLastIndex
+
+    afterEach(() => {
+      window.api.queue = originalQueue
+      window.api.getFolderLastIndex =
+        originalGetFolderLastIndex
+    })
+
+    test("saves this window's columns and every queued folder's last image", async () => {
+      const save = vi.fn<Window["api"]["queue"]["save"]>(
+        () => Promise.resolve(true),
+      )
+
+      window.api.queue = { ...originalQueue, save }
+
+      // The shared store remembers /b at 9 and /a at 1; /a's column is on 4 now.
+      window.api.getFolderLastIndex = (folderPath) =>
+        Promise.resolve(
+          folderPath === "/b"
+            ? 9
+            : folderPath === "/a"
+              ? 1
+              : null,
+        )
+
+      const { result } = renderWorkspace()
+
+      act(() => {
+        result.current.addFoldersToQueue([
+          { name: "a", path: "/a" },
+          { name: "b", path: "/b" },
+          { name: "c", path: "/c" },
+        ])
+      })
+
+      const [folderA] = result.current.queuedFolders
+
+      let firstPaneId = ""
+
+      act(() => {
+        firstPaneId = result.current.addPane().id
+      })
+
+      act(() => {
+        result.current.addPane()
+      })
+
+      act(() => {
+        result.current.assignFolderToPane(
+          firstPaneId,
+          folderA.id,
+        )
+        result.current.setPaneIndex(firstPaneId, 4)
+        result.current.setActivePaneId(firstPaneId)
+      })
+
+      await act(async () => {
+        await result.current.saveQueue()
+      })
+
+      const [layout] = save.mock.calls[0]
+
+      expect(layout.lastIndexByPath).toEqual({
+        "/a": 4,
+        "/b": 9,
+      })
+      expect(layout.activePaneIndex).toBe(0)
+      expect(layout.panes[0]).toEqual({
+        currentIndex: 4,
+        folderPath: "/a",
+      })
+      expect(layout.panes).toHaveLength(2)
+    })
+
+    test("loading brings back the saved columns on their folders and images", async () => {
+      const folders = [
+        { id: "saved-a", name: "a", path: "/a" },
+        { id: "saved-b", name: "b", path: "/b" },
+      ]
+
+      window.api.queue = {
+        ...originalQueue,
+        load: () =>
+          Promise.resolve({
+            activePaneIndex: 1,
+            folders,
+            lastIndexByPath: { "/a": 7, "/b": 12 },
+            panes: [
+              { currentIndex: 7, folderPath: "/a" },
+              { currentIndex: 12, folderPath: "/b" },
+              { currentIndex: 3, folderPath: "/gone" },
+            ],
+          }),
+      }
+
+      const { result } = renderWorkspace()
+
+      await act(async () => {
+        result.current.loadQueue()
+
+        await Promise.resolve()
+      })
+
+      expect(result.current.queuedFolders).toEqual(folders)
+
+      const [paneA, paneB, paneGone] = result.current.panes
+
+      expect(paneA).toMatchObject({
+        currentIndex: 7,
+        folderId: "saved-a",
+      })
+      expect(paneB).toMatchObject({
+        currentIndex: 12,
+        folderId: "saved-b",
+      })
+      expect(result.current.activePaneId).toBe(paneB.id)
+
+      // A column whose folder left the queue keeps its place in the layout.
+      expect(paneGone?.currentIndex).toBe(0)
+    })
+
+    test("loading a slot with no columns leaves this window's columns alone", async () => {
+      window.api.queue = {
+        ...originalQueue,
+        load: () =>
+          Promise.resolve({
+            activePaneIndex: null,
+            folders: [],
+            lastIndexByPath: {},
+            panes: [],
+          }),
+      }
+
+      const { result } = renderWorkspace()
+
+      act(() => {
+        result.current.addPane()
+      })
+
+      await act(async () => {
+        result.current.loadQueue()
+
+        await Promise.resolve()
+      })
+
+      expect(result.current.panes).toHaveLength(1)
+    })
+  })
 })

@@ -153,3 +153,7 @@ to apply here); everything else is sourced from Image Viewer's own chats, commit
 ### 2026-09-25 — Visual regression
 
 - [2026-09-25 — VRT shoots the browser build over the fake filesystem](2026-09-25-vrt-shoots-the-browser-build-over-the-fake-filesystem.md) ← **no Storybook here: `scripts/vrtCapture.mjs` shoots 7 scenes x Wide/Narrow x light/dark into the shared `vrt` job**
+
+### 2026-09-28 — Saved queue
+
+- [2026-09-28 — A saved queue keeps reading positions and columns](2026-09-28-a-saved-queue-keeps-reading-positions-and-columns.md) ← **"Save for later" stores every queued folder's last image and the window's columns; "Load queue" brings all of it back. Read slots through `src/savedQueue.ts`, which still accepts the old bare array**

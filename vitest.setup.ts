@@ -56,7 +56,7 @@ const api: Window["api"] = {
     clearSaved: () => Promise.resolve(),
     get: () => Promise.resolve([]),
     hasSaved: () => Promise.resolve(false),
-    load: () => Promise.resolve([]),
+    load: () => Promise.resolve(null),
     onChanged: () => () => {},
     onSavedChanged: () => () => {},
     remove: () => {},

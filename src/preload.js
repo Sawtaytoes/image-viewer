@@ -559,8 +559,25 @@ contextBridge.exposeInMainWorld("api", {
     get: () => ipcRenderer.invoke("queue:get"),
     // Whether a saved slot currently exists (gates the "Load queue" button).
     hasSaved: () => ipcRenderer.invoke("queue:hasSaved"),
-    // Replace the live queue with the saved slot; main broadcasts the change.
-    load: () => ipcRenderer.invoke("queue:load"),
+    // Replace the live queue with the saved slot; main broadcasts the change
+    // and resolves to the slot (or null) so this window can restore its columns.
+    // Main seeds its own "where I left off" store; in fake mode that store is
+    // the fake filesystem's (see `getFolderLastIndex` below), so seed it here.
+    load: () =>
+      ipcRenderer.invoke("queue:load").then((saved) => {
+        if (fakeFileSystem) {
+          for (const [folderPath, index] of Object.entries(
+            saved?.lastIndexByPath ?? {},
+          )) {
+            fakeFileSystem.setFolderLastIndex(
+              folderPath,
+              index,
+            )
+          }
+        }
+
+        return saved
+      }),
     onChanged: (callback) => {
       const listener = (_event, folders) =>
         callback(folders)
@@ -591,8 +608,10 @@ contextBridge.exposeInMainWorld("api", {
     },
     remove: (folderId) =>
       ipcRenderer.send("queue:remove", folderId),
-    // Snapshot the current live queue into the saved slot.
-    save: () => ipcRenderer.invoke("queue:save"),
+    // Snapshot the current live queue into the saved slot, with this window's
+    // layout (columns + last-viewed images).
+    save: (layout) =>
+      ipcRenderer.invoke("queue:save", layout),
   },
   // In fake mode the delete is virtual (mutates the in-memory tree, never the
   // disk and never the trash); otherwise it goes to main's trash/rm handler.
