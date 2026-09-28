@@ -103,6 +103,7 @@ read `process`. All of that goes through the preload bridge, exposed as **`windo
 | `createNewWindow({ filePath })` | open another window |
 | `colorScheme.get()` | `"light" \| "dark"` — the OS scheme from main's `nativeTheme` (sync); the seam Charcuterie's colour-scheme resolver reads instead of `matchMedia` |
 | `colorScheme.onChanged(cb)` | subscribe to OS light/dark flips (main's `nativeTheme` `updated`); returns an unsubscribe |
+| `queue.save(layout)` / `queue.load()` | the saved-queue slot: save takes the window's columns + last-viewed images (main adds its own folder list); load returns the whole slot or null and seeds the resume store. Old bare-array slots still load via `src/savedQueue.ts` ([decision](docs/decisions/2026-09-28-a-saved-queue-keeps-reading-positions-and-columns.md)) |
 | `path.{dirname,basename,join,resolve,extname,sep}` | path helpers |
 
 To add a privileged capability: add it to `src/preload.js` (and an `ipcMain` handler in

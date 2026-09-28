@@ -8,7 +8,11 @@ import {
   useState,
 } from "react"
 
-import type { QueuedFolder } from "../../types"
+import type {
+  QueuedFolder,
+  SavedQueue,
+  SavedQueueLayout,
+} from "../../types"
 import type {
   Pane,
   UnqueuedFolder,
@@ -93,6 +97,87 @@ const fillEmptyPanes = (
   })
 
   return { filled, panes: nextPanes }
+}
+
+// The saving window's side of a saved queue: its columns (folder by path, since
+// ids are only meaningful within a session) and the "where I left off" image of
+// every queued folder. A column's own index is the freshest spot for its
+// folder, so it wins over the shared store's copy, which may be another
+// window's older one.
+const buildSavedQueueLayout = (
+  { activePaneId, panes, queuedFolders }: Workspace,
+  storedIndexes: (number | null)[],
+): SavedQueueLayout => {
+  const folderPathById = new Map(
+    queuedFolders.map((folder) => [folder.id, folder.path]),
+  )
+
+  const savedPanes = panes.map((pane) => ({
+    currentIndex: pane.currentIndex,
+    folderPath:
+      pane.folderId == null
+        ? null
+        : (folderPathById.get(pane.folderId) ?? null),
+  }))
+
+  const lastIndexByPath: Record<string, number> = {}
+
+  queuedFolders.forEach((folder, folderIndex) => {
+    const storedIndex = storedIndexes[folderIndex]
+
+    if (storedIndex != null) {
+      lastIndexByPath[folder.path] = storedIndex
+    }
+  })
+
+  for (const { currentIndex, folderPath } of savedPanes) {
+    if (folderPath != null) {
+      lastIndexByPath[folderPath] = currentIndex
+    }
+  }
+
+  const activePaneIndex = panes.findIndex(
+    (pane) => pane.id === activePaneId,
+  )
+
+  return {
+    activePaneIndex:
+      activePaneIndex === -1 ? null : activePaneIndex,
+    lastIndexByPath,
+    panes: savedPanes,
+  }
+}
+
+// The loading window's columns, rebuilt from a saved queue: fresh pane ids,
+// each on the folder it showed (matched by path) at the image it was on. A
+// folder that is no longer in the queue leaves an empty column rather than a
+// missing one, so the layout keeps its shape.
+const restoreSavedPanes = (
+  saved: SavedQueue,
+): Pick<Workspace, "activePaneId" | "panes"> => {
+  const folderIdByPath = new Map(
+    saved.folders.map((folder) => [folder.path, folder.id]),
+  )
+
+  const panes = saved.panes.map((savedPane) => {
+    const folderId =
+      savedPane.folderPath == null
+        ? null
+        : (folderIdByPath.get(savedPane.folderPath) ?? null)
+
+    return {
+      currentIndex:
+        folderId == null ? 0 : savedPane.currentIndex,
+      folderId,
+      id: createId(),
+    }
+  })
+
+  return {
+    activePaneId:
+      panes[saved.activePaneIndex ?? 0]?.id ?? null,
+    panes,
+  }
 }
 
 // Panes are ephemeral: there are none until the user opens a folder into a
@@ -607,16 +692,56 @@ const WorkspaceProvider = ({
   // broadcasts the new saved-state). Resolves once written so callers can
   // sequence a clear after it — e.g. the title bar's "Save for later" closes the
   // queue only once the snapshot is safely on disk.
-  const saveQueue = useCallback(
-    () => Promise.resolve(window.api.queue.save()),
-    [],
-  )
+  //
+  // The snapshot carries this window's columns and every queued folder's
+  // last-viewed image, read from the shared store at save time (a ref, since
+  // the save is a click handler and needs the state as of now).
+  const workspaceRef = useRef(workspace)
 
-  // Replace the live queue with the saved slot. Main swaps `queuedFolders` and
-  // broadcasts `queue:changed`, so this window's mirror (and every other's)
-  // reconciles panes to the loaded list via the existing `onChanged` path.
+  useEffect(() => {
+    workspaceRef.current = workspace
+  }, [workspace])
+
+  const saveQueue = useCallback(() => {
+    const currentWorkspace = workspaceRef.current
+
+    return Promise.all(
+      currentWorkspace.queuedFolders.map((folder) =>
+        Promise.resolve(
+          window.api.getFolderLastIndex(folder.path),
+        ),
+      ),
+    ).then((storedIndexes) =>
+      window.api.queue.save(
+        buildSavedQueueLayout(
+          currentWorkspace,
+          storedIndexes,
+        ),
+      ),
+    )
+  }, [])
+
+  // Replace the live queue with the saved slot. Main swaps `queuedFolders`,
+  // puts the saved positions back in the shared "where I left off" store, and
+  // broadcasts `queue:changed`, so every window's mirror reconciles to the
+  // loaded list. This window also gets its saved columns back, each at the
+  // image it was on — which opens the viewer, the way it was left. A slot with
+  // no columns (saved from the file browser, or before columns were saved)
+  // leaves this window's columns to the usual reconciliation.
   const loadQueue = useCallback(() => {
-    window.api.queue.load()
+    Promise.resolve(window.api.queue.load()).then(
+      (saved) => {
+        if (!saved || saved.panes.length === 0) {
+          return
+        }
+
+        setWorkspace((previousWorkspace) => ({
+          ...previousWorkspace,
+          ...restoreSavedPanes(saved),
+          queuedFolders: saved.folders,
+        }))
+      },
+    )
   }, [])
 
   const addPane = useCallback(() => {
