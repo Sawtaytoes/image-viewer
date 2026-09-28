@@ -9,13 +9,16 @@ import {
 import FolderTab from "./FolderTab"
 import WorkspaceContext from "./WorkspaceContext"
 
+// `min-w-0` lets the strip be narrower than its tabs. Without it the strip's
+// minimum width is every tab laid end to end, the file browser's grid column
+// grows to fit, and the whole page scrolls sideways instead of the tab list.
 const tabStripClassName =
-  "flex items-center gap-1 bg-surface-raised p-1"
+  "flex min-w-0 items-center gap-1 bg-surface-raised p-1"
 
 // The tabs scroll horizontally; the Clear-queue action sits outside this so it
 // stays pinned and visible no matter how many tabs are queued.
 const tabListClassName =
-  "flex flex-1 gap-1 touch-pan-x overflow-x-auto whitespace-nowrap"
+  "flex min-w-0 flex-1 gap-1 touch-pan-x overflow-x-auto whitespace-nowrap"
 
 const clearQueueButtonClassName =
   "flex-none cursor-pointer rounded-[5px] border-0 bg-transparent px-[10px] py-1.5 font-normal whitespace-nowrap text-content-secondary hover:bg-intent-neutral-surface-hover hover:text-content-primary"

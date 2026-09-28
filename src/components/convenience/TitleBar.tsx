@@ -39,8 +39,18 @@ const WINDOW_CONTROLS_WIDTH = 140
 //
 // `transition-transform` animates the one transition the bar still makes: sliding
 // up out of view when it stands down for the fullscreen viewer (see `barStyle`).
+//
+// The drag region is one of two static classes because the bar is not always
+// a place to grab the window. Standing down for the fullscreen viewer it only
+// slides out of view, and a drag region the OS still honors at the top edge
+// takes a touch there as a window move before the page ever sees it — the
+// viewer's own tap and pull-down at that edge then do nothing.
+const titleBarDragClassName = "[-webkit-app-region:drag]"
+const titleBarNoDragClassName =
+  "[-webkit-app-region:no-drag]"
+
 const titleBarClassName =
-  "[-webkit-app-region:drag] fixed top-0 right-0 left-0 z-[10000] flex h-(--title-bar-height) items-center gap-1.5 bg-surface-sunken px-[10px] text-content-primary select-none transition-transform duration-[220ms] ease-[ease]"
+  "fixed top-0 right-0 left-0 z-[10000] flex h-(--title-bar-height) items-center gap-1.5 bg-surface-sunken px-[10px] text-content-primary select-none transition-transform duration-[220ms] ease-[ease]"
 
 const appNameClassName =
   "[-webkit-app-region:no-drag] flex-none cursor-help text-sm font-semibold whitespace-nowrap text-content-secondary"
@@ -164,7 +174,14 @@ const TitleBar = () => {
   }
 
   return (
-    <div className={titleBarClassName} style={barStyle}>
+    <div
+      className={`${titleBarClassName} ${
+        isTitleBarActive
+          ? titleBarDragClassName
+          : titleBarNoDragClassName
+      }`}
+      style={barStyle}
+    >
       <Tooltip
         label={`Image Viewer ${appVersion}`}
         placement="bottom"
