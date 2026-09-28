@@ -10,6 +10,8 @@ import {
 } from "electron"
 import started from "electron-squirrel-startup"
 
+import normalizeSavedQueue from "./savedQueue"
+
 // Handle creating/removing shortcuts on Windows when installing/uninstalling.
 if (started) {
   app.quit()
@@ -396,12 +398,21 @@ const broadcastSavedQueueState = () => {
   }
 }
 
-// Write the current live queue to the slot; returns whether it stuck.
-ipcMain.handle("queue:save", () => {
+// Write the current live queue to the slot, with the saving window's layout
+// (its columns and the "where I left off" image of every queued folder), so a
+// load brings the reading positions back too. The folder list is always main's
+// own — the canonical queue — never the renderer's mirror of it. Returns
+// whether it stuck.
+ipcMain.handle("queue:save", (_event, layout = {}) => {
   try {
     fs.writeFileSync(
       savedQueueFilePath(),
-      JSON.stringify(queuedFolders),
+      JSON.stringify(
+        normalizeSavedQueue({
+          ...layout,
+          folders: queuedFolders,
+        }),
+      ),
     )
 
     broadcastSavedQueueState()
@@ -413,26 +424,39 @@ ipcMain.handle("queue:save", () => {
 })
 
 // Replace the live queue with the saved slot and broadcast, so every window's
-// mirror (and its panes) reconciles to the loaded list. Returns the loaded queue
-// (or the untouched current one if there's no readable slot).
+// mirror (and its panes) reconciles to the loaded list. The saved positions go
+// back into the shared "where I left off" store, so any folder opened from the
+// loaded queue — in any window — resumes where it was. Returns the whole slot
+// so the loading window can rebuild its columns, or null when there is no
+// readable slot (the live queue is then left as it was).
 ipcMain.handle("queue:load", () => {
+  let saved = null
+
   try {
-    const raw = fs.readFileSync(
-      savedQueueFilePath(),
-      "utf8",
+    saved = normalizeSavedQueue(
+      JSON.parse(
+        fs.readFileSync(savedQueueFilePath(), "utf8"),
+      ),
     )
-    const parsed = JSON.parse(raw)
-
-    if (Array.isArray(parsed)) {
-      queuedFolders = parsed
-
-      broadcastQueue()
-    }
   } catch {
-    // No slot yet (or unreadable/corrupt) — leave the live queue as-is.
+    // No slot yet, or unreadable/corrupt.
   }
 
-  return queuedFolders
+  if (!saved) {
+    return null
+  }
+
+  for (const [folderPath, index] of Object.entries(
+    saved.lastIndexByPath,
+  )) {
+    folderLastIndexByPath.set(folderPath, index)
+  }
+
+  queuedFolders = saved.folders
+
+  broadcastQueue()
+
+  return saved
 })
 
 ipcMain.handle("queue:hasSaved", () => hasSavedQueue())

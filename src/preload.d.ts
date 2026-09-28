@@ -11,6 +11,8 @@ import type {
   ImageFile,
   PathStat,
   QueuedFolder,
+  SavedQueue,
+  SavedQueueLayout,
 } from "./types"
 
 declare global {
@@ -85,8 +87,10 @@ declare global {
         // button).
         hasSaved: () => Promise<boolean>
         // Replace the live queue with the saved slot; main broadcasts the
-        // change to every window.
-        load: () => Promise<QueuedFolder[]>
+        // change to every window and seeds the "where I left off" store from
+        // it. Resolves to the slot so the loading window can rebuild its
+        // columns, or null when there is none.
+        load: () => Promise<SavedQueue | null>
         // Subscribe to queue changes (from any window); returns an unsubscribe.
         onChanged: (
           callback: (folders: QueuedFolder[]) => void,
@@ -98,8 +102,9 @@ declare global {
           callback: (isSaved: boolean) => void,
         ) => () => void
         remove: (folderId: string) => void
-        // Snapshot the live queue into the saved slot.
-        save: () => Promise<boolean>
+        // Snapshot the live queue into the saved slot, with the saving
+        // window's columns and every queued folder's last-viewed image.
+        save: (layout: SavedQueueLayout) => Promise<boolean>
       }
       // Trash a file or folder (resolves to whether it was removed).
       deleteFilePath: (payload: {

@@ -52,6 +52,29 @@ export interface QueuedFolder {
   path: string
 }
 
+// One column of the window that saved the queue: which folder it showed (by
+// path — ids are minted per session) and the image it was on.
+export interface SavedPane {
+  currentIndex: number
+  folderPath: string | null
+}
+
+// The saved queue "slot". `lastIndexByPath` is the "where I left off" image for
+// every queued folder, so a tab opened after a load resumes too; `panes` and
+// `activePaneIndex` bring back the saving window's columns. A slot written
+// before these existed was a bare `QueuedFolder[]`; `normalizeSavedQueue`
+// reads it as a queue with no positions and no columns.
+export interface SavedQueue {
+  activePaneIndex: number | null
+  folders: QueuedFolder[]
+  lastIndexByPath: Record<string, number>
+  panes: SavedPane[]
+}
+
+// What a window hands to `queue.save`: everything but the folder list, which
+// the shared store owns and fills in itself.
+export type SavedQueueLayout = Omit<SavedQueue, "folders">
+
 // A rectangle in the virtual screen space (Electron display bounds/workArea).
 export interface DisplayRect {
   height: number
