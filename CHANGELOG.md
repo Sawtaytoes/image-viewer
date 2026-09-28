@@ -1,3 +1,10 @@
+## [2.11.4](https://github.com/Sawtaytoes/image-viewer/compare/v2.11.3...v2.11.4) (2026-09-28)
+
+
+### Bug Fixes
+
+* open the column menu scrolled to the column's own folder ([#43](https://github.com/Sawtaytoes/image-viewer/issues/43)) ([a46bc5c](https://github.com/Sawtaytoes/image-viewer/commit/a46bc5c27c4c4e3ec612459099bab0f8088c6407))
+
 ## [2.11.3](https://github.com/Sawtaytoes/image-viewer/compare/v2.11.2...v2.11.3) (2026-09-28)
 
 
