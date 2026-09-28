@@ -54,8 +54,15 @@ const TOP_ANCHOR_WINDOWED = "top-(--title-bar-height)"
 
 // It sits below the fixed custom title bar (windowed) so hover-to-reveal isn't
 // swallowed by it; the top anchor is appended per-mode at render.
+//
+// `h-12` (48px) is a finger-sized target: the strip is also the touch tap zone
+// (`onHitStripPointerUp`), and at 32px a tap on a tablet mostly landed below it.
 const HIT_STRIP_CLASSES =
-  "fixed left-0 z-[1] h-8 w-full touch-none"
+  "fixed left-0 z-[1] h-12 w-full touch-none"
+
+// How far a finger may travel between press and release and still count as a
+// tap on the hit strip. Anything longer is a drag, which `useEdgeSwipe` owns.
+const TAP_SLOP_PX = 10
 
 // Sits just under the fixed custom title bar rather than behind it (windowed);
 // the top anchor is appended per-mode at render.
@@ -175,6 +182,50 @@ const RevealableChrome = ({
     [isChromeRevealSuppressed, reveal],
   )
 
+  // Touch summon, part one: a tap on the top strip reveals the bar. The strip
+  // sits over the image and is `touch-none`, so before this a tap on the top
+  // edge was swallowed and did nothing at all. Only a touch or pen counts —
+  // the mouse keeps its movement-gated hover above (2026-06-04 decision) — and
+  // only a tap: a press that travelled is a drag, and a drag is the edge swipe's.
+  const tapStartRef = useRef<{
+    x: number
+    y: number
+  } | null>(null)
+
+  const onHitStripPointerDown = useCallback<
+    PointerEventHandler<HTMLDivElement>
+  >((event) => {
+    tapStartRef.current =
+      event.pointerType === "mouse"
+        ? null
+        : { x: event.clientX, y: event.clientY }
+  }, [])
+
+  const onHitStripPointerUp = useCallback<
+    PointerEventHandler<HTMLDivElement>
+  >(
+    (event) => {
+      const tapStart = tapStartRef.current
+
+      tapStartRef.current = null
+
+      if (
+        !tapStart ||
+        event.pointerType === "mouse" ||
+        isChromeRevealSuppressed ||
+        Math.hypot(
+          event.clientX - tapStart.x,
+          event.clientY - tapStart.y,
+        ) > TAP_SLOP_PX
+      ) {
+        return
+      }
+
+      reveal({ x: event.clientX })
+    },
+    [isChromeRevealSuppressed, reveal],
+  )
+
   // Keep the bar up while the pointer is over it; reschedule the hide on leave.
   const cancelAutoHide = useCallback(() => {
     window.clearTimeout(autoHideTimerRef.current)
@@ -289,7 +340,9 @@ const RevealableChrome = ({
     <Fragment>
       <div
         className={`${HIT_STRIP_CLASSES} ${topAnchorClass}`}
+        onPointerDown={onHitStripPointerDown}
         onPointerMove={onHitStripPointerMove}
+        onPointerUp={onHitStripPointerUp}
         ref={hitStripRef}
       >
         {!isVisible && (

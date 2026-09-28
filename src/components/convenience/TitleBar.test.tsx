@@ -113,6 +113,32 @@ describe("TitleBar", () => {
     ).toBeNull()
   })
 
+  test("is a window drag area only while it is pinned, never while it stands down for the viewer", () => {
+    const { unmount } = renderTitleBar({
+      isFullScreen: false,
+    })
+
+    expect(getBar().className).toContain(
+      "[-webkit-app-region:drag]",
+    )
+
+    unmount()
+
+    renderTitleBar({
+      imageFilePath: "C:\\pics\\photo.jpg",
+      isFullScreen: true,
+    })
+
+    // Slid out of view, it must not keep the top edge as a drag region: the OS
+    // would take a touch there as a window move before the viewer sees it.
+    expect(getBar().className).toContain(
+      "[-webkit-app-region:no-drag]",
+    )
+    expect(getBar().className).not.toContain(
+      "[-webkit-app-region:drag]",
+    )
+  })
+
   test("stays slid up in fullscreen while the viewer is open, no matter what pointer events arrive", () => {
     renderTitleBar({
       imageFilePath: "C:\\pics\\photo.jpg",
