@@ -1,3 +1,10 @@
+## [2.12.1](https://github.com/Sawtaytoes/image-viewer/compare/v2.12.0...v2.12.1) (2026-09-28)
+
+
+### Bug Fixes
+
+* show hover styles on a Surface with a mouse or pen ([#45](https://github.com/Sawtaytoes/image-viewer/issues/45)) ([a4105a8](https://github.com/Sawtaytoes/image-viewer/commit/a4105a8673736ec011f4f4f1742424b031835e50))
+
 # [2.12.0](https://github.com/Sawtaytoes/image-viewer/compare/v2.11.4...v2.12.0) (2026-09-28)
 
 
