@@ -5,7 +5,9 @@ import {
   useCallback,
   useContext,
   useEffect,
+  useLayoutEffect,
   useMemo,
+  useRef,
   useState,
 } from "react"
 
@@ -115,6 +117,29 @@ const FolderPickerPopover = ({
       ),
     [paneId, panes],
   )
+
+  // With a long queue the pane's own folder is often far down the list, so the
+  // menu opens scrolled to center it. Once, on open: a row removed later must
+  // not yank the list back. The menu scrolls itself rather than calling
+  // `scrollIntoView`, which also scrolls every ancestor — the pane and the
+  // viewer included. The menu is `relative` so a row's `offsetTop` is measured
+  // from it, and a layout offset (unlike a client rect) ignores the pop-in
+  // animation's scale.
+  const menuRef = useRef<HTMLDivElement>(null)
+  const currentRowRef = useRef<HTMLDivElement>(null)
+
+  useLayoutEffect(() => {
+    const menu = menuRef.current
+    const currentRow = currentRowRef.current
+
+    if (!menu || !currentRow) {
+      return
+    }
+
+    menu.scrollTop =
+      currentRow.offsetTop -
+      (menu.clientHeight - currentRow.offsetHeight) / 2
+  }, [])
 
   // Esc closes the menu first (the owning pane's nav keyboard is silenced while
   // we're open, so a later Esc then leaves the viewer).
@@ -248,7 +273,10 @@ const FolderPickerPopover = ({
           gets a real minimum width and large rows rather than shrinking to its
           content. Icons are forced larger here (the shared SvgIcon is a fixed
           24px) so they match the bumped-up text. */}
-      <div className="flex max-h-[85%] min-w-[460px] max-w-[92%] animate-pop-in flex-col gap-1 overflow-y-auto rounded-[12px] bg-surface-sunken p-3 shadow-[0_8px_24px_var(--color-scrim)] select-none [&_svg]:h-[30px] [&_svg]:w-[30px]">
+      <div
+        className="relative flex max-h-[85%] min-w-[460px] max-w-[92%] animate-pop-in flex-col gap-1 overflow-y-auto rounded-[12px] bg-surface-sunken p-3 shadow-[0_8px_24px_var(--color-scrim)] select-none [&_svg]:h-[30px] [&_svg]:w-[30px]"
+        ref={menuRef}
+      >
         {queuedFolders.length === 0 ? (
           <div className="p-5 text-xl font-light text-content-muted">
             No folders queued yet.
@@ -295,6 +323,7 @@ const FolderPickerPopover = ({
                     : ""
                 }`}
                 key={id}
+                ref={isCurrent ? currentRowRef : undefined}
               >
                 {isOpenElsewhere ? (
                   <Tooltip

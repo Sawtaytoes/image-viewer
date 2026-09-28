@@ -249,4 +249,52 @@ describe("FolderPickerPopover (per-column menu)", () => {
 
     expect(onClose).toHaveBeenCalled()
   })
+
+  test("opens scrolled so the pane's own folder is centered in a long list", () => {
+    // jsdom does no layout: give every element a fixed box, and each row an
+    // offset from its index in the list.
+    const rowHeight = 60
+    const menuHeight = 600
+
+    const offsetTopSpy = vi
+      .spyOn(HTMLElement.prototype, "offsetTop", "get")
+      .mockImplementation(function (this: HTMLElement) {
+        const siblings = [
+          ...(this.parentElement?.children ?? []),
+        ]
+
+        return siblings.indexOf(this) * rowHeight
+      })
+    const offsetHeightSpy = vi
+      .spyOn(HTMLElement.prototype, "offsetHeight", "get")
+      .mockReturnValue(rowHeight)
+    const clientHeightSpy = vi
+      .spyOn(HTMLElement.prototype, "clientHeight", "get")
+      .mockReturnValue(menuHeight)
+
+    const queuedFolders = Array.from(
+      { length: 40 },
+      (_, index) => ({
+        id: `folder-${index}`,
+        name: `Folder ${index}`,
+        path: `/folder-${index}`,
+      }),
+    )
+
+    renderPopover({
+      currentFolderId: "folder-30",
+      queuedFolders,
+    })
+
+    const menu = screen
+      .getByText("Folder 30")
+      .closest("[data-viewer-overlay] > div") as HTMLElement
+
+    // Row 30 starts at 1800px; centering a 60px row in 600px puts it 270px down.
+    expect(menu.scrollTop).toBe(30 * rowHeight - 270)
+
+    offsetTopSpy.mockRestore()
+    offsetHeightSpy.mockRestore()
+    clientHeightSpy.mockRestore()
+  })
 })
