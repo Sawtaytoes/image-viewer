@@ -1,3 +1,10 @@
+# [2.12.0](https://github.com/Sawtaytoes/image-viewer/compare/v2.11.4...v2.12.0) (2026-09-28)
+
+
+### Features
+
+* a saved queue keeps every gallery's page and the open columns ([#44](https://github.com/Sawtaytoes/image-viewer/issues/44)) ([c84ddc0](https://github.com/Sawtaytoes/image-viewer/commit/c84ddc0f93c7882a110b8a7172d7113cd1cbb96a))
+
 ## [2.11.4](https://github.com/Sawtaytoes/image-viewer/compare/v2.11.3...v2.11.4) (2026-09-28)
 
 
