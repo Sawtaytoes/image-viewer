@@ -1,3 +1,10 @@
+## [2.11.2](https://github.com/Sawtaytoes/image-viewer/compare/v2.11.1...v2.11.2) (2026-09-28)
+
+
+### Bug Fixes
+
+* refresh an open gallery when its folder changes on disk ([#41](https://github.com/Sawtaytoes/image-viewer/issues/41)) ([0ce97b3](https://github.com/Sawtaytoes/image-viewer/commit/0ce97b31387011d10dab908a446ed43f094bc0d3))
+
 ## [2.11.1](https://github.com/Sawtaytoes/image-viewer/compare/v2.11.0...v2.11.1) (2026-09-19)
 
 
