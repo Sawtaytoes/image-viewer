@@ -79,6 +79,7 @@ const api: Window["api"] = {
     isDirectory: false,
     isFile: false,
   }),
+  watchDirectory: () => () => undefined,
   path: {
     basename: (filePath: string) =>
       filePath.slice(

@@ -151,7 +151,9 @@ const PaneGallery = ({
   // drive it opened in.
   const isDrivesRoot = browsePath === ""
 
-  const listing = useFolderListing(browsePath)
+  const listing = useFolderListing(browsePath, {
+    isWatchingForChanges: true,
+  })
 
   // At the all-drives root there is no folder to read — surface the connected
   // drives as tiles (exactly as `FileSystemProvider` does). Everywhere else, the

@@ -112,6 +112,44 @@ const readDirectory = (
       ),
     )
 
+// Tells the renderer when a folder's own entries change on disk, so an open
+// gallery picks up folders and images added or removed outside the app. Only
+// the direct children matter to a listing, so the watch is not recursive.
+// `fs.watch` fires once per changed entry — a copy of a gallery folder is a
+// burst of them — so the callback waits for the burst to settle before the
+// renderer re-reads. A folder that cannot be watched (gone, permission, a
+// filesystem without change notifications) degrades to no watch rather than
+// failing the listing. Returns an unsubscribe.
+const directoryChangeSettleMs = 300
+
+const watchDirectory = (directoryPath, onChange) => {
+  let watcher
+  let settleTimer
+
+  const close = () => {
+    clearTimeout(settleTimer)
+    watcher?.close()
+    watcher = undefined
+  }
+
+  try {
+    watcher = fs.watch(directoryPath, () => {
+      clearTimeout(settleTimer)
+      settleTimer = setTimeout(
+        onChange,
+        directoryChangeSettleMs,
+      )
+    })
+
+    // Deleting the watched folder itself surfaces here on Windows; stop quietly.
+    watcher.on("error", close)
+  } catch {
+    watcher = undefined
+  }
+
+  return close
+}
+
 // Image extensions the renderer can display — the keys of the shared MIME map,
 // so this list never drifts from `readImageData`/`useImageFiles`.
 const imageExtensions = new Set(
@@ -600,6 +638,9 @@ contextBridge.exposeInMainWorld("api", {
   statPath: fakeFileSystem
     ? fakeFileSystem.statPath
     : statPath,
+  watchDirectory: fakeFileSystem
+    ? fakeFileSystem.watchDirectory
+    : watchDirectory,
   path: {
     basename: (targetPath) => path.basename(targetPath),
     dirname: (targetPath) => path.dirname(targetPath),

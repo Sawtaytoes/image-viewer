@@ -149,6 +149,13 @@ declare global {
         index: number,
       ) => void
       statPath: (targetPath: string) => PathStat
+      // Calls `onChange` (settled, once per burst) when an entry directly
+      // inside `directoryPath` is added, removed or renamed. Returns an
+      // unsubscribe; a folder that cannot be watched returns a no-op one.
+      watchDirectory: (
+        directoryPath: string,
+        onChange: () => void,
+      ) => () => void
       path: {
         basename: (targetPath: string) => string
         dirname: (targetPath: string) => string

@@ -671,6 +671,40 @@ const createFakeFileSystem = ({
     })
   }
 
+  // Mirror of the real preload's `watchDirectory`. The tree changes only
+  // through `deleteFilePath`, which notifies the deleted node's parent — on a
+  // later tick, the way `fs.watch` reports after the fact.
+  const changeListenersByPath = new Map<
+    string,
+    Set<() => void>
+  >()
+
+  const watchDirectory = (
+    directoryPath: string,
+    onChange: () => void,
+  ): (() => void) => {
+    const listeners =
+      changeListenersByPath.get(directoryPath) ??
+      new Set<() => void>()
+
+    listeners.add(onChange)
+    changeListenersByPath.set(directoryPath, listeners)
+
+    return () => {
+      listeners.delete(onChange)
+    }
+  }
+
+  const notifyDirectoryChanged = (
+    directoryPath: string,
+  ) => {
+    for (const listener of changeListenersByPath.get(
+      directoryPath,
+    ) ?? []) {
+      setTimeout(listener, 0)
+    }
+  }
+
   // Virtual delete: drop the node and its whole subtree, and unlink it from its
   // parent. Mutates the in-memory map only — never disk.
   const deleteFilePath = ({
@@ -703,6 +737,10 @@ const createFakeFileSystem = ({
 
     removeSubtree(filePath)
 
+    if (node.parent) {
+      notifyDirectoryChanged(node.parent)
+    }
+
     return Promise.resolve(true)
   }
 
@@ -719,6 +757,7 @@ const createFakeFileSystem = ({
     searchFolders,
     setFolderLastIndex,
     statPath,
+    watchDirectory,
   }
 }
 
