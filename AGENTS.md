@@ -97,6 +97,7 @@ read `process`. All of that goes through the preload bridge, exposed as **`windo
 | `getWindowsDrives()` | `["C:\\", "D:\\", …]` (sync IPC) |
 | `statPath(p)` | `{ exists, isFile, isDirectory }` (sync) |
 | `readDirectory(dir)` | `Promise<[{ fileName, filePath, isDirectory, isFile }]>` |
+| `watchDirectory(dir, onChange)` | `fs.watch` on a folder's direct entries, settled per burst; returns an unsubscribe. The galleries re-read in place on a change (`useFolderListing(path, { isWatchingForChanges: true })`); an open image pane does not |
 | `readImageData(filePath)` | `Promise<{ data: ArrayBuffer, mimeType }>` — image bytes for the renderer Blob |
 | `deleteFilePath({ filePath, isDirectory })` | `Promise<boolean>` — trash, then permanent-delete fallback |
 | `createNewWindow({ filePath })` | open another window |

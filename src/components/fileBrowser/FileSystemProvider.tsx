@@ -82,7 +82,9 @@ const FileSystemProvider = ({
     directories: listedDirectories,
     imageFiles,
     isLoading,
-  } = useFolderListing(filePath)
+  } = useFolderListing(filePath, {
+    isWatchingForChanges: true,
+  })
 
   // At the root there is no folder to list, so surface the drives instead.
   const directories = filePath

@@ -4,7 +4,7 @@ import {
   useEffect,
   useState,
 } from "react"
-import { from } from "rxjs"
+import { from, type Subscription } from "rxjs"
 
 import type { DirectoryEntry, ImageFile } from "../../types"
 import SettingsContext from "../settings/SettingsContext"
@@ -30,6 +30,14 @@ export interface FolderListing {
 
 const useFolderListing = (
   folderPath = "",
+  {
+    isWatchingForChanges = false,
+  }: {
+    // Re-read the folder when its entries change on disk. The galleries opt
+    // in; an open image pane does not, because a file landing earlier in the
+    // sort order would move the image the reader is looking at.
+    isWatchingForChanges?: boolean
+  } = {},
 ): FolderListing => {
   const { sortOrdersByFolder } = useContext(SettingsContext)
 
@@ -93,6 +101,44 @@ const useFolderListing = (
   }, [folderPath, hasModifiedTimeSort])
 
   useEffect(() => loadListing(), [loadListing])
+
+  // A change on disk re-reads in place: the current tiles stay up until the
+  // new listing lands, rather than blanking to a spinner the way navigation
+  // does. A newer change supersedes a read still in flight.
+  useEffect(() => {
+    if (!isWatchingForChanges || !folderPath) {
+      return undefined
+    }
+
+    let subscription: Subscription | undefined
+
+    const stopWatching = window.api.watchDirectory(
+      folderPath,
+      () => {
+        subscription?.unsubscribe()
+
+        subscription = from(
+          window.api.readDirectory(folderPath, {
+            withModifiedTime: hasModifiedTimeSort,
+          }),
+        ).subscribe({
+          next: (contents) => {
+            setDirectoryContents(contents)
+          },
+          error: () => undefined,
+        })
+      },
+    )
+
+    return () => {
+      stopWatching()
+      subscription?.unsubscribe()
+    }
+  }, [
+    folderPath,
+    hasModifiedTimeSort,
+    isWatchingForChanges,
+  ])
 
   const directories = useDirectories(
     directoryContents,
