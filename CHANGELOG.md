@@ -1,3 +1,10 @@
+## [2.11.3](https://github.com/Sawtaytoes/image-viewer/compare/v2.11.2...v2.11.3) (2026-09-28)
+
+
+### Bug Fixes
+
+* scroll only the queue tabs, and reveal the viewer bar by touch ([#42](https://github.com/Sawtaytoes/image-viewer/issues/42)) ([dd4b650](https://github.com/Sawtaytoes/image-viewer/commit/dd4b6504f4f33fd1a0c613b74092b0cbcb981e0c))
+
 ## [2.11.2](https://github.com/Sawtaytoes/image-viewer/compare/v2.11.1...v2.11.2) (2026-09-28)
 
 
