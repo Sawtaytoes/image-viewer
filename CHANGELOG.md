@@ -1,3 +1,10 @@
+## [2.12.2](https://github.com/Sawtaytoes/image-viewer/compare/v2.12.1...v2.12.2) (2026-10-04)
+
+
+### Bug Fixes
+
+* **deps:** remediate dependency vulnerabilities ([#47](https://github.com/Sawtaytoes/image-viewer/issues/47)) ([400414a](https://github.com/Sawtaytoes/image-viewer/commit/400414ad6c3dec32e1b3eb3940f9be6663d38bc2))
+
 ## [2.12.1](https://github.com/Sawtaytoes/image-viewer/compare/v2.12.0...v2.12.1) (2026-09-28)
 
 
