@@ -80,5 +80,9 @@
     "vite": "^8.0.0",
     "vitest": "^4.1.8"
   },
-  "packageManager": "yarn@4.16.0"
+  "packageManager": "yarn@4.16.0",
+  "resolutions": {
+    "braces": "patch:braces@npm%3A3.0.3#./.yarn/patches/braces-npm-3.0.3-582c14023c.patch",
+    "http-cache-semantics": "patch:http-cache-semantics@npm%3A4.3.0#./.yarn/patches/http-cache-semantics-npm-4.3.0-ee45f76976.patch"
+  }
 }
