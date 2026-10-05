@@ -31,6 +31,7 @@ corepack enable          # once per machine (Yarn 4 is Corepack-managed)
 yarn                     # install
 yarn start               # dev (electron-forge start; Vite HMR)
 yarn test                # vitest (watch)   |  yarn test:run for one-shot
+yarn test:e2e            # Playwright browser smoke, every route in four windows
 yarn typecheck           # tsc --noEmit — covers all of src/ now, not just the configs
 yarn lint                # biome check --write  +  eslint . --fix
 yarn build:renderer      # vite build of the renderer alone — the gate that can see Tailwind
@@ -75,7 +76,7 @@ IMAGE_VIEWER_FAKE_FS=1 xvfb-run -n 71 -s "-screen 0 1600x1000x24" \
 
 Then drive it with Playwright over CDP — `chromium.connectOverCDP("http://127.0.0.1:9333")` and
 pick the page whose URL contains `main_window` (a DevTools page is also listed). `playwright-core`
-is not a dependency here; import a sibling repo's copy rather than installing one.
+is a devDependency now (the browser smoke below brought it in), so import this repo's own copy.
 
 Two things that will waste your time if you don't know them: **`window.api` is frozen** by
 `contextBridge`, so you cannot stub the preload bridge from the renderer to simulate slow disk or
@@ -208,3 +209,28 @@ Two tests exist only to stop a copied constant drifting, because nothing else ca
 - `src/components/convenience/titleBarHeight.test.ts` — the title bar's height across its three
   homes: the TS constant, `--title-bar-height` in the stylesheet, and `titleBarOverlay.height`
   in the main process. Drift puts the native window controls off our strip and throws nothing.
+
+**The browser smoke runs in four windows.** `e2e/routes.spec.ts` (`yarn test:e2e`) loads every
+top-level route in browser mode over the fake filesystem, once per window — `narrow` 384x824,
+`tall` 1080x1920, `wide` 1920x1080, `ultrawide` 3440x1440 — and checks that nothing overflows
+the window sideways and that the gallery stays a grid of card-sized tiles. A failure in one
+window is triaged, never pinned back to one window
+([decision](https://github.com/Sawtaytoes/charcuterie/blob/master/docs/decisions/2026-10-04-every-browser-test-runs-in-four-named-windows.md)).
+Each run attaches a full-page screenshot per route and window to the HTML report; it is
+evidence for a person, not an assertion, so the no-screenshot-tests decision still holds.
+`playwright test --project chromium-narrow` runs one window alone. The vrt capture
+(`scripts/vrtCapture.mjs`) keeps its own two windows; it is a separate job.
+
+**Browser will not start? Install the one THIS repo's Playwright wants.** The sandbox image's
+`/opt/pw-browsers` holds a different Playwright's revision and is root-owned. Install into a
+path of your own and point the run at it — never bump `@playwright/test` to match the image,
+and never use a global `npx playwright`:
+
+```bash
+PLAYWRIGHT_BROWSERS_PATH=/tmp/pw-browsers-image-viewer node node_modules/playwright-core/cli.js install chromium
+PLAYWRIGHT_BROWSERS_PATH=/tmp/pw-browsers-image-viewer yarn test:e2e
+```
+
+The smoke's dev server listens on 4175; set `IMAGE_VIEWER_E2E_PORT` when that port is taken.
+On a loaded host, many 5 s timeouts at once are machine starvation, not a defect: re-run with
+`CI=true` (one worker, 15 s budget) before you believe one.
