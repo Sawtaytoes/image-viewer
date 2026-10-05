@@ -33,6 +33,11 @@ export default createVitestConfig({
     // config turns browser mode on by default, so this suite opts out.
     browser: { enabled: false },
     environment: "jsdom",
+    // `e2e/` is the Playwright browser smoke (`yarn test:e2e`), not a Vitest
+    // suite. Its `*.spec.ts` names match Vitest's default include, and
+    // `mergeConfig` appends this to the shared excludes rather than
+    // replacing them.
+    exclude: ["e2e/**"],
     execArgv: storageExecArgv,
     globals: true,
     setupFiles: ["./vitest.setup.ts"],
