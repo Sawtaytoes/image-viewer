@@ -30,6 +30,9 @@ jobs:
     # Also skipped when the diff is documentation only.
     if: ${{ needs.changes.outputs.isDocsOnly != 'true' && (github.server_url == 'https://github.com') }}
     runs-on: ubuntu-latest
+    # A wedged browser install or dev server must fail the job, not hold it
+    # until GitHub's six-hour cap.
+    timeout-minutes: 30
 
     steps:
       - uses: actions/checkout@v7
@@ -46,6 +49,30 @@ jobs:
 
       - name: Test
         run: yarn test:run
+
+      # The browser smoke (`e2e/routes.spec.ts`): every top-level route in the
+      # fleet's four windows, against browser mode's dev server over the fake
+      # filesystem. The browser comes from THIS repo's own Playwright, never a
+      # global one. `install-deps` is an apt call and is allowed to fail: it
+      # stalled for six hours in queuepilot's CI on 2026-08-19, and the
+      # GitHub-hosted image already carries Chromium's libraries.
+      - name: Install Playwright browser
+        run: |
+          DEBIAN_FRONTEND=noninteractive timeout 300 yarn playwright install-deps chromium \
+            || echo "playwright install-deps failed or timed out; continuing, the runner image ships Chromium's libraries"
+          timeout 600 yarn playwright install chromium
+
+      - name: Browser smoke (four windows)
+        run: yarn test:e2e
+
+      # The HTML report carries a full-page screenshot per route and window.
+      - name: Upload browser smoke report
+        if: ${{ !cancelled() }}
+        uses: actions/upload-artifact@v7
+        with:
+          name: playwright-report
+          path: playwright-report/
+          retention-days: 14
 
       - name: Typecheck
         run: yarn typecheck

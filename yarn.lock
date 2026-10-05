@@ -422,6 +422,17 @@ __metadata:
   languageName: node
   linkType: hard
 
+"@charcuterie/playwright-config@npm:^2.0.0":
+  version: 2.0.0
+  resolution: "@charcuterie/playwright-config@npm:2.0.0"
+  dependencies:
+    "@charcuterie/vitest-config": "npm:^2.0.0"
+  peerDependencies:
+    "@playwright/test": ">=1.40"
+  checksum: 10c0/ebfb86730bbe183854fedb351f9e73a03f9eb2aa362406da4c1fb4dc2aabe9d8f37b93c0c3bdbc1e4f4165a5415d160ae29df03eeaca899d91b7b47511321a6b
+  languageName: node
+  linkType: hard
+
 "@charcuterie/tokens@npm:1.10.2, @charcuterie/tokens@npm:^1.10.2":
   version: 1.10.2
   resolution: "@charcuterie/tokens@npm:1.10.2"
@@ -483,9 +494,9 @@ __metadata:
   languageName: node
   linkType: hard
 
-"@charcuterie/vitest-config@npm:^1.3.0":
-  version: 1.3.0
-  resolution: "@charcuterie/vitest-config@npm:1.3.0"
+"@charcuterie/vitest-config@npm:^2.0.0":
+  version: 2.0.0
+  resolution: "@charcuterie/vitest-config@npm:2.0.0"
   peerDependencies:
     "@vitest/browser": ">=3"
     "@vitest/browser-playwright": ">=3"
@@ -493,7 +504,7 @@ __metadata:
     vitest: ">=3"
   bin:
     charcuterie-check-optimize-deps: src/cli/checkOptimizeDeps.js
-  checksum: 10c0/fb61e9418b05abb21a61d420c138065f6bcb07640c1dac293fd00e02b6b11802554b37fd2874be6e87a10ee3c37482d32ec826388812fd3788d3d6f010115641
+  checksum: 10c0/1487cf31a3836453d7e68d4d70ce661f00856edebc5d23e05c67fd6f6d2bf6dddb5ca69b8b0b9b6c80bbb3d0353c57cbf9e05f0b035d585ad1cfa1cd98e861ee
   languageName: node
   linkType: hard
 
@@ -1563,6 +1574,17 @@ __metadata:
   version: 0.133.0
   resolution: "@oxc-project/types@npm:0.133.0"
   checksum: 10c0/70c57ba58644f7ec217b670c301801f4d06995f4ccdba6b2bd106ea3e5ee49d616573e6ef8d55530b87571a960696543687f3850e87ad173d3f88965c30cdd63
+  languageName: node
+  linkType: hard
+
+"@playwright/test@npm:^1.63.0":
+  version: 1.63.0
+  resolution: "@playwright/test@npm:1.63.0"
+  dependencies:
+    playwright: "npm:1.63.0"
+  bin:
+    playwright: cli.js
+  checksum: 10c0/795cd06c2eb6cb6142e72792f4df8f97665aa8c551c16278a7f2b3f31664e0cff07ed3c066490da55daf2fe51bc18e9c1ec6cba05b2c37387a0c49ad63017db8
   languageName: node
   linkType: hard
 
@@ -2821,11 +2843,12 @@ __metadata:
     "@charcuterie/biome-config": "npm:^1.3.0"
     "@charcuterie/eslint-config": "npm:^1.7.1"
     "@charcuterie/logic": "npm:^2.4.0"
+    "@charcuterie/playwright-config": "npm:^2.0.0"
     "@charcuterie/tokens": "npm:^1.10.2"
     "@charcuterie/tsconfig": "npm:^1.0.0"
     "@charcuterie/ui": "npm:^4.10.1"
     "@charcuterie/vite-config": "npm:^1.1.0"
-    "@charcuterie/vitest-config": "npm:^1.3.0"
+    "@charcuterie/vitest-config": "npm:^2.0.0"
     "@electron-forge/cli": "npm:8.0.0-alpha.10"
     "@electron-forge/maker-deb": "npm:8.0.0-alpha.10"
     "@electron-forge/maker-rpm": "npm:8.0.0-alpha.10"
@@ -2835,6 +2858,7 @@ __metadata:
     "@electron-forge/plugin-vite": "npm:8.0.0-alpha.10"
     "@electron-forge/shared-types": "npm:8.0.0-alpha.10"
     "@electron/fuses": "npm:^2.1.1"
+    "@playwright/test": "npm:^1.63.0"
     "@semantic-release/changelog": "npm:^6.0.3"
     "@semantic-release/exec": "npm:^7.1.0"
     "@semantic-release/git": "npm:^10.0.1"
@@ -7601,6 +7625,26 @@ __metadata:
     find-up: "npm:^2.0.0"
     load-json-file: "npm:^4.0.0"
   checksum: 10c0/e1474a4f7714ee78204b4a7f2316dec9e59887762bdc126ebd0eb701bbde7c6a6da65c4dc9c2a7c1eaeee49914009bf4a4368f5d9894c596ddf812ff982fdb05
+  languageName: node
+  linkType: hard
+
+"playwright-core@npm:1.63.0":
+  version: 1.63.0
+  resolution: "playwright-core@npm:1.63.0"
+  bin:
+    playwright-core: cli.js
+  checksum: 10c0/39c1ebae4029ca2e9371e00a5588d962038e24b6e0bdb7d0d27374dde04838f349b83ae0c8b3b648653d0935cba7fb9011f1201adaab9dd0db7801ad6c75e9aa
+  languageName: node
+  linkType: hard
+
+"playwright@npm:1.63.0":
+  version: 1.63.0
+  resolution: "playwright@npm:1.63.0"
+  dependencies:
+    playwright-core: "npm:1.63.0"
+  bin:
+    playwright: cli.js
+  checksum: 10c0/d1fd048a89be27c9aba6757dc4f70eff4a5163b49f439ad691767be8b2a482327d0dd1928b4f73c8fe0d8b33aab2c9dc2670424ab60f112d9e98e91b94e3b090
   languageName: node
   linkType: hard
 
