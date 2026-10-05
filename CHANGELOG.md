@@ -1,3 +1,10 @@
+## [2.12.3](https://github.com/Sawtaytoes/image-viewer/compare/v2.12.2...v2.12.3) (2026-10-05)
+
+
+### Bug Fixes
+
+* keep the gallery grid's last column inside the list; adopt playwright-config 2.1.0 ([#49](https://github.com/Sawtaytoes/image-viewer/issues/49)) ([b079ce7](https://github.com/Sawtaytoes/image-viewer/commit/b079ce71f14f78a66dc04e0a2724081d3e4f3246))
+
 ## [2.12.2](https://github.com/Sawtaytoes/image-viewer/compare/v2.12.1...v2.12.2) (2026-10-04)
 
 
