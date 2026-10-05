@@ -1,12 +1,17 @@
-import { expectNoHorizontalOverflow } from "@charcuterie/playwright-config/responsive.js"
+import {
+  expectNoHorizontalOverflow,
+  expectNoSplitWords,
+} from "@charcuterie/playwright-config/responsive.js"
 import { expect, type Page, test } from "@playwright/test"
 
 // The browser smoke. Every top-level route, in each of the fleet's four
 // windows (one Playwright project per window — see `playwright.config.ts`):
-// the page renders its fixture content, throws nothing, and nothing overflows
-// the window sideways. A full-page screenshot per route and window goes into
-// the HTML report as an ATTACHMENT for a person to look at. It is not compared
-// against anything: this repo writes no screenshot assertions
+// the page renders its fixture content, throws nothing, nothing overflows the
+// window sideways or is clipped out of sight inside an `overflow-x: hidden`
+// box, and no heading breaks a word across two lines. A full-page screenshot
+// per route and window goes into the HTML report as an ATTACHMENT for a person
+// to look at. It is not compared against anything: this repo writes no
+// screenshot assertions
 // (`docs/decisions/2026-05-10-no-snapshot-or-screenshot-tests.md`), and the
 // pixel comparison is the shared `vrt` job's work (`scripts/vrtCapture.mjs`).
 //
@@ -100,6 +105,7 @@ for (const route of routes) {
     await waitForImagesToSettle(page)
 
     await expectNoHorizontalOverflow(page)
+    await expectNoSplitWords(page)
 
     await testInfo.attach(
       `${route.name} (${testInfo.project.name})`,
