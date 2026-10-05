@@ -99,7 +99,11 @@ const DateGroupedGrid = ({
       const viewWidth = scrollContainer.clientWidth
 
       setViewport({
-        itemSize: Math.ceil(viewWidth / numberOfColumns),
+        // The exact column width, never rounded up: a rounded-up tile size
+        // makes the row `numberOfColumns` rounded tiles wide, up to
+        // `numberOfColumns - 1` pixels wider than the list, and
+        // `overflow-x: hidden` cuts the last column off.
+        itemSize: viewWidth / numberOfColumns,
         viewHeight: scrollContainer.clientHeight,
       })
     }

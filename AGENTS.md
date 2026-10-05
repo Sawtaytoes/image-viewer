@@ -213,7 +213,8 @@ Two tests exist only to stop a copied constant drifting, because nothing else ca
 **The browser smoke runs in four windows.** `e2e/routes.spec.ts` (`yarn test:e2e`) loads every
 top-level route in browser mode over the fake filesystem, once per window — `narrow` 384x824,
 `tall` 1080x1920, `wide` 1920x1080, `ultrawide` 3440x1440 — and checks that nothing overflows
-the window sideways and that the gallery stays a grid of card-sized tiles. A failure in one
+the window sideways or is cut off inside an `overflow-x: hidden` box, that no heading breaks a
+word across two lines, and that the gallery stays a grid of card-sized tiles. A failure in one
 window is triaged, never pinned back to one window
 ([decision](https://github.com/Sawtaytoes/charcuterie/blob/master/docs/decisions/2026-10-04-every-browser-test-runs-in-four-named-windows.md)).
 Each run attaches a full-page screenshot per route and window to the HTML report; it is

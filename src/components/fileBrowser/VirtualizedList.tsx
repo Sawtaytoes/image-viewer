@@ -66,9 +66,13 @@ const VirtualizedList = ({
 
       const viewHeight = scrollContainer.clientHeight
 
-      const itemSize = Math.ceil(
-        viewWidth / numberOfColumns,
-      )
+      // The exact column width, never rounded up. Each tile is placed at
+      // `column * itemSize` and is `1 / numberOfColumns` of the list wide, so
+      // a rounded-up step pushed the last column up to `numberOfColumns - 1`
+      // pixels past the list's right edge — under the scrollbar gutter, where
+      // `overflow-x: hidden` cuts it off (3432px of grid in a 3428px list at
+      // 3440 wide, 11 columns).
+      const itemSize = viewWidth / numberOfColumns
 
       const numberOfItemsInView =
         Math.ceil(
