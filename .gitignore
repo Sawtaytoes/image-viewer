@@ -19,6 +19,10 @@
 /.reg
 /.regconfig.json
 
+# Playwright browser smoke (`yarn test:e2e`) — its run output and HTML report
+/test-results
+/playwright-report
+
 # Playwright/ad-hoc screenshots — scratch, not deliverables (fleet-wide rule)
 __screenshots__/
 
