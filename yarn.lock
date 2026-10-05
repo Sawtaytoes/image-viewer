@@ -422,14 +422,14 @@ __metadata:
   languageName: node
   linkType: hard
 
-"@charcuterie/playwright-config@npm:^2.0.0":
-  version: 2.0.0
-  resolution: "@charcuterie/playwright-config@npm:2.0.0"
+"@charcuterie/playwright-config@npm:^2.1.0":
+  version: 2.1.0
+  resolution: "@charcuterie/playwright-config@npm:2.1.0"
   dependencies:
     "@charcuterie/vitest-config": "npm:^2.0.0"
   peerDependencies:
     "@playwright/test": ">=1.40"
-  checksum: 10c0/ebfb86730bbe183854fedb351f9e73a03f9eb2aa362406da4c1fb4dc2aabe9d8f37b93c0c3bdbc1e4f4165a5415d160ae29df03eeaca899d91b7b47511321a6b
+  checksum: 10c0/cf9c7c3a30337065f15273f09db6ab57390b0483b937806b2c73eea98e9f06b7ac04a144fe162ccff6db92f21c54e0157d27ca135303fcfbe1877e330ae72050
   languageName: node
   linkType: hard
 
@@ -2843,7 +2843,7 @@ __metadata:
     "@charcuterie/biome-config": "npm:^1.3.0"
     "@charcuterie/eslint-config": "npm:^1.7.1"
     "@charcuterie/logic": "npm:^2.4.0"
-    "@charcuterie/playwright-config": "npm:^2.0.0"
+    "@charcuterie/playwright-config": "npm:^2.1.0"
     "@charcuterie/tokens": "npm:^1.10.2"
     "@charcuterie/tsconfig": "npm:^1.0.0"
     "@charcuterie/ui": "npm:^4.10.1"
