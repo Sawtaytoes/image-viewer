@@ -23,7 +23,7 @@ const isDevelopment = !app.isPackaged
 // in the main process — where `process.env` reliably reflects the real OS
 // environment (same as IMAGE_VIEWER_DEFAULT_DIRECTORY) — and forwarded to the
 // preload via `additionalArguments`, because a Vite-bundled preload can't read
-// `process.env` at runtime. Launch it with `yarn start:fake`.
+// `process.env` at runtime. Launch it with `pnpm start:fake`.
 const isFakeFileSystem = Boolean(
   process.env.IMAGE_VIEWER_FAKE_FS,
 )

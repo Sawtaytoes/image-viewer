@@ -1,9 +1,16 @@
 # 2026-06-02 — Use Yarn 4 (Berry) with nodeLinker node-modules
 
-- **Status:** Locked
+- **Status:** Superseded for package-manager choice by [pnpm replaces Yarn](2026-10-06-pnpm-replaces-yarn.md)
 - **Date:** 2026-06-02
+- **Type:** Tooling
+- **Supersedes:** —
+- **Superseded by:** [pnpm replaces Yarn](2026-10-06-pnpm-replaces-yarn.md)
 - **Deciders:** Kevin (owner) + agent
 - **Source:** Migrated from `docs/research/0008-package-manager-yarn4.md` (Phase 1 modernization)
+
+## Context
+
+The modernization moved the Electron toolchain from Yarn Classic to Berry while retaining the physical node_modules layout required by its packaging tools.
 
 ## Decision (the rule)
 

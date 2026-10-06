@@ -41,14 +41,21 @@ jobs:
         with:
           node-version: 24
 
-      - name: Enable Corepack (Yarn 4)
-        run: corepack enable
+      - name: Install pinned pnpm
+        run: |
+          npm install --global --force --allow-scripts=pnpm pnpm@12.9.1
+          export PATH="$(npm prefix -g)/bin:$PATH"
+          printf '%s\n' "$(npm prefix -g)/bin" >> "$GITHUB_PATH"
+          pnpm --version
 
       - name: Install dependencies
-        run: yarn install --immutable
+        run: pnpm install --frozen-lockfile --store-dir "$HOME/.cache/pnpm/store"
+
+      - name: Verify dependency security patches
+        run: pnpm check:dependency-patches
 
       - name: Test
-        run: yarn test:run
+        run: pnpm test:run
 
       # The browser smoke (`e2e/routes.spec.ts`): every top-level route in the
       # fleet's four windows, against browser mode's dev server over the fake
@@ -58,12 +65,12 @@ jobs:
       # GitHub-hosted image already carries Chromium's libraries.
       - name: Install Playwright browser
         run: |
-          DEBIAN_FRONTEND=noninteractive timeout 300 yarn playwright install-deps chromium \
+          DEBIAN_FRONTEND=noninteractive timeout 300 pnpm playwright install-deps chromium \
             || echo "playwright install-deps failed or timed out; continuing, the runner image ships Chromium's libraries"
-          timeout 600 yarn playwright install chromium
+          timeout 600 pnpm playwright install chromium
 
       - name: Browser smoke (four windows)
-        run: yarn test:e2e
+        run: pnpm test:e2e
 
       # The HTML report carries a full-page screenshot per route and window.
       - name: Upload browser smoke report
@@ -75,13 +82,13 @@ jobs:
           retention-days: 14
 
       - name: Typecheck
-        run: yarn typecheck
+        run: pnpm typecheck
 
       - name: Lint (Biome)
-        run: yarn lint:biome
+        run: pnpm lint:biome
 
       - name: Lint (ESLint)
-        run: yarn lint:eslint
+        run: pnpm lint:eslint
 
       # The only gate that can see a Tailwind class that generates nothing.
       # jsdom does not compute styles from a stylesheet, so a `className`
@@ -89,7 +96,7 @@ jobs:
       # built from a template literal renders unstyled with no error anywhere.
       # This runs the real Tailwind pass over the real source.
       - name: Build renderer
-        run: yarn build:renderer
+        run: pnpm build:renderer
 
   # Visual regression — the SHARED workflow, imported by tag like the two
   # above. This app has no Storybook, so every shot comes from
@@ -106,6 +113,6 @@ jobs:
     uses: Sawtaytoes/charcuterie/.github/workflows/shared-vrt.yml@workflows-v1
     with:
       # No Electron binary: the capture shoots the browser build only.
-      setupCommand: ELECTRON_SKIP_BINARY_DOWNLOAD=1 yarn install --immutable
+      setupCommand: npm install --global --force --allow-scripts=pnpm pnpm@12.9.1 && export PATH="$(npm prefix -g)/bin:$PATH" && printf '%s\n' "$(npm prefix -g)/bin" >> "$GITHUB_PATH" && ELECTRON_SKIP_BINARY_DOWNLOAD=1 pnpm install --frozen-lockfile --store-dir "$HOME/.cache/pnpm/store"
       captureCommand: node scripts/vrtCapture.mjs
     secrets: inherit

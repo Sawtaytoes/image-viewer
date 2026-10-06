@@ -1,11 +1,18 @@
 # 2026-05-08 — Use yarn, never npm
 
-- **Status:** Locked
+- **Status:** Superseded for package-manager choice by [pnpm replaces Yarn](2026-10-06-pnpm-replaces-yarn.md)
 - **Date:** 2026-05-08
+- **Type:** Tooling
+- **Supersedes:** —
+- **Superseded by:** [pnpm replaces Yarn](2026-10-06-pnpm-replaces-yarn.md)
 - **Deciders:** Kevin (owner) + agent
 - **Source:** media-tools `memory/feedback_package_manager.md`. General working preference confirmed across the owner's projects; applies to image-viewer too.
 
 _Cross-project preference, not specific to image-viewer._
+
+## Context
+
+The owner had established a cross-project Yarn standard and corrected commands that bypassed its lockfile.
 
 ## Decision (the rule)
 
