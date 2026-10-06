@@ -21,7 +21,7 @@ source-build instructions.
 ## Run from source
 
 ```sh
-npm install --global --force pnpm@12.9.1
+npm install --global --force --allow-scripts=pnpm pnpm@12.9.1
 pnpm install
 pnpm start
 ```

@@ -27,7 +27,7 @@ first — it is the specification for renderer code and it has the hex→token m
 ## Commands
 
 ```bash
-npm install --global --force pnpm@12.9.1 # bootstrap the pinned package manager
+npm install --global --force --allow-scripts=pnpm pnpm@12.9.1 # bootstrap the pinned package manager
 pnpm                     # install
 pnpm start               # dev (electron-forge start; Vite HMR)
 pnpm test                # vitest (watch)   |  pnpm test:run for one-shot
@@ -44,7 +44,7 @@ stylesheet, so **no test can tell a real utility from a class name Tailwind neve
 a `className` assertion passes either way. The Vite build runs the real Tailwind pass and is
 the only gate that can.
 
-Bootstrap the pinned pnpm with `npm install --global --force pnpm@12.9.1`; dependency and task commands use pnpm. Corepack is not required.
+Bootstrap the pinned pnpm with `npm install --global --force --allow-scripts=pnpm pnpm@12.9.1`; dependency and task commands use pnpm. Corepack is not required.
 
 ## Running the app in the sandbox — you can, so do
 

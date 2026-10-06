@@ -8,7 +8,7 @@
 
 ## Decision
 
-Use pinned pnpm 12.9.1 for dependency installation and task execution. Preserve existing manifest ranges, resolved dependency versions, security patches and dependency lifecycle behavior. Use a frozen lockfile in CI. A pinned `npm install --global --force pnpm@12.9.1` is allowed to bootstrap pnpm; application commands use pnpm.
+Use pinned pnpm 12.9.1 for dependency installation and task execution. Preserve existing manifest ranges, resolved dependency versions, security patches and dependency lifecycle behavior. Use a frozen lockfile in CI. A pinned `npm install --global --force --allow-scripts=pnpm pnpm@12.9.1` is allowed to bootstrap pnpm; application commands use pnpm.
 
 Electron Forge requires `nodeLinker: hoisted` in pnpm-workspace.yaml so packaging can collect a physical node_modules tree. Preserve that requirement.
 

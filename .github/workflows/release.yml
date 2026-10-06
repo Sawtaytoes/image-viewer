@@ -41,7 +41,11 @@ jobs:
           node-version: 24
 
       - name: Install pinned pnpm
-        run: npm install --global --force pnpm@12.9.1
+        run: |
+          npm install --global --force --allow-scripts=pnpm pnpm@12.9.1
+          $pnpmBin = npm prefix -g
+          Add-Content -Path $env:GITHUB_PATH -Value $pnpmBin
+          & "$pnpmBin\pnpm.cmd" --version
 
       - name: Install dependencies
         run: pnpm install --frozen-lockfile --store-dir "$HOME/.cache/pnpm/store"

@@ -42,7 +42,11 @@ jobs:
           node-version: 24
 
       - name: Install pinned pnpm
-        run: npm install --global --force pnpm@12.9.1
+        run: |
+          npm install --global --force --allow-scripts=pnpm pnpm@12.9.1
+          export PATH="$(npm prefix -g)/bin:$PATH"
+          printf '%s\n' "$(npm prefix -g)/bin" >> "$GITHUB_PATH"
+          pnpm --version
 
       - name: Install dependencies
         run: pnpm install --frozen-lockfile --store-dir "$HOME/.cache/pnpm/store"
@@ -109,6 +113,6 @@ jobs:
     uses: Sawtaytoes/charcuterie/.github/workflows/shared-vrt.yml@workflows-v1
     with:
       # No Electron binary: the capture shoots the browser build only.
-      setupCommand: npm install --global --force pnpm@12.9.1 && ELECTRON_SKIP_BINARY_DOWNLOAD=1 pnpm install --frozen-lockfile --store-dir "$HOME/.cache/pnpm/store"
+      setupCommand: npm install --global --force --allow-scripts=pnpm pnpm@12.9.1 && export PATH="$(npm prefix -g)/bin:$PATH" && printf '%s\n' "$(npm prefix -g)/bin" >> "$GITHUB_PATH" && ELECTRON_SKIP_BINARY_DOWNLOAD=1 pnpm install --frozen-lockfile --store-dir "$HOME/.cache/pnpm/store"
       captureCommand: node scripts/vrtCapture.mjs
     secrets: inherit
