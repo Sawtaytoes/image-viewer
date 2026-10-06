@@ -1,6 +1,6 @@
 # 2026-05-08 — Use yarn, never npm
 
-- **Status:** Locked
+- **Status:** Superseded for package-manager choice by [pnpm replaces Yarn](2026-10-06-pnpm-replaces-yarn.md)
 - **Date:** 2026-05-08
 - **Deciders:** Kevin (owner) + agent
 - **Source:** media-tools `memory/feedback_package_manager.md`. General working preference confirmed across the owner's projects; applies to image-viewer too.

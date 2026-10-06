@@ -19,21 +19,12 @@
 /.reg
 /.regconfig.json
 
-# Playwright browser smoke (`yarn test:e2e`) — its run output and HTML report
+# Playwright browser smoke (`pnpm test:e2e`) — its run output and HTML report
 /test-results
 /playwright-report
 
 # Playwright/ad-hoc screenshots — scratch, not deliverables (fleet-wide rule)
 __screenshots__/
-
-# Yarn (Berry) — node-modules linker, no zero-install
-.yarn/*
-!.yarn/patches
-!.yarn/plugins
-!.yarn/releases
-!.yarn/sdks
-!.yarn/versions
-.pnp.*
 
 # Misc
 .DS_Store

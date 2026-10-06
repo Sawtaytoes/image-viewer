@@ -1,6 +1,6 @@
 # 2026-06-02 — Use Yarn 4 (Berry) with nodeLinker node-modules
 
-- **Status:** Locked
+- **Status:** Superseded for package-manager choice by [pnpm replaces Yarn](2026-10-06-pnpm-replaces-yarn.md)
 - **Date:** 2026-06-02
 - **Deciders:** Kevin (owner) + agent
 - **Source:** Migrated from `docs/research/0008-package-manager-yarn4.md` (Phase 1 modernization)

@@ -17,7 +17,7 @@ Slim guide for working in this repo without breaking it. Deeper rationale lives 
 A touch-friendly **Electron** image browser (used on a Surface tablet). Renderer is **React 19 +
 TypeScript**, styled with **Tailwind v4 on `@charcuterie/tokens`**, state via **RxJS** + a small
 custom redux-observable. Built with **Electron Forge 7 + the Vite plugin**. Package manager is
-**Yarn 4** (Corepack).
+**pnpm 12.9.1**.
 
 **There is no Emotion.** It was removed in M6c (2026-07-31) so the app could consume
 `@charcuterie/ui`, the fleet's shared component library. If you are about to write a `css` prop,
@@ -27,27 +27,24 @@ first — it is the specification for renderer code and it has the hex→token m
 ## Commands
 
 ```bash
-corepack enable          # once per machine (Yarn 4 is Corepack-managed)
-yarn                     # install
-yarn start               # dev (electron-forge start; Vite HMR)
-yarn test                # vitest (watch)   |  yarn test:run for one-shot
-yarn test:e2e            # Playwright browser smoke, every route in four windows
-yarn typecheck           # tsc --noEmit — covers all of src/ now, not just the configs
-yarn lint                # biome check --write  +  eslint . --fix
-yarn build:renderer      # vite build of the renderer alone — the gate that can see Tailwind
-yarn package             # build main/preload/renderer + package the app (no installer)
-yarn make                # build + Windows Squirrel installer (and zip/deb/rpm)
+npm install --global --force pnpm@12.9.1 # bootstrap the pinned package manager
+pnpm                     # install
+pnpm start               # dev (electron-forge start; Vite HMR)
+pnpm test                # vitest (watch)   |  pnpm test:run for one-shot
+pnpm test:e2e            # Playwright browser smoke, every route in four windows
+pnpm typecheck           # tsc --noEmit — covers all of src/ now, not just the configs
+pnpm lint                # biome check --write  +  eslint . --fix
+pnpm build:renderer      # vite build of the renderer alone — the gate that can see Tailwind
+pnpm package             # build main/preload/renderer + package the app (no installer)
+pnpm make                # build + Windows Squirrel installer (and zip/deb/rpm)
 ```
 
-`yarn build:renderer` matters more than it looks. jsdom does not compute styles from a
+`pnpm build:renderer` matters more than it looks. jsdom does not compute styles from a
 stylesheet, so **no test can tell a real utility from a class name Tailwind never generated** —
 a `className` assertion passes either way. The Vite build runs the real Tailwind pass and is
 the only gate that can.
 
-There is no working global `yarn` on the sandbox host; `corepack yarn <script>` works without
-installing anything (`corepack enable` may fail on EACCES writing `/usr/local/bin`), or call the
-binaries directly (`node_modules/.bin/tsc`, `node_modules/.bin/vitest`, …), which is what a
-subagent scoped to one directory should do anyway.
+Bootstrap the pinned pnpm with `npm install --global --force pnpm@12.9.1`; dependency and task commands use pnpm. Corepack is not required.
 
 ## Running the app in the sandbox — you can, so do
 
@@ -63,7 +60,7 @@ loaded a *different app* from another agent's `:5173`. Build for `file://` inste
 
 ```bash
 # renderer → the path main.js looks for, with relative asset URLs
-yarn vite build --config vite.renderer.config.ts \
+pnpm vite build --config vite.renderer.config.ts \
   --outDir .vite/renderer/main_window --base ./ --emptyOutDir
 
 # main + preload → cjs lib build, electron + node builtins external, and
@@ -168,7 +165,7 @@ The short version:
   (one component per file), the react-hooks pair, and the two picker rules above. The rest of
   `@charcuterie/eslint-config`'s component-choice block (`no-raw-button`, `no-raw-anchor`,
   `no-clickable-non-interactive`) is **not** on yet — the tab strip and gallery tiles would go
-  red. Run `yarn lint` before committing.
+  red. Run `pnpm lint` before committing.
 - **Entry points** referenced by `forge.config.ts`: `src/main.js`, `src/preload.js`, and the root
   `index.html` → `/src/renderer.tsx`. Don't move these without updating the config.
 - **`window.api` is fully typed** by [`src/preload.d.ts`](src/preload.d.ts), with the payload
@@ -184,7 +181,7 @@ The short version:
    `safe-file-protocol` custom scheme** — it never delivered pixels on Windows and was deliberately
    removed (see [`no-custom-protocol-read-image-bytes-in-preload`](docs/decisions/2026-06-03-no-custom-protocol-read-image-bytes-in-preload.md)).
 4. Passing the launch path via `additionalArguments` / reading `cliFilePath` in preload.
-5. `nodeLinker: node-modules` in `.yarnrc.yml` (PnP breaks Electron Forge packaging).
+5. `nodeLinker: hoisted` in `pnpm-workspace.yaml` (Electron Forge packaging requires a physical node_modules tree).
 6. The **self-hosted** fonts. `src/styles/tailwind.css` imports `src/fonts/SourceSansPro.css`;
    do not put a Google Fonts `<link>` back in `index.html`. That import existed and was wired to
    nothing until M6c, which is why the CDN link survived a decision that had already banned it.
@@ -210,7 +207,7 @@ Two tests exist only to stop a copied constant drifting, because nothing else ca
   homes: the TS constant, `--title-bar-height` in the stylesheet, and `titleBarOverlay.height`
   in the main process. Drift puts the native window controls off our strip and throws nothing.
 
-**The browser smoke runs in four windows.** `e2e/routes.spec.ts` (`yarn test:e2e`) loads every
+**The browser smoke runs in four windows.** `e2e/routes.spec.ts` (`pnpm test:e2e`) loads every
 top-level route in browser mode over the fake filesystem, once per window — `narrow` 384x824,
 `tall` 1080x1920, `wide` 1920x1080, `ultrawide` 3440x1440 — and checks that nothing overflows
 the window sideways or is cut off inside an `overflow-x: hidden` box, that no heading breaks a
@@ -228,8 +225,8 @@ path of your own and point the run at it — never bump `@playwright/test` to ma
 and never use a global `npx playwright`:
 
 ```bash
-PLAYWRIGHT_BROWSERS_PATH=/tmp/pw-browsers-image-viewer node node_modules/playwright-core/cli.js install chromium
-PLAYWRIGHT_BROWSERS_PATH=/tmp/pw-browsers-image-viewer yarn test:e2e
+PLAYWRIGHT_BROWSERS_PATH=/tmp/pw-browsers-image-viewer pnpm exec playwright install chromium
+PLAYWRIGHT_BROWSERS_PATH=/tmp/pw-browsers-image-viewer pnpm test:e2e
 ```
 
 The smoke's dev server listens on 4175; set `IMAGE_VIEWER_E2E_PORT` when that port is taken.

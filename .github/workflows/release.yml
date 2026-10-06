@@ -40,18 +40,21 @@ jobs:
         with:
           node-version: 24
 
-      - name: Enable Corepack (Yarn 4)
-        run: corepack enable
+      - name: Install pinned pnpm
+        run: npm install --global --force pnpm@12.9.1
 
       - name: Install dependencies
-        run: yarn install --immutable
+        run: pnpm install --frozen-lockfile --store-dir "$HOME/.cache/pnpm/store"
+
+      - name: Verify dependency security patches
+        run: pnpm check:dependency-patches
 
       # Belt-and-suspenders: make sure Electron's binary is fetched under
-      # Yarn 4 even if the postinstall script didn't run.
+      # pnpm even if the postinstall script did not run.
       - name: Ensure Electron binary
         run: node node_modules/electron/install.js
 
-      # `yarn make` is unreliable when invoked from inside semantic-release's
+      # The former `yarn make` failed when invoked from inside semantic-release's
       # @semantic-release/exec prepare step — it dies partway through packaging
       # and never builds the installers, so the release published with no assets.
       # Building it as a first-class workflow step (below) is reliable, so we
@@ -70,7 +73,7 @@ jobs:
           # Capture the status instead of ignoring it: a "no relevant changes"
           # exit is a success, and every OTHER non-zero exit still fails.
           status=0
-          yarn semantic-release --dry-run 2>&1 | tee sr-dry.log || status=$?
+          pnpm semantic-release --dry-run 2>&1 | tee sr-dry.log || status=$?
           # `|| true`: "no match" is a grep exit of 1, which under -e/pipefail
           # kills the step before the empty `next` can be interpreted. An empty
           # `next` is the signal here, not an error.
@@ -94,11 +97,11 @@ jobs:
 
       - name: Stamp version into package.json
         if: steps.version.outputs.release == 'true'
-        run: npm version ${{ steps.version.outputs.version }} --no-git-tag-version --allow-same-version
+        run: pnpm version ${{ steps.version.outputs.version }} --no-git-tag-version --allow-same-version
 
       - name: Build Windows distributables
         if: steps.version.outputs.release == 'true'
-        run: yarn make
+        run: pnpm make
 
       # Guard: never publish an empty release again. Fail loudly if make
       # produced no installers.
@@ -118,6 +121,6 @@ jobs:
 
       - name: Publish release (uploads pre-built assets)
         if: steps.version.outputs.release == 'true'
-        run: yarn semantic-release
+        run: pnpm semantic-release
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
