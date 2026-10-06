@@ -146,13 +146,14 @@ const serve = () =>
 
 // Every `<img>` decoded, and the count unchanged across two checks: the
 // gallery is virtualized and its loader is a queue, so "one image arrived" is
-// not "the screen is done".
+// not "the screen is done". Zero images means loading has not started yet.
 const waitForImagesToSettle = async (page) => {
   let previousCount = -1
 
   for (let attempt = 0; attempt < 40; attempt += 1) {
     await page.waitForFunction(
       () =>
+        document.images.length > 0 &&
         [...document.images].every(
           (image) =>
             image.complete && image.naturalWidth > 0,

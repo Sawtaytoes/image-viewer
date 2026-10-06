@@ -1,0 +1,17 @@
+# Forge packaging requires a physical, hoisted node_modules tree.
+nodeLinker: hoisted
+minimumReleaseAge: 0
+autoInstallPeers: false
+strictPeerDependencies: false
+enableGlobalVirtualStore: false
+verifyDepsBeforeRun: false
+enablePrePostScripts: false
+# Match the previously explicit Yarn enableScripts: true lifecycle policy.
+dangerouslyAllowAllBuilds: true
+overrides:
+  "braces": "3.0.3"
+  "http-cache-semantics@^4.1.1": "4.3.0"
+patchedDependencies:
+  "braces@3.0.3": "patches/braces-npm-3.0.3-582c14023c.patch"
+  "http-cache-semantics@4.3.0": "patches/http-cache-semantics-npm-4.3.0-ee45f76976.patch"
+  "npm@11.16.0": "patches/npm-11.16.0-unbundle.patch"

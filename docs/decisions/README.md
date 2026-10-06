@@ -1,5 +1,7 @@
 # docs/decisions — the locked-decisions paper trail
 
+- [2026-10-06 — pnpm replaces Yarn](2026-10-06-pnpm-replaces-yarn.md)
+
 This directory is the **paper trail of decisions the owner does not want re-litigated.** Each file
 records one decision: the rule, what was *rejected* ("no, that's wrong"), why, and how to honor it.
 The point is to stop agents (and future-us) from quietly reverting things that were already settled.

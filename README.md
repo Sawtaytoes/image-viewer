@@ -21,11 +21,12 @@ source-build instructions.
 ## Run from source
 
 ```sh
-corepack yarn install
-corepack yarn start
+npm install --global --force --allow-scripts=pnpm pnpm@12.9.1
+pnpm install
+pnpm start
 ```
 
-Use `IMAGE_VIEWER_FAKE_FS=1 corepack yarn start` to run with invented fixture folders.
+Use `IMAGE_VIEWER_FAKE_FS=1 pnpm start` to run with invented fixture folders.
 
 ## Documentation
 
@@ -36,3 +37,18 @@ Use `IMAGE_VIEWER_FAKE_FS=1 corepack yarn start` to run with invented fixture fo
 - [Decision records](docs/decisions/README.md)
 
 Image Viewer is available under the [MIT License](LICENSE.md).
+
+## Dependency installation
+
+`pnpm-workspace.yaml` keeps the physical, hoisted `node_modules` tree required by
+Electron Forge. Dependency install scripts remain enabled, matching the prior
+Yarn configuration; task pre/post hooks remain disabled.
+
+The pinned npm release-tool dependency bundles its own dependencies. The scoped
+`.pnpmfile.cjs` hook and deletion-only npm patch remove that duplicate bundle so
+npm resolves the same locked, security-patched packages Yarn used. npm's own
+license and all active dependency licenses remain present. When upgrading npm,
+regenerate that patch from the exact official tarball and verify the resolved
+graph and `pnpm check:dependency-patches` before changing its version.
+
+The pinned npm unbundle patch leaves empty vendor directories that Node ESM can mistake for installed packages. The install cleanup removes only empty directories inside the resolved npm 11.16.0 vendor tree; it preserves files, skips symlinks, and rejects other package versions or locations. The dependency-patch gate checks this scope before exercising the actual cache-policy module.
