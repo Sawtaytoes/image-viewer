@@ -50,3 +50,5 @@ npm resolves the same locked, security-patched packages Yarn used. npm's own
 license and all active dependency licenses remain present. When upgrading npm,
 regenerate that patch from the exact official tarball and verify the resolved
 graph and `pnpm check:dependency-patches` before changing its version.
+
+The pinned npm unbundle patch leaves empty vendor directories that Node ESM can mistake for installed packages. The install cleanup removes only empty directories inside the resolved npm 11.16.0 vendor tree; it preserves files, skips symlinks, and rejects other package versions or locations. The dependency-patch gate checks this scope before exercising the actual cache-policy module.

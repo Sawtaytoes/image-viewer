@@ -24,7 +24,8 @@
     "lint:eslint": "eslint .",
     "lint:eslint-format": "eslint . --fix",
     "lint": "pnpm lint:biome-format && pnpm lint:eslint-format",
-    "check:dependency-patches": "node scripts/checkDependencyPatches.cjs"
+    "check:dependency-patches": "node --test scripts/testNpmBundleCleanup.cjs && node scripts/checkDependencyPatches.cjs",
+    "postinstall": "node scripts/cleanupNpmBundleDirs.cjs"
   },
   "engines": {
     "node": ">=20.18.0"

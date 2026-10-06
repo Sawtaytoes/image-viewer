@@ -1,13 +1,34 @@
 const assert = require("node:assert/strict")
 const { createRequire } = require("node:module")
+const { spawnSync } = require("node:child_process")
+const path = require("node:path")
 
 // Check the module npm's release tooling actually resolves, including bundles.
 const releaseRequire = createRequire(
   require.resolve("@semantic-release/npm"),
 )
-const npmRequire = createRequire(
-  releaseRequire.resolve("npm/package.json"),
+const npmManifest = releaseRequire.resolve(
+  "npm/package.json",
 )
+const npmRequire = createRequire(npmManifest)
+const npmCli = path.join(
+  path.dirname(npmManifest),
+  "bin/npm-cli.js",
+)
+const versionResult = spawnSync(
+  process.execPath,
+  [npmCli, "--version", "--offline"],
+  { encoding: "utf8" },
+)
+assert.equal(versionResult.status, 0, versionResult.stderr)
+assert.equal(versionResult.stdout.trim(), "11.16.0")
+const configResult = spawnSync(
+  process.execPath,
+  [npmCli, "config", "get", "cache", "--offline"],
+  { encoding: "utf8" },
+)
+assert.equal(configResult.status, 0, configResult.stderr)
+assert.ok(configResult.stdout.trim())
 const cachePath = npmRequire.resolve("http-cache-semantics")
 const CachePolicy = npmRequire("http-cache-semantics")
 assert.equal(
@@ -61,6 +82,8 @@ assert.throws(
 )
 console.log(
   JSON.stringify({
+    npmCliVersion: "11.16.0",
+    npmOfflineConfig: true,
     cachePath,
     cacheVersion: "4.3.0",
     restrictedResponses: 5,
