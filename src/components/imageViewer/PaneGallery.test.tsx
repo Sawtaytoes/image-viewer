@@ -24,7 +24,7 @@ import WorkspaceContext, {
 } from "../workspace/WorkspaceContext"
 import PaneGallery from "./PaneGallery"
 
-// The setup stub's `getWindowsDrives` is empty, so stand in a single drive for
+// The setup stub's `getDriveRoots` is empty, so stand in a single drive for
 // the all-drives root the gallery climbs to (see the drive-root climb test).
 vi.mock("../fileBrowser/driveDirectories", () => ({
   default: [{ name: "MockDrive", path: "/" }],

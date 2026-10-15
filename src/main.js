@@ -1,4 +1,5 @@
 import fs from "node:fs"
+import os from "node:os"
 import path from "node:path"
 import {
   app,
@@ -10,6 +11,7 @@ import {
 } from "electron"
 import started from "electron-squirrel-startup"
 
+import getDriveRoots from "./driveRoots"
 import normalizeSavedQueue from "./savedQueue"
 
 // Handle creating/removing shortcuts on Windows when installing/uninstalling.
@@ -84,26 +86,27 @@ loadDotEnv()
 const getDefaultDirectory = () =>
   process.env.IMAGE_VIEWER_DEFAULT_DIRECTORY ?? ""
 
-// Enumerate available Windows drive letters without spawning a shell. The old
-// `wmic logicaldisk` call is removed on modern Windows 11; probing A:..Z: with
-// fs.existsSync is instant and reliable. See docs/research/0006.
-const getWindowsDrives = () => {
-  if (process.platform !== "win32") {
+// The home screen's tiles: drive letters on Windows; the root, the home folder
+// and the mounted volumes on macOS and Linux (see driveRoots.ts).
+const listChildDirectories = (directoryPath) => {
+  try {
+    return fs
+      .readdirSync(directoryPath, { withFileTypes: true })
+      .filter((entry) => entry.isDirectory())
+      .map((entry) => path.join(directoryPath, entry.name))
+  } catch {
     return []
   }
-
-  const drives = []
-
-  for (let charCode = 65; charCode <= 90; charCode++) {
-    const driveRoot = `${String.fromCharCode(charCode)}:\\`
-
-    if (fs.existsSync(driveRoot)) {
-      drives.push(driveRoot)
-    }
-  }
-
-  return drives
 }
+
+const readDriveRoots = () =>
+  getDriveRoots({
+    homeDirectory: app.getPath("home"),
+    isExistingPath: fs.existsSync,
+    listChildDirectories,
+    platform: process.platform,
+    userName: os.userInfo().username,
+  })
 
 // The file/folder path the app was launched with (e.g. "Open with" from
 // Explorer). When there's no real launch path — nothing passed, a CLI flag, or
@@ -163,10 +166,13 @@ const createWindow = ({
     // Custom title bar: hide the OS one and render our own strip (see TitleBar),
     // but keep the native window buttons via the overlay so min/max/close (and
     // Windows Snap Layouts) still work. `height` must match TITLE_BAR_HEIGHT in
-    // the renderer so our content clears the overlay. NOTE: `titleBarOverlay`
-    // draws native controls on Windows/macOS only — on Linux the window is
-    // frameless with no controls, so a future Linux build needs custom buttons.
+    // the renderer so our content clears the overlay. Electron draws the
+    // controls on the right on Windows and Linux; macOS keeps its traffic lights
+    // on the left, centered in the 40px strip by `trafficLightPosition` (the
+    // buttons are 12px tall, so y 14 puts their middle at 20), and TitleBar
+    // moves its gutter to that side.
     titleBarStyle: "hidden",
+    trafficLightPosition: { x: 14, y: 14 },
     titleBarOverlay: {
       color: "#2b2b2b",
       height: 40,
@@ -282,8 +288,8 @@ ipcMain.handle("window:isFullScreen", (event) =>
 )
 
 // Synchronous bridge for the drive list (consumed at renderer module-load time).
-ipcMain.on("get-windows-drives", (event) => {
-  event.returnValue = getWindowsDrives()
+ipcMain.on("get-drive-roots", (event) => {
+  event.returnValue = readDriveRoots()
 })
 
 // The OS colour scheme, owned by the main process. This is the whole reason the

@@ -63,6 +63,9 @@ declare global {
       // True when this window was spawned onto another display — boot straight
       // into the viewer with one auto-filled column.
       isSpawnedViewer: boolean
+      // `process.platform` ("darwin", "linux", "win32", …), or "browser" in the
+      // browser build, which has no native window buttons to clear.
+      platform: string
       // Folder paths open in *other* windows, for cross-window auto-fill dedupe.
       openFolders: {
         get: () => Promise<string[]>
@@ -122,8 +125,10 @@ declare global {
       getFolderLastIndex: (
         folderPath: string,
       ) => Promise<number | null>
-      // Available Windows drive roots (e.g. ["C:\\", "G:\\"]).
-      getWindowsDrives: () => string[]
+      // The home screen's tiles: drive roots on Windows (["C:\\", "G:\\"]);
+      // the root, the home folder and mounted volumes on macOS and Linux
+      // (["/", "/home/user", "/media/user/Photos"]). See src/driveRoots.ts.
+      getDriveRoots: () => string[]
       // `withModifiedTime` opts into a `stat` per entry for `modifiedTime`
       // (needed only by the date-modified sort); the default name sort skips it
       // so large folders list instantly.
