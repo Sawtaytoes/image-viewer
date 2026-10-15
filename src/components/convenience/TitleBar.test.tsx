@@ -190,6 +190,42 @@ describe("TitleBar", () => {
 
     expect(getBar().style.transform).toBe("translateY(0)")
   })
+
+  test("leaves the right edge clear for the window buttons on Windows and Linux", () => {
+    renderTitleBar({ isFullScreen: false })
+
+    expect(getBar().style.paddingLeft).toBe("10px")
+    expect(getBar().style.paddingRight).toBe("140px")
+  })
+
+  test("leaves the left edge clear for the traffic lights on macOS", () => {
+    const originalPlatform = window.api.platform
+
+    window.api.platform = "darwin"
+
+    try {
+      renderTitleBar({ isFullScreen: false })
+
+      expect(getBar().style.paddingLeft).toBe("78px")
+      expect(getBar().style.paddingRight).toBe("10px")
+    } finally {
+      window.api.platform = originalPlatform
+    }
+  })
+
+  test("reclaims the macOS gutter in fullscreen, where the traffic lights are hidden", () => {
+    const originalPlatform = window.api.platform
+
+    window.api.platform = "darwin"
+
+    try {
+      renderTitleBar({ isFullScreen: true })
+
+      expect(getBar().style.paddingLeft).toBe("10px")
+    } finally {
+      window.api.platform = originalPlatform
+    }
+  })
 })
 
 // The queue actions read straight off `WorkspaceContext`, so an explicit

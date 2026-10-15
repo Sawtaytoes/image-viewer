@@ -23,7 +23,7 @@ import useViewerKeyboard from "./useViewerKeyboard"
 // Where the in-pane gallery starts when the column has no folder yet: the first
 // drive (Windows) or the filesystem root (POSIX).
 const getRootBrowsePath = (): string =>
-  window.api.getWindowsDrives()?.[0] ??
+  window.api.getDriveRoots()?.[0] ??
   (window.api.path.sep === "\\" ? "C:\\" : "/")
 
 // `touch-none`: a pane isn't scrollable, so taps and the chrome summon-swipe
