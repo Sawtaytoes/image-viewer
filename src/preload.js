@@ -522,6 +522,9 @@ contextBridge.exposeInMainWorld("api", {
   // Set on a window spawned onto another display: boot into the viewer with one
   // auto-filled column rather than the file browser.
   isSpawnedViewer,
+  // The OS, so the title bar can leave room where the native window buttons
+  // are: on the left on macOS, on the right everywhere else.
+  platform: process.platform,
   // Which folder paths are open in *other* windows, so a fresh column/window
   // auto-fills the next folder not already open anywhere. `get` hydrates on mount,
   // `set` reports this window's open folders, `onChanged` tracks the others.
@@ -637,9 +640,9 @@ contextBridge.exposeInMainWorld("api", {
           "get-folder-last-index",
           folderPath,
         ),
-  getWindowsDrives: fakeFileSystem
-    ? fakeFileSystem.getWindowsDrives
-    : () => ipcRenderer.sendSync("get-windows-drives"),
+  getDriveRoots: fakeFileSystem
+    ? fakeFileSystem.getDriveRoots
+    : () => ipcRenderer.sendSync("get-drive-roots"),
   readDirectory: fakeFileSystem
     ? fakeFileSystem.readDirectory
     : readDirectory,

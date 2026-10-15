@@ -751,7 +751,7 @@ const createFakeFileSystem = ({
     deleteFilePath,
     findFirstImage,
     getFolderLastIndex,
-    getWindowsDrives: () => [rootPath],
+    getDriveRoots: () => [rootPath],
     readDirectory,
     readImageData,
     searchFolders,

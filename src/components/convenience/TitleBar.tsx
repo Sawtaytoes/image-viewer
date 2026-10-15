@@ -13,16 +13,20 @@ import FullScreenContext from "./FullScreenContext"
 
 const pathApi = window.api.path
 
-// Reserve room on the right for the native window controls the `titleBarOverlay`
-// paints there (Windows/macOS) so the fullscreen button can hug them without
-// sitting underneath. In fullscreen the OS hides those controls, so the button
-// reclaims the space (see `barStyle` below).
+// Reserve room for the native window controls the `titleBarOverlay` paints, so
+// nothing of ours sits underneath them. Windows and Linux put them on the right,
+// where the fullscreen button hugs them; macOS puts its three traffic lights on
+// the left (at `trafficLightPosition` in main.js), ahead of the app name. In
+// fullscreen the OS hides the controls, so the bar reclaims the space (see
+// `barStyle` below).
 const WINDOW_CONTROLS_WIDTH = 140
+const TRAFFIC_LIGHTS_WIDTH = 78
+const EDGE_PADDING = 10
 
 // The whole strip is a drag handle (`-webkit-app-region: drag`) so the frameless
 // window can still be moved; interactive children opt back out with `no-drag`.
-// The right edge is left as empty drag space for the native window controls that
-// `titleBarOverlay` paints there (Windows/macOS), so nothing sits under them.
+// The edge with the native window controls (right on Windows and Linux, left on
+// macOS) is left as empty drag space, so nothing sits under them.
 //
 // `-webkit-app-region` is Electron's property, not CSS's, and Tailwind has no
 // utility for it — so it is the arbitrary property `[-webkit-app-region:drag]`
@@ -155,9 +159,9 @@ const TitleBar = () => {
     saveQueue().then(clearQueue)
   }, [clearQueue, saveQueue])
 
-  // Pinned open (windowed and the fullscreen file browser), with the right
-  // gutter reserved for the native window controls only where they exist — the
-  // OS hides them in fullscreen, so the button reclaims that space. Standing
+  // Pinned open (windowed and the fullscreen file browser), with a gutter
+  // reserved for the native window controls only where they exist — the OS
+  // hides them in fullscreen, so the bar reclaims that space. Standing
   // down (fullscreen + viewer open) slides the whole bar up out of view.
   //
   // Both values are computed at render, which is precisely what a Tailwind class
@@ -166,8 +170,21 @@ const TitleBar = () => {
   // also resolves cleanly, since an element's own `style` beats any utility. The
   // `transition-transform` that animates the slide is a class, because the
   // transition itself never changes.
+  const isMacOs = window.api.platform === "darwin"
+
+  const windowControlsGutter = isFullScreen
+    ? EDGE_PADDING
+    : isMacOs
+      ? TRAFFIC_LIGHTS_WIDTH
+      : WINDOW_CONTROLS_WIDTH
+
   const barStyle: CSSProperties = {
-    paddingRight: isFullScreen ? 10 : WINDOW_CONTROLS_WIDTH,
+    paddingLeft: isMacOs
+      ? windowControlsGutter
+      : EDGE_PADDING,
+    paddingRight: isMacOs
+      ? EDGE_PADDING
+      : windowControlsGutter,
     transform: isTitleBarActive
       ? "translateY(0)"
       : "translateY(-100%)",

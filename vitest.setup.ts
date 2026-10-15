@@ -41,9 +41,10 @@ const api: Window["api"] = {
   },
   getDisplays: () => Promise.resolve([]),
   getFolderLastIndex: () => Promise.resolve(null),
-  getWindowsDrives: () => [],
+  getDriveRoots: () => [],
   identifyDisplay: () => {},
   isSpawnedViewer: false,
+  platform: "linux",
   openFolders: {
     get: () => Promise.resolve([]),
     onChanged: () => () => {},

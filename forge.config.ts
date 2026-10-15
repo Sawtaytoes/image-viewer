@@ -14,13 +14,44 @@ const config: ForgeConfig = {
     // `ImageViewer.exe`) regardless of the spaced `productName` display label.
     name: "ImageViewer",
     executableName: "ImageViewer",
+    // macOS reads these from the bundle's Info.plist: the id names the app to
+    // the OS, and the category files it under Photography in Finder.
+    appBundleId: "io.github.sawtaytoes.imageviewer",
+    appCategoryType: "public.app-category.photography",
   },
   rebuildConfig: {},
   makers: [
     new MakerSquirrel({ name: "image_viewer" }),
-    new MakerZIP({}, ["darwin", "win32"]),
-    new MakerRpm({}),
-    new MakerDeb({}),
+    // The zip is the only macOS download (no signing identity, so no DMG; see
+    // docs/decisions/2026-10-14-linux-and-macos-builds-ship-and-the-mac-build-is-unsigned.md)
+    // and a no-install option on Windows and Linux.
+    new MakerZIP({}, ["darwin", "linux", "win32"]),
+    // The Linux packages install the executable as `ImageViewer` and a menu
+    // entry under Graphics. `bin` must name the packaged executable, or the
+    // menu entry points at a file that does not exist.
+    new MakerRpm({
+      options: {
+        bin: "ImageViewer",
+        categories: ["Graphics"],
+        genericName: "Image viewer",
+        homepage:
+          "https://github.com/Sawtaytoes/image-viewer",
+        name: "image-viewer",
+        productName: "Image Viewer",
+      },
+    }),
+    new MakerDeb({
+      options: {
+        bin: "ImageViewer",
+        categories: ["Graphics"],
+        genericName: "Image viewer",
+        homepage:
+          "https://github.com/Sawtaytoes/image-viewer",
+        maintainer: "Image Viewer contributors",
+        name: "image-viewer",
+        productName: "Image Viewer",
+      },
+    }),
   ],
   plugins: [
     new VitePlugin({
@@ -53,6 +84,11 @@ const config: ForgeConfig = {
       [FuseV1Options.EnableNodeCliInspectArguments]: false,
       [FuseV1Options.EnableEmbeddedAsarIntegrityValidation]: true,
       [FuseV1Options.OnlyLoadAppFromAsar]: true,
+      // Flipping a fuse edits the Electron binary, which breaks the ad-hoc
+      // signature Apple silicon requires before it runs anything. Re-sign the
+      // macOS build ad hoc after the flip, or it will not open at all.
+      resetAdHocDarwinSignature:
+        process.platform === "darwin",
     }),
   ],
 }

@@ -1,6 +1,6 @@
 # Image Viewer
 
-**[Install Image Viewer on Windows →](docs/setup.md)**
+**[Install Image Viewer on Windows, Linux, or macOS →](docs/setup.md)**
 
 Image Viewer is a touch-friendly Electron image browser. It supports folder browsing,
 full-screen viewing, side-by-side folders, multi-display windows, natural filename sorting,
@@ -11,12 +11,18 @@ stay on the local filesystem.
 
 ## Install a release
 
-Download the Windows installer from [the latest GitHub release](https://github.com/Sawtaytoes/image-viewer/releases/latest).
-Run the setup executable, then open Image Viewer from the Start menu or open an image or
-folder with the application.
+[The latest GitHub release](https://github.com/Sawtaytoes/image-viewer/releases/latest)
+has a build for each desktop platform:
 
-See [the setup guide](docs/setup.md) for the portable ZIP, default start directory, and
-source-build instructions.
+| Platform | Download |
+| --- | --- |
+| Windows | `Setup.exe` (installer) or the Windows ZIP |
+| Linux | `.deb` (Debian, Ubuntu), `.rpm` (Fedora, openSUSE), or the Linux ZIP — x64 and arm64 |
+| macOS | the macOS ZIP — Apple silicon (arm64) or Intel (x64) |
+
+The macOS build is not notarized, so macOS blocks its first launch. See
+[the setup guide](docs/setup.md) for that step, the portable ZIPs, the default start
+directory, and source-build instructions.
 
 ## Run from source
 

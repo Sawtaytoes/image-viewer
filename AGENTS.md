@@ -92,7 +92,8 @@ read `process`. All of that goes through the preload bridge, exposed as **`windo
 | Member | Purpose |
 | --- | --- |
 | `cliFilePath` | file/folder the window was launched with (from `--filePath=` additionalArguments) |
-| `getWindowsDrives()` | `["C:\\", "D:\\", …]` (sync IPC) |
+| `getDriveRoots()` | `["C:\\", "D:\\", …]` on Windows; `["/", home, …mounted volumes]` on macOS/Linux (sync IPC) |
+| `platform` | `process.platform` (`"browser"` in the browser build) — the title bar reads it to clear macOS's left-side window buttons |
 | `statPath(p)` | `{ exists, isFile, isDirectory }` (sync) |
 | `readDirectory(dir)` | `Promise<[{ fileName, filePath, isDirectory, isFile }]>` |
 | `watchDirectory(dir, onChange)` | `fs.watch` on a folder's direct entries, settled per burst; returns an unsubscribe. The galleries re-read in place on a change (`useFolderListing(path, { isWatchingForChanges: true })`); an open image pane does not |

@@ -42,7 +42,7 @@ describe("createFakeFileSystem", () => {
     const fakeFileSystem = setup()
 
     expect(fakeFileSystem.cliFilePath).toBe(rootPath)
-    expect(fakeFileSystem.getWindowsDrives()).toEqual([
+    expect(fakeFileSystem.getDriveRoots()).toEqual([
       rootPath,
     ])
     expect(fakeFileSystem.statPath(rootPath)).toMatchObject(

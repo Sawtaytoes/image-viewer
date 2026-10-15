@@ -4,6 +4,19 @@ on:
   push:
     branches:
       - master
+  # A pull request that changes packaging builds every platform without
+  # publishing, so a broken maker is found before it reaches master. This is
+  # not a required check, so a path filter cannot strand a pull request.
+  pull_request:
+    paths:
+      - .github/workflows/release.yml
+      - .releaserc.json
+      - forge.config.ts
+      - package.json
+      - pnpm-lock.yaml
+      - pnpm-workspace.yaml
+      - src/main.js
+      - src/preload.js
 
 # Two Release runs on the same branch must never overlap: semantic-release
 # pushes a version-bump commit and a tag, so a second run racing the first
@@ -21,20 +34,28 @@ permissions:
   issues: write
   pull-requests: write
 
+# Gitea Actions also reads .github/workflows, but only has an Ubuntu runner.
+# Every job is restricted to GitHub (on Gitea, server_url is the Gitea
+# instance URL, so the jobs are skipped there).
+#
+# The shape: `version` decides the release, `windows` and `unix` build on their
+# own operating systems in parallel, and `publish` hands every artifact to
+# semantic-release. The former single-job `yarn make` failed when invoked from
+# inside semantic-release's @semantic-release/exec prepare step — it died
+# partway through packaging and the release published with no assets — so the
+# builds stay first-class steps and semantic-release only uploads what exists.
 jobs:
-  release:
-    # Gitea Actions also reads .github/workflows, but only has an Ubuntu runner.
-    # Restrict the Windows build/release to GitHub (on Gitea, server_url is the
-    # Gitea instance URL, so this job is skipped there).
+  version:
     if: ${{ github.server_url == 'https://github.com' }}
-    runs-on: windows-latest
-
+    runs-on: ubuntu-latest
+    outputs:
+      release: ${{ steps.version.outputs.release }}
+      version: ${{ steps.version.outputs.version }}
     steps:
       - uses: actions/checkout@v7
         with:
           # semantic-release needs full history + tags to compute the next version.
           fetch-depth: 0
-          persist-credentials: true
 
       - uses: actions/setup-node@v6
         with:
@@ -43,39 +64,35 @@ jobs:
       - name: Install pinned pnpm
         run: |
           npm install --global --force --allow-scripts=pnpm pnpm@12.9.1
-          $pnpmBin = npm prefix -g
-          Add-Content -Path $env:GITHUB_PATH -Value $pnpmBin
-          & "$pnpmBin\pnpm.cmd" --version
+          pnpm --version
 
       - name: Install dependencies
-        run: pnpm install --frozen-lockfile --store-dir "$HOME/.cache/pnpm/store"
+        run: pnpm install --frozen-lockfile
 
       - name: Verify dependency security patches
         run: pnpm check:dependency-patches
 
-      # Belt-and-suspenders: make sure Electron's binary is fetched under
-      # pnpm even if the postinstall script did not run.
-      - name: Ensure Electron binary
-        run: node node_modules/electron/install.js
-
-      # The former `yarn make` failed when invoked from inside semantic-release's
-      # @semantic-release/exec prepare step — it dies partway through packaging
-      # and never builds the installers, so the release published with no assets.
-      # Building it as a first-class workflow step (below) is reliable, so we
-      # determine the next version here, stamp it in, build, then let
-      # semantic-release publish the already-built out/make artifacts.
+      # A pull request is not a release: it builds the version already in
+      # package.json so the makers run, and `publish` is skipped.
       - name: Determine next version
         id: version
-        shell: bash
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          IS_PULL_REQUEST: ${{ github.event_name == 'pull_request' }}
         run: |
           set -o pipefail
+          if [ "$IS_PULL_REQUEST" = true ]; then
+            current="$(node -p "require('./package.json').version")"
+            echo "Pull request build of ${current}; nothing is published."
+            echo "release=true" >> "$GITHUB_OUTPUT"
+            echo "version=$current" >> "$GITHUB_OUTPUT"
+            exit 0
+          fi
           # semantic-release exits 1 when it decides no release is due, and
-          # `shell: bash` runs with -e, so the step died before ever reaching
-          # the branch below — six red runs on commits where nothing was wrong.
-          # Capture the status instead of ignoring it: a "no relevant changes"
-          # exit is a success, and every OTHER non-zero exit still fails.
+          # the default bash shell runs with -e, so the step died before ever
+          # reaching the branch below — six red runs on commits where nothing
+          # was wrong. Capture the status instead of ignoring it: a "no relevant
+          # changes" exit is a success, and every OTHER non-zero exit still fails.
           status=0
           pnpm semantic-release --dry-run 2>&1 | tee sr-dry.log || status=$?
           # `|| true`: "no match" is a grep exit of 1, which under -e/pipefail
@@ -99,32 +116,211 @@ jobs:
             echo "version=$next" >> "$GITHUB_OUTPUT"
           fi
 
+  windows:
+    needs: version
+    if: ${{ needs.version.outputs.release == 'true' }}
+    runs-on: windows-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v7
+
+      - uses: actions/setup-node@v6
+        with:
+          node-version: 24
+
+      - name: Install pinned pnpm
+        run: |
+          npm install --global --force --allow-scripts=pnpm pnpm@12.9.1
+          $pnpmBin = npm prefix -g
+          Add-Content -Path $env:GITHUB_PATH -Value $pnpmBin
+          & "$pnpmBin\pnpm.cmd" --version
+
+      # Stamped before the install, so nothing edits package.json after pnpm
+      # has recorded the dependency state it verifies.
       - name: Stamp version into package.json
-        if: steps.version.outputs.release == 'true'
-        run: pnpm version ${{ steps.version.outputs.version }} --no-git-tag-version --allow-same-version
+        run: npm version ${{ needs.version.outputs.version }} --no-git-tag-version --allow-same-version
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile --store-dir "$HOME/.cache/pnpm/store"
+
+      # Belt-and-suspenders: make sure Electron's binary is fetched under
+      # pnpm even if the postinstall script did not run.
+      - name: Ensure Electron binary
+        run: node node_modules/electron/install.js
 
       - name: Build Windows distributables
-        if: steps.version.outputs.release == 'true'
         run: pnpm make
 
       # Guard: never publish an empty release again. Fail loudly if make
       # produced no installers.
       - name: Verify artifacts exist
-        if: steps.version.outputs.release == 'true'
         shell: bash
         run: |
           shopt -s nullglob
           files=(out/make/squirrel.windows/x64/*Setup.exe out/make/zip/win32/x64/*.zip)
-          if [ ${#files[@]} -eq 0 ]; then
-            echo "::error::No installers were produced in out/make — failing so we don't publish an empty release."
+          if [ ${#files[@]} -lt 2 ]; then
+            echo "::error::The Windows installer or ZIP is missing from out/make — failing so we don't publish an incomplete release."
             find out -type f 2>/dev/null || true
             exit 1
           fi
           echo "Built artifacts:"
           printf '  %s\n' "${files[@]}"
 
+      - uses: actions/upload-artifact@v7
+        with:
+          name: image-viewer-windows-${{ needs.version.outputs.version }}
+          path: |
+            out/make/squirrel.windows/x64/*
+            out/make/zip/win32/x64/*.zip
+          if-no-files-found: error
+
+  unix:
+    name: ${{ matrix.platform }}
+    needs: version
+    if: ${{ needs.version.outputs.release == 'true' }}
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          # The arm64 packages are built on the x64 runner: Forge downloads the
+          # arm64 Electron, and nothing in the app is compiled.
+          - platform: linux
+            runner: ubuntu-latest
+            architectures: "x64 arm64"
+            files: |
+              out/make/deb/*/*.deb
+              out/make/rpm/*/*.rpm
+              out/make/zip/linux/*/*.zip
+          # The macOS runner is Apple silicon. `codesign` there re-signs the
+          # fused Electron binary ad hoc, which Apple silicon requires.
+          - platform: macos
+            runner: macos-latest
+            architectures: "arm64 x64"
+            files: |
+              out/make/zip/darwin/*/*.zip
+    runs-on: ${{ matrix.runner }}
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v7
+
+      - uses: actions/setup-node@v6
+        with:
+          node-version: 24
+
+      - name: Install pinned pnpm
+        run: |
+          npm install --global --force --allow-scripts=pnpm pnpm@12.9.1
+          pnpm --version
+
+      # `rpmbuild` is the one Linux maker tool the runner image lacks.
+      - name: Install rpm
+        if: ${{ matrix.platform == 'linux' }}
+        run: sudo apt-get update && sudo apt-get install --yes rpm
+
+      - name: Stamp version into package.json
+        run: npm version ${{ needs.version.outputs.version }} --no-git-tag-version --allow-same-version
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Ensure Electron binary
+        run: node node_modules/electron/install.js
+
+      - name: Build the packages
+        env:
+          ARCHITECTURES: ${{ matrix.architectures }}
+        run: |
+          set -euo pipefail
+          for arch in $ARCHITECTURES; do
+            pnpm exec electron-forge make --arch="$arch"
+          done
+
+      # Never publish an incomplete release: a .deb, an .rpm and a .zip per
+      # architecture on Linux, one .zip per architecture on macOS.
+      - name: Verify the packages exist
+        env:
+          PLATFORM: ${{ matrix.platform }}
+          ARCHITECTURES: ${{ matrix.architectures }}
+        run: |
+          set -euo pipefail
+          shopt -s nullglob
+          make=out/make
+          missing=0
+          for arch in $ARCHITECTURES; do
+            if [ "$PLATFORM" = linux ]; then
+              debArch=$([ "$arch" = x64 ] && echo amd64 || echo "$arch")
+              # The .rpm's file name is not checked for the architecture:
+              # Forge builds an `aarch64` package but names the file
+              # `.arm64.rpm`, so the arch folder is the reliable part.
+              expected=("$make"/deb/"$arch"/*_"$debArch".deb "$make"/rpm/"$arch"/*.rpm "$make"/zip/linux/"$arch"/*.zip)
+              wanted=3
+            else
+              expected=("$make"/zip/darwin/"$arch"/*.zip)
+              wanted=1
+            fi
+            if [ ${#expected[@]} -lt "$wanted" ]; then
+              echo "::error::No complete $PLATFORM $arch build."
+              missing=1
+            fi
+            printf 'Built: %s\n' "${expected[@]}"
+          done
+          if [ "$missing" -ne 0 ]; then
+            find "$make" -type f || true
+            exit 1
+          fi
+
+      - uses: actions/upload-artifact@v7
+        with:
+          name: image-viewer-${{ matrix.platform }}-${{ needs.version.outputs.version }}
+          path: ${{ matrix.files }}
+          if-no-files-found: error
+
+  publish:
+    needs: [version, windows, unix]
+    if: ${{ needs.version.outputs.release == 'true' && github.event_name != 'pull_request' }}
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          fetch-depth: 0
+          persist-credentials: true
+
+      - uses: actions/setup-node@v6
+        with:
+          node-version: 24
+
+      - name: Install pinned pnpm
+        run: |
+          npm install --global --force --allow-scripts=pnpm pnpm@12.9.1
+          pnpm --version
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      # An artifact is rooted at the common parent of its files. That is
+      # `out/make` for Windows and Linux, which mix makers, but
+      # `out/make/zip/darwin` for macOS, which has only ZIPs — so each one is
+      # downloaded back to its own root to restore the paths `.releaserc.json`
+      # names.
+      - uses: actions/download-artifact@v7
+        with:
+          name: image-viewer-windows-${{ needs.version.outputs.version }}
+          path: out/make
+
+      - uses: actions/download-artifact@v7
+        with:
+          name: image-viewer-linux-${{ needs.version.outputs.version }}
+          path: out/make
+
+      - uses: actions/download-artifact@v7
+        with:
+          name: image-viewer-macos-${{ needs.version.outputs.version }}
+          path: out/make/zip/darwin
+
+      - name: List the release assets
+        run: find out/make -type f | sort
+
       - name: Publish release (uploads pre-built assets)
-        if: steps.version.outputs.release == 'true'
         run: pnpm semantic-release
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

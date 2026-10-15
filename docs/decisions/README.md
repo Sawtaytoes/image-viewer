@@ -1,5 +1,6 @@
 # docs/decisions — the locked-decisions paper trail
 
+- [2026-10-14 — Linux and macOS builds ship, and the Mac build is unsigned](2026-10-14-linux-and-macos-builds-ship-and-the-mac-build-is-unsigned.md)
 - [2026-10-06 — pnpm replaces Yarn](2026-10-06-pnpm-replaces-yarn.md)
 
 This directory is the **paper trail of decisions the owner does not want re-litigated.** Each file
@@ -159,3 +160,7 @@ to apply here); everything else is sourced from Image Viewer's own chats, commit
 ### 2026-09-28 — Saved queue
 
 - [2026-09-28 — A saved queue keeps reading positions and columns](2026-09-28-a-saved-queue-keeps-reading-positions-and-columns.md) ← **"Save for later" stores every queued folder's last image and the window's columns; "Load queue" brings all of it back. Read slots through `src/savedQueue.ts`, which still accepts the old bare array**
+
+### 2026-10-14 — Linux and macOS
+
+- [2026-10-14 — Linux and macOS builds ship, and the Mac build is unsigned](2026-10-14-linux-and-macos-builds-ship-and-the-mac-build-is-unsigned.md) ← **every release adds `.deb`, `.rpm` and ZIP for Linux x64/arm64 and ZIPs for macOS arm64/x64; the home screen lists `/`, home and mounted volumes off Windows (`src/driveRoots.ts`), and the title bar's window-button gutter moves to the left on macOS**

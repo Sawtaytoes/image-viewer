@@ -601,6 +601,8 @@ export const installBrowserApi = (): void => {
     isSpawnedViewer,
     openFolders,
     path: posixPath,
+    // A browser tab has no native window buttons to clear.
+    platform: "browser",
     queue: {
       ...queue,
       load: () =>
