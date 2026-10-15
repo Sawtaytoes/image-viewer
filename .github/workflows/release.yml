@@ -249,8 +249,10 @@ jobs:
           for arch in $ARCHITECTURES; do
             if [ "$PLATFORM" = linux ]; then
               debArch=$([ "$arch" = x64 ] && echo amd64 || echo "$arch")
-              rpmArch=$([ "$arch" = x64 ] && echo x86_64 || echo aarch64)
-              expected=("$make"/deb/"$arch"/*_"$debArch".deb "$make"/rpm/"$arch"/*."$rpmArch".rpm "$make"/zip/linux/"$arch"/*.zip)
+              # The .rpm's file name is not checked for the architecture:
+              # Forge builds an `aarch64` package but names the file
+              # `.arm64.rpm`, so the arch folder is the reliable part.
+              expected=("$make"/deb/"$arch"/*_"$debArch".deb "$make"/rpm/"$arch"/*.rpm "$make"/zip/linux/"$arch"/*.zip)
               wanted=3
             else
               expected=("$make"/zip/darwin/"$arch"/*.zip)
