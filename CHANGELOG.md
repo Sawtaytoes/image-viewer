@@ -1,3 +1,10 @@
+# [2.13.0](https://github.com/Sawtaytoes/image-viewer/compare/v2.12.3...v2.13.0) (2026-10-15)
+
+
+### Features
+
+* publish Linux and macOS builds ([#51](https://github.com/Sawtaytoes/image-viewer/issues/51)) ([d3886a6](https://github.com/Sawtaytoes/image-viewer/commit/d3886a62862ed1d95ff7a5b174ddce0ef8f47f52))
+
 ## [2.12.3](https://github.com/Sawtaytoes/image-viewer/compare/v2.12.2...v2.12.3) (2026-10-05)
 
 
