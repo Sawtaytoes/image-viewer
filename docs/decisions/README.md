@@ -1,5 +1,6 @@
 # docs/decisions — the locked-decisions paper trail
 
+- [2026-10-17 — The app icon is the red photo stack](2026-10-17-the-app-icon-is-the-red-photo-stack.md)
 - [2026-10-14 — Linux and macOS builds ship, and the Mac build is unsigned](2026-10-14-linux-and-macos-builds-ship-and-the-mac-build-is-unsigned.md)
 - [2026-10-06 — pnpm replaces Yarn](2026-10-06-pnpm-replaces-yarn.md)
 

@@ -34,6 +34,7 @@
     "forge.config.ts",
     "forge.env.d.ts",
     "playwright.config.ts",
+    "scripts/**/*.ts",
     "vite.browserModeSpaFallback.ts",
     "vite.browserModeSpaFallback.test.ts",
     "vite.main.config.ts",
