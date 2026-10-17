@@ -1,3 +1,10 @@
+# [2.14.0](https://github.com/Sawtaytoes/image-viewer/compare/v2.13.0...v2.14.0) (2026-10-17)
+
+
+### Features
+
+* give the app its own icon, the red photo stack ([#52](https://github.com/Sawtaytoes/image-viewer/issues/52)) ([a819b7c](https://github.com/Sawtaytoes/image-viewer/commit/a819b7cca462fab956013ec0f950281af71e2717))
+
 # [2.13.0](https://github.com/Sawtaytoes/image-viewer/compare/v2.12.3...v2.13.0) (2026-10-15)
 
 
