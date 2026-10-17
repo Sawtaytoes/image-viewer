@@ -11,10 +11,12 @@ on:
     paths:
       - .github/workflows/release.yml
       - .releaserc.json
+      - assets/icon.svg
       - forge.config.ts
       - package.json
       - pnpm-lock.yaml
       - pnpm-workspace.yaml
+      - scripts/appIcon.ts
       - src/main.js
       - src/preload.js
 

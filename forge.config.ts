@@ -7,6 +7,12 @@ import { FusesPlugin } from "@electron-forge/plugin-fuses"
 import { VitePlugin } from "@electron-forge/plugin-vite"
 import type { ForgeConfig } from "@electron-forge/shared-types"
 
+import { buildAppIcons } from "./scripts/appIcon"
+
+// The rasterized icons land in the gitignored `build/`. `generateAssets` below
+// writes them before `start`, `package` and `make` read them.
+const appIconBase = "build/icon"
+
 const config: ForgeConfig = {
   packagerConfig: {
     asar: true,
@@ -18,10 +24,27 @@ const config: ForgeConfig = {
     // the OS, and the category files it under Photography in Finder.
     appBundleId: "io.github.sawtaytoes.imageviewer",
     appCategoryType: "public.app-category.photography",
+    // Packager adds `.ico` on Windows and `.icns` on macOS.
+    icon: appIconBase,
+    // The Linux window draws its own icon, so the PNG ships beside the app
+    // (`process.resourcesPath`) where `main.js` can read it. The Vite plugin
+    // packages only `.vite/`, so a file anywhere else is not in the app.
+    extraResource: [`${appIconBase}.png`],
+  },
+  hooks: {
+    generateAssets: async () => {
+      await buildAppIcons({
+        markPath: "assets/icon.svg",
+        outputDirectory: "build",
+      })
+    },
   },
   rebuildConfig: {},
   makers: [
-    new MakerSquirrel({ name: "image_viewer" }),
+    new MakerSquirrel({
+      name: "image_viewer",
+      setupIcon: `${appIconBase}.ico`,
+    }),
     // The zip is the only macOS download (no signing identity, so no DMG; see
     // docs/decisions/2026-10-14-linux-and-macos-builds-ship-and-the-mac-build-is-unsigned.md)
     // and a no-install option on Windows and Linux.
@@ -34,6 +57,7 @@ const config: ForgeConfig = {
         bin: "ImageViewer",
         categories: ["Graphics"],
         genericName: "Image viewer",
+        icon: `${appIconBase}.png`,
         homepage:
           "https://github.com/Sawtaytoes/image-viewer",
         name: "image-viewer",
@@ -45,6 +69,7 @@ const config: ForgeConfig = {
         bin: "ImageViewer",
         categories: ["Graphics"],
         genericName: "Image viewer",
+        icon: `${appIconBase}.png`,
         homepage:
           "https://github.com/Sawtaytoes/image-viewer",
         maintainer: "Image Viewer contributors",
