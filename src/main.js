@@ -163,6 +163,20 @@ const createWindow = ({
   const mainWindow = new BrowserWindow({
     autoHideMenuBar: true,
     backgroundThrottling: true,
+    // Windows and macOS take the window icon from the executable and the app
+    // bundle. Linux takes it from the window, so pass the PNG Forge generated
+    // (see forge.config.ts): beside the app once packaged, `build/` in dev.
+    ...(process.platform === "linux"
+      ? {
+          icon: app.isPackaged
+            ? path.join(process.resourcesPath, "icon.png")
+            : path.join(
+                app.getAppPath(),
+                "build",
+                "icon.png",
+              ),
+        }
+      : {}),
     // Custom title bar: hide the OS one and render our own strip (see TitleBar),
     // but keep the native window buttons via the overlay so min/max/close (and
     // Windows Snap Layouts) still work. `height` must match TITLE_BAR_HEIGHT in
