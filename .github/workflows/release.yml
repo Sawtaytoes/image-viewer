@@ -11,7 +11,7 @@ on:
     paths:
       - .github/workflows/release.yml
       - .releaserc.json
-      - assets/icon.svg
+      - public/favicon.svg
       - forge.config.ts
       - package.json
       - pnpm-lock.yaml

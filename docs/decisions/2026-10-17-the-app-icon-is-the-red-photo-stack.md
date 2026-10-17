@@ -8,10 +8,12 @@
 
 ## Decision
 
-The app's mark is **`assets/icon.svg`**: a red (`#DC2626`) rounded square with a white
+The app's mark is **`public/favicon.svg`**: a red (`#DC2626`) rounded square with a white
 drawing of two stacked photos, one with a mountain and a sun. It follows the fleet's app-mark
 style — one color, a white line glyph, `rx` 5.5 on a 24-unit square — in a color no other
-app mark uses.
+app mark uses. It is also the renderer's favicon, and it is a byte-identical copy of the
+workspace's canonical mark (`truenas/apps-icons/icons/image-viewer.svg`), so `cmp` between
+the two is the drift check. A change to the mark starts there and is copied here.
 
 Every platform's icon is **rasterized from that one SVG at package time** by
 `scripts/appIcon.ts`, through Forge's `generateAssets` hook, into the gitignored `build/`:

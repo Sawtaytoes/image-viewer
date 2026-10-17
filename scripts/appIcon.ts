@@ -6,7 +6,7 @@ import {
 import path from "node:path"
 import sharp from "sharp"
 
-// The app icon is `assets/icon.svg`, rasterized at package time — never
+// The app icon is `public/favicon.svg`, rasterized at package time — never
 // redrawn and never committed as a binary. Every platform's file comes from the
 // one SVG, so changing the mark is a one-file change. See
 // docs/decisions/2026-10-17-the-app-icon-is-the-red-photo-stack.md.

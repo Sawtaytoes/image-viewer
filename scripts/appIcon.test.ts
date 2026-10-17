@@ -73,8 +73,8 @@ describe(buildAppIcons.name, () => {
         markPath: path.join(
           import.meta.dirname,
           "..",
-          "assets",
-          "icon.svg",
+          "public",
+          "favicon.svg",
         ),
         outputDirectory,
       })

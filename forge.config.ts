@@ -34,7 +34,7 @@ const config: ForgeConfig = {
   hooks: {
     generateAssets: async () => {
       await buildAppIcons({
-        markPath: "assets/icon.svg",
+        markPath: "public/favicon.svg",
         outputDirectory: "build",
       })
     },
