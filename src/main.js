@@ -19,6 +19,14 @@ if (started) {
   app.quit()
 }
 
+// Electron names the settings folder after `productName`. The label was
+// `Image-Viewer` until 2026-10-23, so pin the folder to that name or every
+// install would start over with an empty saved queue under `Image Viewer`.
+app.setPath(
+  "userData",
+  path.join(app.getPath("appData"), "Image-Viewer"),
+)
+
 const isDevelopment = !app.isPackaged
 
 // Opt-in in-memory sandbox (see fakeFileSystem.js / preload.js). Detected here
