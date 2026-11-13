@@ -1,3 +1,10 @@
+# [2.15.0](https://github.com/Sawtaytoes/image-viewer/compare/v2.14.1...v2.15.0) (2026-11-13)
+
+
+### Features
+
+* show what a delete removes, with progress and a Stop button ([#55](https://github.com/Sawtaytoes/image-viewer/issues/55)) ([b4540c1](https://github.com/Sawtaytoes/image-viewer/commit/b4540c13b1ccf4f787e7b361f893e4ceebd91f3f))
+
 ## [2.14.1](https://github.com/Sawtaytoes/image-viewer/compare/v2.14.0...v2.14.1) (2026-10-23)
 
 
