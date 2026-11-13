@@ -222,27 +222,49 @@ const scenes = {
     await waitForImagesToSettle(page)
     await page.locator("img").nth(2).click()
 
-    const addColumnButton = page.getByRole("button", {
-      name: "Add column",
-    })
-
-    await addColumnButton.waitFor()
+    await page
+      .getByRole("button", { name: "Add column" })
+      .waitFor()
 
     // The viewer's bar hides itself 3 s after the viewer opens, unless the
     // pointer rests on it. The click above leaves the pointer on the image,
     // so on a slow runner the shot could land after the bar hid (pull request
-    // #56). Rest the pointer on the bar's empty middle, which holds it up and
-    // puts no button into its hover state. `viewer-two-columns` needs none of
-    // this: its last click is on the bar.
-    const addColumnBox = await addColumnButton.boundingBox()
+    // #56). `viewer-two-columns` needs none of this: its last click is on the
+    // bar.
+    //
+    // First move across the top strip, which brings the bar back if it has
+    // already hidden. Then wait until the bar sits fully below the title bar,
+    // and rest the pointer on its empty middle, which holds it up and puts no
+    // button into its hover state.
     const viewport = page.viewportSize()
+    const middleX = (viewport?.width ?? 0) / 2
+    const titleBarHeight = await page.evaluate(
+      () =>
+        Number.parseFloat(
+          getComputedStyle(
+            document.documentElement,
+          ).getPropertyValue("--title-bar-height"),
+        ) || 0,
+    )
 
-    if (addColumnBox && viewport) {
-      await page.mouse.move(
-        viewport.width / 2,
-        addColumnBox.y + addColumnBox.height / 2,
-      )
-    }
+    await page.mouse.move(middleX, titleBarHeight + 4, {
+      steps: 2,
+    })
+
+    const barMiddleY = await page
+      .waitForFunction((barTop) => {
+        const button = document.querySelector(
+          'button[aria-label="Add column"]',
+        )
+        const box = button?.getBoundingClientRect()
+
+        return box && box.top >= barTop
+          ? box.top + box.height / 2
+          : null
+      }, titleBarHeight)
+      .then((handle) => handle.jsonValue())
+
+    await page.mouse.move(middleX, barMiddleY, { steps: 2 })
   },
   "viewer-two-columns": async (page) => {
     await openFolder(page, "Cats")
