@@ -69,6 +69,8 @@ describe(createFileDownloadObservable.name, () => {
     )
 
     expect(first).not.toBe(second)
+    // A token for the page load, so ids differ after a reload too.
+    expect(first).toMatch(/^image-read-[a-z0-9]+-\d+$/)
   })
 
   test("does not cancel a read that already finished", async () => {

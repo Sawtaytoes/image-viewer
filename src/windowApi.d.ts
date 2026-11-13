@@ -155,8 +155,8 @@ declare global {
         // canceled.
         requestId?: string,
       ) => Promise<ImageBytes>
-      // Stops the read named `requestId` because its image is no longer
-      // shown. The read rejects with an `AbortError`. A HEIC decode that no
+      // Stops the read named `requestId` because no view holds its image any
+      // more. The read rejects with an `AbortError`. A HEIC decode that no
       // other window waits for is dropped from main's queue. Does nothing
       // once the read has settled.
       cancelReadImageData: (requestId: string) => void

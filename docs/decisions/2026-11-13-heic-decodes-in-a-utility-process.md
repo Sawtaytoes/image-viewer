@@ -13,8 +13,8 @@
 Decode HEIC and HEIF in an Electron `utilityProcess` (`src/heicDecoding/heicDecodeWorker.ts`),
 never in the main process. Main keeps the queue, the cache, and cancellation
 (`src/heicDecoding/heicDecodeQueue.ts`): one decode at a time, requests for the same file share
-one decode, and a decode that no window waits for any more is dropped, or, when it is running,
-stopped by ending the worker. The output is unchanged: the same `heic-convert` call at JPEG
+one decode, and a decode that no view holds any more (its folder or pane closed, or its window
+closed or reloaded) is dropped, or, when it is running, stopped by ending the worker. The output is unchanged: the same `heic-convert` call at JPEG
 quality 0.92, cached by path and modification time.
 
 ## Context
@@ -31,9 +31,12 @@ froze while a gallery of iPhone photos loaded.
 - **Decoding in the renderer or the preload.** The preload runs in each window's renderer
   process, so a decode there freezes that window's UI instead, and every window would load its
   own copy of libheif.
-- **Letting a running decode finish after its image scrolled away.** It holds the only worker
-  for seconds while the image now on screen waits. Ending the worker costs a restart of under a
-  second, so cancel wins.
+- **Letting a running decode finish after every view released its image.** It holds the only
+  worker for seconds while the image now on screen waits. Ending the worker costs a restart of
+  under a second, so cancel wins.
+- **Canceling when a tile merely scrolls out of view.** That would reverse
+  [[2026-06-04-dont-cancel-in-flight-downloads-on-hide]]: a hidden tile is only demoted, and its
+  started download finishes and fills the shared cache.
 
 ## Why
 
@@ -48,8 +51,10 @@ app down: a crash fails only the image being decoded.
 - The worker is its own Forge build entry in `forge.config.ts`, built to `heicDecodeWorker.js`
   beside `main.js`. Moving or renaming it means changing both.
 - A renderer read passes a `requestId` to `window.api.readImageData` and calls
-  `window.api.cancelReadImageData(requestId)` when the image stops being shown
-  (`createFileDownloadObservable.ts`). Main answers a canceled read with `null`, and the
+  `window.api.cancelReadImageData(requestId)` when the download is torn down, which happens when
+  the last holder releases the image: its folder or pane closed
+  (`createFileDownloadObservable.ts`). The ids carry a per-page-load token, and main gives each
+  call its own queue id, so an id reused after a reload cannot cancel or untrack another read. Main answers a canceled read with `null`, and the
   preload turns that into an `AbortError`, so routine cancels do not fill main's log.
 - A window that closes, reloads, or crashes cancels its own reads.
 

@@ -119,7 +119,7 @@ read `process`. All of that goes through the preload bridge, exposed as **`windo
 | `readDirectory(dir)` | `Promise<[{ fileName, filePath, isDirectory, isFile }]>` |
 | `watchDirectory(dir, onChange)` | `fs.watch` on a folder's direct entries, settled per burst; returns an unsubscribe. The galleries re-read in place on a change (`useFolderListing(path, { isWatchingForChanges: true })`); an open image pane does not |
 | `readImageData(filePath, onProgress?, requestId?)` | `Promise<{ data: ArrayBuffer, mimeType }>` — image bytes for the renderer Blob |
-| `cancelReadImageData(requestId)` | stops that read because its image is no longer shown; it rejects with an `AbortError`, and main drops a HEIC decode nobody else waits for |
+| `cancelReadImageData(requestId)` | stops that read because no view holds its image any more (its folder or pane closed; scrolling out of view does not cancel, per the 2026-06-04 decision); it rejects with an `AbortError`, and main drops a HEIC decode nobody else waits for |
 | `deleteFilePath({ filePath, isDirectory })` | `Promise<boolean>` — trash, then permanent-delete fallback |
 | `deleteItems.{summarize,start,stop}` | the app's delete: `summarize(targets)` counts files, folders and bytes for the confirmation (bounded, so a huge folder says "at least"); `start({ jobId, targets }, onProgress)` runs it with progress and resolves to how each item went; `stop(jobId)` halts what remains. Every delete button goes through `DeleteItemsProvider`'s `requestDelete` ([decision](docs/decisions/2026-11-13-delete-shows-what-it-removes-with-progress-and-a-stop-button.md)) |
 | `createNewWindow({ filePath })` | open another window |

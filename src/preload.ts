@@ -531,7 +531,7 @@ const createCanceledReadError = () => {
 // HEIC/HEIF can't be rendered by Chromium, so hand them to main for a JPEG
 // transcode (queued and cached there by path+mtime). No mid-read progress for
 // these — the WASM decode, not the byte read, is the cost. Aborting tells main
-// the image is no longer shown, so it can drop the decode.
+// no view holds the image any more, so it can drop the decode.
 const readHeicAsJpeg = (
   filePath: string,
   requestId: string | undefined,
@@ -564,7 +564,7 @@ const readHeicAsJpeg = (
 }
 
 // Reads in flight, by the renderer's request id, so `cancelReadImageData` can
-// stop one whose image is no longer shown.
+// stop one whose image no view holds any more.
 const readAbortControllersByRequestId = new Map<
   string,
   AbortController

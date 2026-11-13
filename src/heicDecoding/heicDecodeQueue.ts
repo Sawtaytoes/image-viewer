@@ -11,8 +11,11 @@
 // - Requests for the same file and modification time share one decode.
 // - Decoded JPEGs are cached by path and modification time, with an LRU bound,
 //   so browsing back to a folder does not decode it again.
-// - A request is canceled when its image is no longer shown. A queued decode
-//   that nobody waits for any more is dropped. A running one is stopped by
+// - A request is canceled when no view holds its image any more: its folder
+//   or pane closed, or its window closed or reloaded. Merely scrolling an
+//   image out of view does not cancel it; the renderer only demotes it
+//   (docs/decisions/2026-06-04-dont-cancel-in-flight-downloads-on-hide.md).
+//   A queued decode that nobody waits for any more is dropped. A running one is stopped by
 //   ending the worker process, because a WASM decode cannot be interrupted;
 //   the next decode starts a new worker.
 // - A worker that crashes fails only the image it was decoding.
@@ -263,16 +266,27 @@ export const createHeicDecodeQueue = ({
   }) => {
     let isCanceled = false
 
-    cancelBeforeQueuedByRequestId.set(requestId, () => {
+    const cancelBeforeQueued = () => {
       isCanceled = true
-    })
+    }
+
+    cancelBeforeQueuedByRequestId.set(
+      requestId,
+      cancelBeforeQueued,
+    )
 
     let modifiedTime: number
 
     try {
       modifiedTime = await getModifiedTime(filePath)
     } finally {
-      cancelBeforeQueuedByRequestId.delete(requestId)
+      // Remove only this request's entry: a later request may reuse the id.
+      if (
+        cancelBeforeQueuedByRequestId.get(requestId) ===
+        cancelBeforeQueued
+      ) {
+        cancelBeforeQueuedByRequestId.delete(requestId)
+      }
     }
 
     if (isCanceled) {

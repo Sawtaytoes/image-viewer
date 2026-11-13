@@ -1061,11 +1061,19 @@ const trackHeicRequestsOf = (sender: WebContents) => {
   return requestIds
 }
 
-// Request ids are the renderer's, unique within its window, so the queue's id
-// adds the window. A caller with no id still decodes; it just cannot cancel.
-let nextAnonymousHeicRequestNumber = 1
+// The queue's id for each call is unique, even when a renderer reuses one of
+// its own ids (its counter starts again after a reload, and the window keeps
+// its webContents id). The renderer's id maps to its newest call, so a cancel
+// reaches the read the renderer means. A caller with no id still decodes; it
+// just cannot cancel.
+let nextHeicCallNumber = 1
 
-const toHeicQueueRequestId = (
+const heicQueueRequestIdsByRendererKey = new Map<
+  string,
+  string
+>()
+
+const toHeicRendererKey = (
   sender: WebContents,
   requestId: string,
 ) => `${sender.id}:${requestId}`
@@ -1079,14 +1087,21 @@ ipcMain.handle(
       requestId,
     }: { filePath: string; requestId?: string },
   ) => {
-    const queueRequestId = toHeicQueueRequestId(
-      event.sender,
-      requestId ??
-        `anonymous-${nextAnonymousHeicRequestNumber++}`,
-    )
+    const rendererKey =
+      requestId === undefined
+        ? null
+        : toHeicRendererKey(event.sender, requestId)
+    const queueRequestId = `${event.sender.id}:${requestId ?? "anonymous"}:${nextHeicCallNumber++}`
     const requestIds = trackHeicRequestsOf(event.sender)
 
     requestIds.add(queueRequestId)
+
+    if (rendererKey !== null) {
+      heicQueueRequestIdsByRendererKey.set(
+        rendererKey,
+        queueRequestId,
+      )
+    }
 
     try {
       return await heicDecodeQueue.decode({
@@ -1094,7 +1109,7 @@ ipcMain.handle(
         requestId: queueRequestId,
       })
     } catch (error) {
-      // A canceled read is routine (the image scrolled away), and Electron
+      // A canceled read is routine (its folder or pane closed), and Electron
       // logs every handler that throws. Null tells the preload it was
       // canceled.
       if (
@@ -1107,17 +1122,32 @@ ipcMain.handle(
       throw error
     } finally {
       requestIds.delete(queueRequestId)
+
+      if (
+        rendererKey !== null &&
+        heicQueueRequestIdsByRendererKey.get(
+          rendererKey,
+        ) === queueRequestId
+      ) {
+        heicQueueRequestIdsByRendererKey.delete(rendererKey)
+      }
     }
   },
 )
 
-// The image is no longer shown: drop its decode if nobody else waits for it.
+// No view holds the image any more: drop its decode if nobody else waits
+// for it.
 ipcMain.on(
   "readHeicAsJpeg:cancel",
   (event, requestId: string) => {
-    heicDecodeQueue.cancel(
-      toHeicQueueRequestId(event.sender, requestId),
-    )
+    const queueRequestId =
+      heicQueueRequestIdsByRendererKey.get(
+        toHeicRendererKey(event.sender, requestId),
+      )
+
+    if (queueRequestId !== undefined) {
+      heicDecodeQueue.cancel(queueRequestId)
+    }
   },
 )
 

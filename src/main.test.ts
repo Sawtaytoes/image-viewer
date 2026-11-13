@@ -196,6 +196,7 @@ beforeEach(async () => {
 })
 
 afterEach(() => {
+  vi.restoreAllMocks()
   fs.rmSync(workPath, { force: true, recursive: true })
 })
 
@@ -735,6 +736,73 @@ describe("readHeicAsJpeg", () => {
 
     await expect(reading).resolves.toBeNull()
     expect(workers[0]?.isKilled).toBe(true)
+  })
+
+  test("a read from before a reload cannot untrack a newer read that reuses its id", async () => {
+    const workers = startFakeWorkers()
+    const firstPath = writeFile("first.heic")
+    const secondPath = writeFile("second.heic")
+    const realStat = fs.promises.stat
+    let finishOldStat: () => void = () => {}
+
+    // Hold the old read in its stat until the new read is decoding.
+    vi.spyOn(fs.promises, "stat").mockImplementationOnce(
+      (filePath) =>
+        new Promise((resolve) => {
+          finishOldStat = () => {
+            resolve(realStat(filePath))
+          }
+        }),
+    )
+
+    const oldRead = invoke("readHeicAsJpeg", {
+      filePath: firstPath,
+      requestId: "read-1",
+    })
+
+    // The page reloads: its reads are canceled, and its counter starts again.
+    sender.emit("did-start-navigation", {
+      isMainFrame: true,
+      isSameDocument: false,
+    })
+
+    const newRead = invoke("readHeicAsJpeg", {
+      filePath: secondPath,
+      requestId: "read-1",
+    })
+
+    await waitForRequestCount(workers, 1)
+
+    finishOldStat()
+
+    await expect(oldRead).resolves.toBeNull()
+
+    // The window closes. The newer read must still be tracked, and canceled.
+    sender.isGone = true
+    sender.emit("destroyed")
+
+    await expect(newRead).resolves.toBeNull()
+    expect(workers[0]?.isKilled).toBe(true)
+  })
+
+  test("a cancel reaches the newest read with that id", async () => {
+    const workers = startFakeWorkers()
+    const filePath = writeFile("photo.heic")
+
+    const reading = invoke("readHeicAsJpeg", {
+      filePath,
+      requestId: "read-1",
+    })
+
+    await waitForRequestCount(workers, 1)
+    send("readHeicAsJpeg:cancel", "read-1")
+
+    await expect(reading).resolves.toBeNull()
+
+    // After the read settled, the same id cancels nothing.
+    expect(() => {
+      send("readHeicAsJpeg:cancel", "read-1")
+    }).not.toThrow()
   })
 
   test("rejects a file that does not exist", async () => {

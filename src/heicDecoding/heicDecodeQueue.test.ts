@@ -426,6 +426,49 @@ describe(createHeicDecodeQueue.name, () => {
     expect(fakeWorkers.workers).toHaveLength(0)
   })
 
+  test("a finished stat does not untrack a newer request that reused its id", async () => {
+    const fakeWorkers = createFakeWorkers()
+    const statResolvers: (() => void)[] = []
+    const queue = createHeicDecodeQueue({
+      getModifiedTime: () =>
+        new Promise((resolve) => {
+          statResolvers.push(() => {
+            resolve(1)
+          })
+        }),
+      spawnWorker: fakeWorkers.spawnWorker,
+    })
+
+    const oldRead = queue.decode({
+      filePath: "/photos/a.heic",
+      requestId: "1",
+    })
+
+    queue.cancel("1")
+
+    const newRead = queue.decode({
+      filePath: "/photos/b.heic",
+      requestId: "1",
+    })
+
+    // The old request's stat finishes after the new one registered.
+    statResolvers[0]?.()
+
+    await expect(oldRead).rejects.toMatchObject({
+      name: "AbortError",
+    })
+
+    queue.cancel("1")
+    statResolvers[1]?.()
+
+    await expect(newRead).rejects.toMatchObject({
+      name: "AbortError",
+    })
+    await flushPromises()
+
+    expect(fakeWorkers.workers).toHaveLength(0)
+  })
+
   test("ignores a cancel for a request it does not know", () => {
     const fakeWorkers = createFakeWorkers()
     const queue = createQueue(fakeWorkers)
