@@ -2,10 +2,16 @@ import {
   fireEvent,
   render,
   screen,
+  waitFor,
 } from "@testing-library/react"
 import { describe, expect, test, vi } from "vitest"
 
+import type {
+  DeleteJobResult,
+  DeleteOutcome,
+} from "../../deleting/deleteItems"
 import type { QueuedFolder } from "../../types"
+import DeleteItemsContext from "../deleting/DeleteItemsContext"
 import type { Pane } from "../workspace/WorkspaceContext"
 import WorkspaceContext, {
   defaultWorkspaceContextValue,
@@ -16,18 +22,52 @@ const PANE_ID = "pane-1"
 
 interface RenderPopoverOptions {
   currentFolderId?: string | null
+  deleteOutcome?: DeleteOutcome | null
   panes?: Pane[]
   queuedFolders?: QueuedFolder[]
 }
 
+// What the shared delete dialog resolves to: null for "No", or a result whose
+// one item ended with `outcome`.
+const createDeleteResult = (
+  filePath: string,
+  outcome: DeleteOutcome,
+): DeleteJobResult => ({
+  isStopped: outcome === "notDeleted",
+  items: [
+    {
+      entriesRemoved: 0,
+      entriesTotal: null,
+      errorMessage: null,
+      filePath,
+      isDirectory: true,
+      name: filePath,
+      outcome,
+      trashErrorMessage: null,
+    },
+  ],
+})
+
 const renderPopover = ({
   currentFolderId = null,
+  deleteOutcome = "movedToTrash",
   panes = [],
   queuedFolders = [],
 }: RenderPopoverOptions = {}) => {
+  const requestDelete = vi.fn(
+    (targets: readonly { filePath: string }[]) =>
+      Promise.resolve(
+        deleteOutcome === null
+          ? null
+          : createDeleteResult(
+              targets[0]?.filePath ?? "",
+              deleteOutcome,
+            ),
+      ),
+  )
+
   const actions = {
     assignFolderToPane: vi.fn(),
-    deleteFolder: vi.fn(() => Promise.resolve(true)),
     removeFolder: vi.fn(),
     removePane: vi.fn(),
     setActivePaneId: vi.fn(),
@@ -40,24 +80,31 @@ const renderPopover = ({
     // Spread the real default rather than a bare literal: with the context
     // value fully typed, a partial object no longer typechecks — and the
     // members this menu doesn't touch have working no-op defaults.
-    <WorkspaceContext.Provider
+    <DeleteItemsContext.Provider
       value={{
-        ...defaultWorkspaceContextValue,
-        ...actions,
-        panes,
-        queuedFolders,
+        isDeleteDialogVisible: false,
+        requestDelete,
       }}
     >
-      <FolderPickerPopover
-        currentFolderId={currentFolderId}
-        onClose={onClose}
-        onOpenGallery={onOpenGallery}
-        paneId={PANE_ID}
-      />
-    </WorkspaceContext.Provider>,
+      <WorkspaceContext.Provider
+        value={{
+          ...defaultWorkspaceContextValue,
+          ...actions,
+          panes,
+          queuedFolders,
+        }}
+      >
+        <FolderPickerPopover
+          currentFolderId={currentFolderId}
+          onClose={onClose}
+          onOpenGallery={onOpenGallery}
+          paneId={PANE_ID}
+        />
+      </WorkspaceContext.Provider>
+    </DeleteItemsContext.Provider>,
   )
 
-  return { actions, onClose, onOpenGallery }
+  return { actions, onClose, onOpenGallery, requestDelete }
 }
 
 describe("FolderPickerPopover (per-column menu)", () => {
@@ -173,7 +220,7 @@ describe("FolderPickerPopover (per-column menu)", () => {
   })
 
   test("removes a queued folder from the queue via the ✕ (no confirm, no disk)", () => {
-    const { actions } = renderPopover({
+    const { actions, requestDelete } = renderPopover({
       queuedFolders: [
         { id: "folder-1", name: "Cats", path: "/cats" },
       ],
@@ -187,28 +234,55 @@ describe("FolderPickerPopover (per-column menu)", () => {
       "folder-1",
     )
     // The ✕ is queue-only — it never trashes the folder from disk.
-    expect(actions.deleteFolder).not.toHaveBeenCalled()
+    expect(requestDelete).not.toHaveBeenCalled()
   })
 
-  test("deletes the current column's folder from disk only after the confirm", () => {
-    const { actions } = renderPopover({
+  test("asks the shared delete dialog to delete the current column's folder, then dequeues it", async () => {
+    const { actions, requestDelete } = renderPopover({
       currentFolderId: "folder-1",
       queuedFolders: [
         { id: "folder-1", name: "Cats", path: "/cats" },
       ],
     })
 
-    // The single, deliberate "Delete folder" action arms the confirm; it
-    // doesn't delete on the first click.
+    // The menu only opens the dialog; the dialog asks before anything goes.
     fireEvent.click(screen.getByText("Delete folder"))
-    expect(actions.deleteFolder).not.toHaveBeenCalled()
 
-    // Confirming ("Yes") trashes the folder.
-    fireEvent.click(screen.getByText("Yes"))
+    expect(requestDelete).toHaveBeenCalledWith([
+      { filePath: "/cats", isDirectory: true },
+    ])
 
-    expect(actions.deleteFolder).toHaveBeenCalledWith(
-      "folder-1",
-    )
+    await waitFor(() => {
+      expect(actions.removeFolder).toHaveBeenCalledWith(
+        "folder-1",
+      )
+    })
+  })
+
+  test.each<DeleteOutcome | null>([
+    null,
+    "notDeleted",
+    "partlyDeleted",
+    "failed",
+  ])("keeps the folder queued when the delete ends as %s", async (deleteOutcome) => {
+    const { actions, requestDelete } = renderPopover({
+      currentFolderId: "folder-1",
+      deleteOutcome,
+      queuedFolders: [
+        { id: "folder-1", name: "Cats", path: "/cats" },
+      ],
+    })
+
+    fireEvent.click(screen.getByText("Delete folder"))
+
+    await waitFor(() => {
+      expect(requestDelete).toHaveBeenCalled()
+    })
+
+    // The folder is still on disk, so it must stay in the queue.
+    await Promise.resolve()
+
+    expect(actions.removeFolder).not.toHaveBeenCalled()
   })
 
   test("offers no folder-delete action when the column has no folder loaded", () => {

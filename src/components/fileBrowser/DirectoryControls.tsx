@@ -5,9 +5,10 @@ import {
   useCallback,
   useContext,
   useMemo,
-  useState,
 } from "react"
 
+import { isTargetRemoved } from "../../deleting/deleteItems"
+import DeleteItemsContext from "../deleting/DeleteItemsContext"
 import ArrowUpwardIcon from "../icons/ArrowUpwardIcon"
 import DeleteForeverIcon from "../icons/DeleteForeverIcon"
 import SortIcon from "../icons/SortIcon"
@@ -16,7 +17,6 @@ import {
   getFolderSortOrder,
   isSortOrder,
 } from "../settings/sortOrders"
-import DeleteFileModal from "../toolkit/DeleteFileModal"
 import FileSystemContext from "./FileSystemContext"
 import MultiSelectContext from "./MultiSelectContext"
 import SortOrderPicker from "./SortOrderPicker"
@@ -113,25 +113,20 @@ const DirectoryControls = () => {
     [filePath],
   )
 
-  const [
-    isDeleteFileModalVisible,
-    setIsDeleteFileModalVisible,
-  ] = useState(false)
+  const { requestDelete } = useContext(DeleteItemsContext)
 
-  const closeDeleteFileModal = useCallback(() => {
-    setIsDeleteFileModalVisible(false)
-  }, [])
-
-  const openDeleteFileModal = useCallback(() => {
-    setIsDeleteFileModalVisible(true)
-  }, [])
-
+  // Delete the folder this toolbar is showing, through the shared dialog. Only
+  // a folder that is fully gone sends the browser up a level: after a Stop,
+  // or a failure, the folder is still there, so the browser stays in it.
   const deleteFolder = useCallback(() => {
-    window.api
-      .deleteFilePath({ filePath, isDirectory: true })
-      .then(navigateUpFolderTree)
-      .then(closeDeleteFileModal)
-  }, [closeDeleteFileModal, filePath, navigateUpFolderTree])
+    requestDelete([{ filePath, isDirectory: true }]).then(
+      (result) => {
+        if (result && isTargetRemoved(result, filePath)) {
+          navigateUpFolderTree()
+        }
+      },
+    )
+  }, [filePath, navigateUpFolderTree, requestDelete])
 
   return (
     <div className="flex items-center">
@@ -221,19 +216,13 @@ const DirectoryControls = () => {
             appearance="ghost"
             intent="danger"
             label="Delete this folder"
-            onClick={openDeleteFileModal}
+            onClick={deleteFolder}
             size="sm"
           >
             <DeleteForeverIcon />
           </IconButton>
         </Tooltip>
       )}
-
-      <DeleteFileModal
-        isVisible={isDeleteFileModalVisible}
-        onClose={closeDeleteFileModal}
-        onConfirm={deleteFolder}
-      />
     </div>
   )
 }

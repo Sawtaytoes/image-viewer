@@ -30,6 +30,10 @@ from the original `TASKS.md` or the kickoff conversation is lost.
    Live in the **file browser** and (branch `feat/viewer-delete`) the **image viewer**: `[Delete]` on the
    active column trashes the current image, advances to the next (or reverts the column to empty when it
    was the folder's last image); the legacy single-image view deletes and drops back to the gallery.
+   **2026-11-13:** the `ConfirmationModal` is gone. Every delete goes through one dialog
+   (`src/components/deleting/`) that names each item with its file and folder counts and size,
+   shows progress with a Stop button, and reports how each item went
+   ([decision](decisions/2026-11-13-delete-shows-what-it-removes-with-progress-and-a-stop-button.md)).
 5. **Full TypeScript conversion** of `src/**` — ✅ **the renderer is done** (M6c, 2026-07-31;
    [decision](decisions/2026-07-31-the-renderer-is-typescript.md)). `allowJs` is off, so a `.js`
    under `src/` is now a hard error. **Still open:** `src/main.js` and `src/preload.js`, the two
@@ -63,7 +67,7 @@ from the original `TASKS.md` or the kickoff conversation is lost.
 - Hover/click highlight on controls, images, and folders.
 - Folder-delete confirmation modal with `[Enter]`=yes; un-hide the folder delete icon.
 - Handle inaccessible/disconnected drives gracefully; loading indicator for slow directory listings.
-- Show `filePath` as the window title; show which file/folder is being deleted; rename "Directory"→"Folder".
+- Show `filePath` as the window title; ~~show which file/folder is being deleted~~ (✅ 2026-11-13); rename "Directory"→"Folder".
 
 ### Image viewer
 - Zoom with mouse-wheel and pinch (changes center-click behaviour).

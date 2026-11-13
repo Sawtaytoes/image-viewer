@@ -635,37 +635,6 @@ const WorkspaceProvider = ({
     window.api.queue.remove(folderId)
   }, [])
 
-  // Trash the folder from disk (OS recycle bin) and, on success, drop it from
-  // the queue + sever any panes on it + auto-load the next ready folder — the
-  // same cleanup as remove-from-queue, but only after the file op resolves so a
-  // failed delete leaves the queue untouched. Distinct from `removeFolder` (the
-  // ✕), which only touches renderer state.
-  const deleteFolder = useCallback(
-    (folderId: string): Promise<boolean> => {
-      const folder = workspace.queuedFolders.find(
-        (queuedFolder) => queuedFolder.id === folderId,
-      )
-
-      if (!folder) {
-        return Promise.resolve(false)
-      }
-
-      return window.api
-        .deleteFilePath({
-          filePath: folder.path,
-          isDirectory: true,
-        })
-        .then((isDeleted) => {
-          if (isDeleted) {
-            removeFolder(folderId)
-          }
-
-          return isDeleted
-        })
-    },
-    [removeFolder, workspace.queuedFolders],
-  )
-
   // Empty the whole shared queue at once and notify main. As with `removeFolder`,
   // the pane-reconciliation effect severs every pane that referenced a queued
   // folder (panes revert to the empty `+` state rather than vanishing) in every
@@ -920,7 +889,6 @@ const WorkspaceProvider = ({
         clearPanes,
         clearQueue,
         clearSavedQueue,
-        deleteFolder,
         hasSavedQueue,
         isChromeRevealSuppressed,
         loadQueue,
@@ -943,7 +911,6 @@ const WorkspaceProvider = ({
         clearPanes,
         clearQueue,
         clearSavedQueue,
-        deleteFolder,
         hasSavedQueue,
         isChromeRevealSuppressed,
         loadQueue,

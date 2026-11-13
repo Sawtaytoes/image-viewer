@@ -1,5 +1,8 @@
 import { renderHook } from "@testing-library/react"
+import { createElement, type ReactNode } from "react"
 import { describe, expect, test, vi } from "vitest"
+
+import DeleteItemsContext from "../deleting/DeleteItemsContext"
 import type { UseViewerKeyboardOptions } from "./useViewerKeyboard"
 import useViewerKeyboard from "./useViewerKeyboard"
 
@@ -47,6 +50,35 @@ describe("useViewerKeyboard", () => {
     expect(onDelete).not.toHaveBeenCalled()
     expect(onClose).not.toHaveBeenCalled()
     expect(goToNextImage).not.toHaveBeenCalled()
+  })
+
+  test("stands down while the delete dialog is up, so its keys never leave the viewer", () => {
+    const handlers = {
+      goToNextImage: vi.fn(),
+      goToPreviousImage: vi.fn(),
+      isEnabled: true,
+      onClose: vi.fn(),
+    }
+
+    renderHook(() => useViewerKeyboard(handlers), {
+      wrapper: ({ children }: { children: ReactNode }) =>
+        createElement(
+          DeleteItemsContext.Provider,
+          {
+            value: {
+              isDeleteDialogVisible: true,
+              requestDelete: () => Promise.resolve(null),
+            },
+          },
+          children,
+        ),
+    })
+
+    pressKey("Enter")
+    pressKey("Backspace")
+    pressKey("Escape")
+
+    expect(handlers.onClose).not.toHaveBeenCalled()
   })
 
   test("treats [Delete] as a no-op when no onDelete is supplied", () => {

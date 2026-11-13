@@ -11,6 +11,14 @@ import {
 } from "electron"
 import started from "electron-squirrel-startup"
 
+import {
+  runDeleteJob,
+  summarizeDeleteTargets,
+} from "./deleting/deleteItems"
+import {
+  nodeDeleteFileSystem,
+  toSafeDeleteTargets,
+} from "./deleting/nodeDeleteFileSystem"
 import getDriveRoots from "./driveRoots"
 import normalizeSavedQueue from "./savedQueue"
 
@@ -37,6 +45,23 @@ const isDevelopment = !app.isPackaged
 const isFakeFileSystem = Boolean(
   process.env.IMAGE_VIEWER_FAKE_FS,
 )
+
+// Two knobs for the fake filesystem's delete, so the progress dialog can be
+// seen and screenshotted: a pause per removed entry (the fake tree otherwise
+// deletes within one tick), and a trash that always refuses, which sends every
+// item down the permanent-delete path as a network share would.
+const fakeDeleteArguments = isFakeFileSystem
+  ? [
+      ...(process.env.IMAGE_VIEWER_FAKE_DELETE_DELAY_MS
+        ? [
+            `--fakeDeleteDelayMs=${process.env.IMAGE_VIEWER_FAKE_DELETE_DELAY_MS}`,
+          ]
+        : []),
+      ...(process.env.IMAGE_VIEWER_FAKE_TRASH_UNAVAILABLE
+        ? ["--fakeTrashUnavailable"]
+        : []),
+    ]
+  : []
 
 // In development, load key=value pairs from the project-root `.env` into
 // process.env (without overriding anything already set). Production reads real
@@ -211,6 +236,7 @@ const createWindow = ({
         ...(filePath ? [`--filePath=${filePath}`] : []),
         ...(spawnedViewer ? ["--spawnedViewer"] : []),
         ...(isFakeFileSystem ? ["--fakeFs"] : []),
+        ...fakeDeleteArguments,
       ],
       contextIsolation: true,
       nodeIntegration: false,
@@ -757,31 +783,134 @@ ipcMain.on("identify-display:hide", () => {
   destroyIdentifyOverlay()
 })
 
-// Delete a file or folder: send to the OS trash, falling back to a permanent
-// delete only if trashing fails. `shell.moveItemToTrash` was removed in
-// Electron 13 — `shell.trashItem` is the replacement. See docs/research/0002.
+// Delete files and folders: each goes to the OS trash, and falls back to a
+// permanent delete when the trash refuses it (a network share, a full Recycle
+// Bin). The fallback is intentional and asks no second question. See
+// docs/decisions/2026-11-13-delete-shows-what-it-removes-with-progress-and-a-stop-button.md.
+//
+// `shell.moveItemToTrash` was removed in Electron 13; `shell.trashItem` is the
+// replacement. The work lives in `src/deleting/deleteItems.ts`, which removes
+// one entry at a time with promises, so this process never blocks on a large
+// folder and the renderer gets progress as it goes.
+const trashItem = (filePath) => shell.trashItem(filePath)
+
+// Running delete jobs, by the id the renderer chose, so Stop can find them.
+const deleteJobAbortControllersById = new Map()
+
+ipcMain.handle("delete:summarize", (_event, targets) =>
+  summarizeDeleteTargets({
+    fileSystem: nodeDeleteFileSystem,
+    targets: toSafeDeleteTargets(targets),
+  }),
+)
+
+ipcMain.handle(
+  "delete:start",
+  async (event, { jobId, targets }) => {
+    const safeTargets = toSafeDeleteTargets(targets)
+    const abortController = new AbortController()
+    const sender = event.sender
+
+    // A window that closes, reloads ([Ctrl][R]), or crashes mid-delete loses
+    // its dialog, so nothing could show progress or offer Stop any more. Its
+    // delete stops after the current entry. A hash-route change is a
+    // same-document navigation and keeps the page, so it does not stop it.
+    const stopWhenWindowCloses = () => {
+      abortController.abort()
+    }
+
+    const stopWhenPageIsReplaced = (details) => {
+      if (details?.isMainFrame && !details.isSameDocument) {
+        abortController.abort()
+      }
+    }
+
+    deleteJobAbortControllersById.set(
+      jobId,
+      abortController,
+    )
+
+    sender.once("destroyed", stopWhenWindowCloses)
+    sender.on("render-process-gone", stopWhenWindowCloses)
+    sender.on(
+      "did-start-navigation",
+      stopWhenPageIsReplaced,
+    )
+
+    try {
+      return await runDeleteJob({
+        fileSystem: nodeDeleteFileSystem,
+        onProgress: (progress) => {
+          if (!sender.isDestroyed()) {
+            sender.send("delete:progress", jobId, progress)
+          }
+        },
+        signal: abortController.signal,
+        targets: safeTargets,
+        trashItem,
+      })
+    } finally {
+      deleteJobAbortControllersById.delete(jobId)
+
+      if (!sender.isDestroyed()) {
+        sender.removeListener(
+          "destroyed",
+          stopWhenWindowCloses,
+        )
+        sender.removeListener(
+          "render-process-gone",
+          stopWhenWindowCloses,
+        )
+        sender.removeListener(
+          "did-start-navigation",
+          stopWhenPageIsReplaced,
+        )
+      }
+    }
+  },
+)
+
+ipcMain.on("delete:stop", (_event, jobId) => {
+  deleteJobAbortControllersById.get(jobId)?.abort()
+})
+
+// The original single-item channel, kept for its contract: trash, then the
+// permanent fallback, resolving to whether the item is gone. The app's own
+// delete buttons use the `delete:*` channels above for progress and Stop.
 ipcMain.handle(
   "deleteFilePath",
-  async (_event, { filePath }) => {
+  async (_event, { filePath, isDirectory }) => {
     try {
-      await shell.trashItem(filePath)
-      return true
-    } catch (trashError) {
-      try {
-        await fs.promises.rm(filePath, {
-          force: true,
-          recursive: true,
-        })
-        return true
-      } catch (removeError) {
+      const { items } = await runDeleteJob({
+        fileSystem: nodeDeleteFileSystem,
+        signal: new AbortController().signal,
+        targets: toSafeDeleteTargets([
+          { filePath, isDirectory },
+        ]),
+        trashItem,
+      })
+
+      const [item] = items
+
+      if (
+        item.outcome !== "movedToTrash" &&
+        item.outcome !== "deletedPermanently"
+      ) {
         console.error(
           "Failed to delete",
           filePath,
-          trashError,
-          removeError,
+          item.trashErrorMessage,
+          item.errorMessage,
         )
+
         return false
       }
+
+      return true
+    } catch (error) {
+      console.error("Failed to delete", filePath, error)
+
+      return false
     }
   },
 )

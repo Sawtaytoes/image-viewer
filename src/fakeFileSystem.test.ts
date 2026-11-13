@@ -245,3 +245,107 @@ describe("createFakeFileSystem", () => {
     ).toBe(false)
   })
 })
+
+describe("deleteItems over the fake tree", () => {
+  const landscapesPath = path.join(rootPath, "Landscapes")
+
+  test("counts a folder's images, subfolders, and BMP bytes", async () => {
+    const fakeFileSystem = createFakeFileSystem({ path })
+
+    const summary =
+      await fakeFileSystem.deleteItems.summarize([
+        { filePath: landscapesPath, isDirectory: true },
+      ])
+
+    // Landscapes holds 7 images and a Mountains subfolder of 5.
+    expect(summary).toMatchObject({
+      fileCount: 12,
+      folderCount: 1,
+      isComplete: true,
+    })
+    expect(summary.totalBytes).toBeGreaterThan(0)
+  })
+
+  test("moves a folder to the fake trash whole", async () => {
+    const fakeFileSystem = createFakeFileSystem({ path })
+
+    const result = await fakeFileSystem.deleteItems.start(
+      {
+        jobId: "job-1",
+        targets: [
+          { filePath: landscapesPath, isDirectory: true },
+        ],
+      },
+      () => {},
+    )
+
+    expect(result.items[0]?.outcome).toBe("movedToTrash")
+    expect(
+      fakeFileSystem.statPath(landscapesPath).exists,
+    ).toBe(false)
+  })
+
+  test("with the trash unavailable, deletes permanently, entry by entry", async () => {
+    const fakeFileSystem = createFakeFileSystem({
+      isTrashUnavailable: true,
+      path,
+    })
+
+    const phases: string[] = []
+
+    const result = await fakeFileSystem.deleteItems.start(
+      {
+        jobId: "job-1",
+        targets: [
+          { filePath: landscapesPath, isDirectory: true },
+        ],
+      },
+      ({ phase }) => {
+        phases.push(phase)
+      },
+    )
+
+    expect(result.items[0]).toMatchObject({
+      entriesRemoved: 14,
+      entriesTotal: 14,
+      outcome: "deletedPermanently",
+      trashErrorMessage:
+        "The trash is not available for this location.",
+    })
+    expect(phases).toContain("removing")
+    expect(
+      fakeFileSystem.statPath(landscapesPath).exists,
+    ).toBe(false)
+  })
+
+  test("Stop before the permanent delete begins leaves the folder whole", async () => {
+    const fakeFileSystem = createFakeFileSystem({
+      isTrashUnavailable: true,
+      path,
+    })
+
+    const result = await fakeFileSystem.deleteItems.start(
+      {
+        jobId: "job-1",
+        targets: [
+          { filePath: landscapesPath, isDirectory: true },
+        ],
+      },
+      ({ phase }) => {
+        if (phase === "listing") {
+          fakeFileSystem.deleteItems.stop("job-1")
+        }
+      },
+    )
+
+    expect(result).toMatchObject({
+      isStopped: true,
+      items: [
+        expect.objectContaining({ outcome: "notDeleted" }),
+      ],
+    })
+    expect(
+      await fakeFileSystem.readDirectory(landscapesPath),
+    ).toHaveLength(8)
+  })
+})

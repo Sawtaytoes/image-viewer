@@ -3,6 +3,7 @@
 // is checked without a cast. The shapes mirror `src/preload.js`; the domain
 // payloads live in `src/types.ts`.
 
+import type { DeleteItemsApi } from "./deleting/deleteItems"
 import type {
   DirectoryEntry,
   Display,
@@ -109,11 +110,16 @@ declare global {
         // window's columns and every queued folder's last-viewed image.
         save: (layout: SavedQueueLayout) => Promise<boolean>
       }
-      // Trash a file or folder (resolves to whether it was removed).
+      // Trash a file or folder, or delete it permanently when the trash
+      // refuses it (resolves to whether it was removed). The app's own delete
+      // buttons use `deleteItems`, which reports progress and can stop.
       deleteFilePath: (payload: {
         filePath: string
         isDirectory?: boolean
       }) => Promise<boolean>
+      // Count what a delete would remove, run it with progress, and stop it.
+      // See `src/deleting/deleteItems.ts`.
+      deleteItems: DeleteItemsApi
       // The first image anywhere under `folderPath` (breadth-first), or null
       // when the folder holds no images at any depth — i.e. isn't a gallery.
       // Doubles as a folder's thumbnail source.

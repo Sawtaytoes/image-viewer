@@ -1,5 +1,6 @@
 # docs/decisions — the locked-decisions paper trail
 
+- [2026-11-13 — Delete shows what it removes, with progress and a Stop button](2026-11-13-delete-shows-what-it-removes-with-progress-and-a-stop-button.md)
 - [2026-10-17 — The app icon is the red photo stack](2026-10-17-the-app-icon-is-the-red-photo-stack.md)
 - [2026-10-14 — Linux and macOS builds ship, and the Mac build is unsigned](2026-10-14-linux-and-macos-builds-ship-and-the-mac-build-is-unsigned.md)
 - [2026-10-06 — pnpm replaces Yarn](2026-10-06-pnpm-replaces-yarn.md)
@@ -165,3 +166,7 @@ to apply here); everything else is sourced from Image Viewer's own chats, commit
 ### 2026-10-14 — Linux and macOS
 
 - [2026-10-14 — Linux and macOS builds ship, and the Mac build is unsigned](2026-10-14-linux-and-macos-builds-ship-and-the-mac-build-is-unsigned.md) ← **every release adds `.deb`, `.rpm` and ZIP for Linux x64/arm64 and ZIPs for macOS arm64/x64; the home screen lists `/`, home and mounted volumes off Windows (`src/driveRoots.ts`), and the title bar's window-button gutter moves to the left on macOS**
+
+### 2026-11-13 — Delete feedback
+
+- [2026-11-13 — Delete shows what it removes, with progress and a Stop button](2026-11-13-delete-shows-what-it-removes-with-progress-and-a-stop-button.md) ← **the permanent fallback stays, with no second question; the confirmation names each item with counts and size, the delete shows progress and a Stop button, and the report says how each item went**

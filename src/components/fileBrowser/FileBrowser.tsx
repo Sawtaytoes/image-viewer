@@ -20,12 +20,14 @@ import {
   useState,
 } from "react"
 
+import type { DeleteTarget } from "../../deleting/deleteItems"
 import type {
   FolderMatch,
   ImageFile as ImageFileEntry,
 } from "../../types"
 import FullScreenContext from "../convenience/FullScreenContext"
 import useKeyboardControls from "../convenience/useKeyboardControls"
+import DeleteItemsContext from "../deleting/DeleteItemsContext"
 import CloseIcon from "../icons/CloseIcon"
 import DeleteForeverIcon from "../icons/DeleteForeverIcon"
 import PlayArrowIcon from "../icons/PlayArrowIcon"
@@ -36,7 +38,6 @@ import {
   getFolderSortOrder,
   sortOrders,
 } from "../settings/sortOrders"
-import DeleteFileModal from "../toolkit/DeleteFileModal"
 import FolderTabStrip from "../workspace/FolderTabStrip"
 import WorkspaceContext from "../workspace/WorkspaceContext"
 import DateGroupedGrid, {
@@ -90,25 +91,15 @@ const initialSelectedFolderPaths: ReadonlySet<string> =
 
 const initialSubfolderResults: FolderMatch[] = []
 
-interface DeleteTarget {
-  filePath: string
-  isDirectory: boolean
-}
-
 const FileBrowser = () => {
   const animationFrameIdRef = useRef<number | null>(null)
   const virtualizedListContainerRef =
     useRef<HTMLDivElement>(null)
 
-  // Capture the paths when the confirmation opens. The browser has two kinds
-  // of selection: the keyboard's single `selectedIndex`, and the folder paths
-  // chosen by press-and-hold. A modal that derives its target later from only
-  // `selectedIndex` cannot represent the held-folder selection at all.
-  const [deleteTargets, setDeleteTargets] = useState<
-    readonly DeleteTarget[]
-  >([])
-
-  const isDeleteFileModalVisible = deleteTargets.length > 0
+  // The delete dialog lives in `DeleteItemsProvider`. While it is up, its keys
+  // belong to it, so this browser's keyboard stands down.
+  const { isDeleteDialogVisible, requestDelete } =
+    useContext(DeleteItemsContext)
 
   const [isMultiSelectMode, setIsMultiSelectMode] =
     useState(false)
@@ -372,35 +363,6 @@ const FileBrowser = () => {
     [],
   )
 
-  const closeDeleteFileModal = useCallback(() => {
-    setDeleteTargets([])
-  }, [])
-
-  const openSelectedItemDeleteModal = useCallback(() => {
-    const numberOfDirectories = directories.length
-    const isDirectory = selectedIndex < numberOfDirectories
-    const selectedItem = isDirectory
-      ? directories[selectedIndex]
-      : imageFiles[selectedIndex - numberOfDirectories]
-
-    if (!selectedItem) {
-      return
-    }
-
-    setDeleteTargets([
-      { filePath: selectedItem.path, isDirectory },
-    ])
-  }, [directories, imageFiles, selectedIndex])
-
-  const openSelectedFoldersDeleteModal = useCallback(() => {
-    setDeleteTargets(
-      [...selectedFolderPaths].map((folderPath) => ({
-        filePath: folderPath,
-        isDirectory: true,
-      })),
-    )
-  }, [selectedFolderPaths])
-
   const enterMultiSelect = useCallback(() => {
     setIsMultiSelectMode(true)
   }, [])
@@ -482,28 +444,63 @@ const FileBrowser = () => {
     selectedFolderPaths,
   ])
 
-  const deleteFileOrFolder = useCallback(() => {
-    Promise.all(
-      deleteTargets.map((target) =>
-        window.api.deleteFilePath(target),
-      ),
-    )
-      .then(() => {
+  // Every delete from this browser goes through the shared dialog, which
+  // asks, shows progress, and reports. Once the delete ends, whatever it
+  // removed, the selection is cleared and the listing is read again, while the
+  // report is still up.
+  const deleteTargets = useCallback(
+    (targets: readonly DeleteTarget[]) => {
+      requestDelete(targets).then((result) => {
+        if (!result) {
+          return
+        }
+
         clearMultiSelect()
 
         setFilePath("")
+
+        Promise.resolve().then(() => {
+          setFilePath(filePath)
+        })
       })
-      .then(() => {
-        setFilePath(filePath)
-      })
-      .then(closeDeleteFileModal)
+    },
+    [
+      clearMultiSelect,
+      filePath,
+      requestDelete,
+      setFilePath,
+    ],
+  )
+
+  const openSelectedItemDeleteModal = useCallback(() => {
+    const numberOfDirectories = directories.length
+    const isDirectory = selectedIndex < numberOfDirectories
+    const selectedItem = isDirectory
+      ? directories[selectedIndex]
+      : imageFiles[selectedIndex - numberOfDirectories]
+
+    if (!selectedItem) {
+      return
+    }
+
+    deleteTargets([
+      { filePath: selectedItem.path, isDirectory },
+    ])
   }, [
-    closeDeleteFileModal,
-    clearMultiSelect,
     deleteTargets,
-    filePath,
-    setFilePath,
+    directories,
+    imageFiles,
+    selectedIndex,
   ])
+
+  const openSelectedFoldersDeleteModal = useCallback(() => {
+    deleteTargets(
+      [...selectedFolderPaths].map((folderPath) => ({
+        filePath: folderPath,
+        isDirectory: true,
+      })),
+    )
+  }, [deleteTargets, selectedFolderPaths])
 
   // This folder pane holds every image it lists, so a path stays cached while
   // the folder is open and only becomes eligible for eviction once released.
@@ -583,7 +580,7 @@ const FileBrowser = () => {
   ])
 
   useKeyboardControls((event) => {
-    if (isDeleteFileModalVisible) {
+    if (isDeleteDialogVisible) {
       return
     }
 
@@ -930,52 +927,51 @@ const FileBrowser = () => {
             </VirtualizedList>
           )}
         </div>
-
-        <DeleteFileModal
-          isVisible={isDeleteFileModalVisible}
-          onClose={closeDeleteFileModal}
-          onConfirm={deleteFileOrFolder}
-        />
       </div>
 
-      {isMultiSelectMode && selectedCount > 0 && (
-        <ul className={multiSelectBarClassName}>
-          <Toast
-            // `0` disables the auto-dismiss timer. Everything else `Toast` does
-            // is what this bar hand-rolled — bottom-centred, elevated, an enter
-            // transition (`animate-action-bar-in`, now the component's own) —
-            // but a selection is not a notification with a deadline, and a bar
-            // that vanished after five seconds mid-selection would be a bug.
-            duration={0}
-            intent="accent"
-            // The ✕ **is** Cancel. Keeping a separate "Cancel" button beside a
-            // dismiss control that does the identical thing is two affordances
-            // for one action; `data-density="kiosk"` (this same phase) sizes the
-            // ✕ to the 44px touch target the old button was reaching for by
-            // hand.
-            onRemove={clearMultiSelect}
-            title={`${selectedCount} folders selected`}
-          >
-            <Button
-              iconStart={<DeleteForeverIcon />}
-              intent="danger"
-              onClick={openSelectedFoldersDeleteModal}
-              size="lg"
+      {/* The bar stands down while the delete dialog is up. It draws above
+          the dialog's scrim, so it would otherwise stay clickable, and "Open"
+          could queue folders the delete is removing. */}
+      {isMultiSelectMode &&
+        selectedCount > 0 &&
+        !isDeleteDialogVisible && (
+          <ul className={multiSelectBarClassName}>
+            <Toast
+              // `0` disables the auto-dismiss timer. Everything else `Toast` does
+              // is what this bar hand-rolled — bottom-centred, elevated, an enter
+              // transition (`animate-action-bar-in`, now the component's own) —
+              // but a selection is not a notification with a deadline, and a bar
+              // that vanished after five seconds mid-selection would be a bug.
+              duration={0}
+              intent="accent"
+              // The ✕ **is** Cancel. Keeping a separate "Cancel" button beside a
+              // dismiss control that does the identical thing is two affordances
+              // for one action; `data-density="kiosk"` (this same phase) sizes the
+              // ✕ to the 44px touch target the old button was reaching for by
+              // hand.
+              onRemove={clearMultiSelect}
+              title={`${selectedCount} folders selected`}
             >
-              Delete selected
-            </Button>
+              <Button
+                iconStart={<DeleteForeverIcon />}
+                intent="danger"
+                onClick={openSelectedFoldersDeleteModal}
+                size="lg"
+              >
+                Delete selected
+              </Button>
 
-            <Button
-              iconStart={<PlayArrowIcon />}
-              intent="success"
-              onClick={openSelectedFolders}
-              size="lg"
-            >
-              Open {selectedCount} folders
-            </Button>
-          </Toast>
-        </ul>
-      )}
+              <Button
+                iconStart={<PlayArrowIcon />}
+                intent="success"
+                onClick={openSelectedFolders}
+                size="lg"
+              >
+                Open {selectedCount} folders
+              </Button>
+            </Toast>
+          </ul>
+        )}
     </MultiSelectContext.Provider>
   )
 }
