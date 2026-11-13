@@ -1,4 +1,4 @@
-// Browser-only assembly of the `window.api` bridge that `preload.js` provides
+// Browser-only assembly of the `window.api` bridge that `preload.ts` provides
 // under Electron. This lets the renderer run in a plain browser — for the T3
 // Code preview or Playwright — backed by the in-memory fake filesystem
 // (`fakeFileSystem.ts`) plus simulated window controls. It is loaded ONLY by

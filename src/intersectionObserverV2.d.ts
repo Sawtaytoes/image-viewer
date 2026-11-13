@@ -11,7 +11,7 @@
 // `trackVisibility` to a `IntersectionObserverInit` that has no such member is
 // then a type error rather than a silently-ignored option.
 //
-// It lives here, beside `preload.d.ts`, rather than at the top of the component
+// It lives here, beside `windowApi.d.ts`, rather than at the top of the component
 // that needs it: `declare global` inside a module is legal and reaches the whole
 // program, which means a global augmentation would have been sitting in a file
 // whose name gives no hint that it changes the DOM types everywhere.

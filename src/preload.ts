@@ -2,10 +2,19 @@ import fs from "node:fs"
 import path from "node:path"
 import { contextBridge, ipcRenderer } from "electron"
 
+import type { DeleteItemsApi } from "./deleting/deleteItems"
 import { createFakeFileSystem } from "./fakeFileSystem"
 import getImageMimeType, {
   imageMimeTypesByExtension,
 } from "./imageMimeTypes"
+import type {
+  FolderMatch,
+  ImageBytes,
+  ImageFile,
+  PathStat,
+  QueuedFolder,
+  SavedQueue,
+} from "./types"
 
 // This preload runs with Node access (sandbox:false) while the renderer does
 // not. It exposes a single curated, serializable `window.api` so renderer code
@@ -52,9 +61,13 @@ const fakeFileSystem = isFakeFileSystem
 // Delete with progress and Stop, over main's `delete:*` channels. Progress for
 // every job arrives on one channel, so each `start` listens for its own job id
 // and stops listening when the job ends.
-const diskDeleteItems = {
+const diskDeleteItems: DeleteItemsApi = {
   start: ({ jobId, targets }, onProgress) => {
-    const listener = (_event, progressJobId, progress) => {
+    const listener = (
+      _event: Electron.IpcRendererEvent,
+      progressJobId: string,
+      progress: Parameters<typeof onProgress>[0],
+    ) => {
       if (progressJobId === jobId) {
         onProgress(progress)
       }
@@ -89,7 +102,7 @@ const cliFilePath = fakeFileSystem
 
 // Synchronous stat used at renderer module-load time to decide whether a launch
 // path is a file or a directory. Returns a plain object (no fs.Stats leaks).
-const statPath = (targetPath) => {
+const statPath = (targetPath: string): PathStat => {
   try {
     const stats = fs.lstatSync(targetPath)
 
@@ -120,9 +133,9 @@ const statPath = (targetPath) => {
 // listing resolves from the single `readdir`. An unreadable entry (permission,
 // broken symlink) keeps `modifiedTime: 0` so it sorts last rather than failing
 // the whole listing.
-const readDirectory = (
+const readDirectory: Window["api"]["readDirectory"] = (
   directoryPath,
-  { withModifiedTime = false } = {},
+  { withModifiedTime: isModifiedTimeIncluded = false } = {},
 ) =>
   fs.promises
     .readdir(directoryPath, { withFileTypes: true })
@@ -136,7 +149,7 @@ const readDirectory = (
 
           let modifiedTime = 0
 
-          if (withModifiedTime) {
+          if (isModifiedTimeIncluded) {
             try {
               modifiedTime = (
                 await fs.promises.stat(filePath)
@@ -167,9 +180,12 @@ const readDirectory = (
 // failing the listing. Returns an unsubscribe.
 const directoryChangeSettleMs = 300
 
-const watchDirectory = (directoryPath, onChange) => {
-  let watcher
-  let settleTimer
+const watchDirectory = (
+  directoryPath: string,
+  onChange: () => void,
+) => {
+  let watcher: fs.FSWatcher | undefined
+  let settleTimer: NodeJS.Timeout | undefined
 
   const close = () => {
     clearTimeout(settleTimer)
@@ -224,20 +240,22 @@ const maxDirectoriesScanned = 600
 // be queued. Bailing on the first hit keeps shallow, image-rich folders cheap;
 // the cap bounds the pathological case. Far lighter than `readDirectory`, which
 // stats every entry — this only reads names and stops early.
-const findFirstImage = async (folderPath) => {
+const findFirstImage = async (
+  folderPath: string,
+): Promise<ImageFile | null> => {
   const queue = [folderPath]
 
   let scanned = 0
 
-  while (
-    queue.length > 0 &&
-    scanned < maxDirectoriesScanned
+  for (
+    let currentPath = queue.shift();
+    currentPath !== undefined &&
+    scanned < maxDirectoriesScanned;
+    currentPath = queue.shift()
   ) {
-    const currentPath = queue.shift()
-
     scanned += 1
 
-    let entries
+    let entries: fs.Dirent[]
 
     try {
       entries = await fs.promises.readdir(currentPath, {
@@ -247,8 +265,8 @@ const findFirstImage = async (folderPath) => {
       continue
     }
 
-    const imageNames = []
-    const subdirectories = []
+    const imageNames: string[] = []
+    const subdirectories: string[] = []
 
     for (const entry of entries) {
       if (
@@ -268,15 +286,15 @@ const findFirstImage = async (folderPath) => {
       }
     }
 
-    if (imageNames.length > 0) {
-      // Name-ascending so the thumbnail is stable rather than readdir-order.
-      imageNames.sort((left, right) =>
-        left.localeCompare(right),
-      )
+    // Name-ascending so the thumbnail is stable rather than readdir-order.
+    const [firstImageName] = imageNames.sort(
+      (left, right) => left.localeCompare(right),
+    )
 
+    if (firstImageName !== undefined) {
       return {
-        name: imageNames[0],
-        path: path.join(currentPath, imageNames[0]),
+        name: firstImageName,
+        path: path.join(currentPath, firstImageName),
       }
     }
 
@@ -291,21 +309,23 @@ const findFirstImage = async (folderPath) => {
 // names only, no per-entry stat, capped the same way so a deep tree can't stall.
 // Powers the per-folder image-count badge; callers gate it on visibility so only
 // on-screen tiles pay for it.
-const countFolderImages = async (folderPath) => {
+const countFolderImages = async (
+  folderPath: string,
+): Promise<number> => {
   const queue = [folderPath]
 
   let scanned = 0
   let count = 0
 
-  while (
-    queue.length > 0 &&
-    scanned < maxDirectoriesScanned
+  for (
+    let currentPath = queue.shift();
+    currentPath !== undefined &&
+    scanned < maxDirectoriesScanned;
+    currentPath = queue.shift()
   ) {
-    const currentPath = queue.shift()
-
     scanned += 1
 
-    let entries
+    let entries: fs.Dirent[]
 
     try {
       entries = await fs.promises.readdir(currentPath, {
@@ -349,7 +369,11 @@ const maxSearchResults = 500
 // descends, so results stream into the UI instead of appearing only once the
 // whole (possibly deep, possibly network-mounted) tree has been scanned. The
 // full list is also returned for callers that don't stream.
-const searchFolders = async (rootPath, query, onBatch) => {
+const searchFolders = async (
+  rootPath: string,
+  query: string,
+  onBatch?: (matches: FolderMatch[]) => void,
+): Promise<FolderMatch[]> => {
   const needle = query.trim().toLowerCase()
 
   if (!needle) {
@@ -357,10 +381,10 @@ const searchFolders = async (rootPath, query, onBatch) => {
   }
 
   const queue = [rootPath]
-  const results = []
+  const results: FolderMatch[] = []
 
   let scanned = 0
-  let batch = []
+  let batch: FolderMatch[] = []
 
   const flushBatch = () => {
     if (batch.length > 0) {
@@ -372,16 +396,16 @@ const searchFolders = async (rootPath, query, onBatch) => {
     }
   }
 
-  while (
-    queue.length > 0 &&
+  for (
+    let currentPath = queue.shift();
+    currentPath !== undefined &&
     scanned < maxSearchDirectoriesScanned &&
-    results.length < maxSearchResults
+    results.length < maxSearchResults;
+    currentPath = queue.shift()
   ) {
-    const currentPath = queue.shift()
-
     scanned += 1
 
-    let entries
+    let entries: fs.Dirent[]
 
     try {
       entries = await fs.promises.readdir(currentPath, {
@@ -430,18 +454,25 @@ const searchFolders = async (rootPath, query, onBatch) => {
 // tick up as bytes arrive; small files read in a single chunk and jump to 100.
 // `Buffer.concat` gives a standalone buffer, but slice out exactly its bytes
 // anyway before crossing the bridge (structured clone carries only this file).
-// Extensions Chromium can't decode itself — transcoded to JPEG in main (via
-// libheif WASM) rather than read straight off disk. Keep in sync with the HEIC
-// handling in main.js / the extension list in useImageFiles.js.
+// Extensions Chromium can't decode itself — transcoded to JPEG in main's HEIC
+// worker (libheif WASM) rather than read straight off disk. Keep in sync with
+// the HEIC handling in main.ts / the extension list in useImageFiles.ts.
 const transcodedImageExtensions = new Set([
   ".heic",
   ".heif",
 ])
 
 // Stream a file off disk, reporting byte-level progress as it goes. Resolves
-// with the same `{ data, mimeType }` shape the renderer already expects.
-const readImageDataStreamed = (filePath, onProgress) =>
-  new Promise((resolve, reject) => {
+// with the same `{ data, mimeType }` shape the renderer already expects. An
+// aborted `signal` stops the read and rejects with an `AbortError`.
+const readImageDataStreamed = (
+  filePath: string,
+  onProgress:
+    | ((downloadPercentage: number) => void)
+    | undefined,
+  signal: AbortSignal,
+) =>
+  new Promise<ImageBytes>((resolve, reject) => {
     fs.stat(filePath, (statError, stats) => {
       if (statError) {
         reject(statError)
@@ -449,14 +480,18 @@ const readImageDataStreamed = (filePath, onProgress) =>
       }
 
       const totalBytes = stats.size
-      const chunks = []
+      const chunks: Buffer[] = []
       let bytesRead = 0
 
-      const stream = fs.createReadStream(filePath)
+      const stream = fs.createReadStream(filePath, {
+        signal,
+      })
 
       stream.on("data", (chunk) => {
-        chunks.push(chunk)
-        bytesRead += chunk.length
+        const bufferChunk = Buffer.from(chunk)
+
+        chunks.push(bufferChunk)
+        bytesRead += bufferChunk.length
 
         // 0-byte files have no meaningful fraction; the `end` handler still
         // resolves them and the caller emits a final 100%.
@@ -485,25 +520,107 @@ const readImageDataStreamed = (filePath, onProgress) =>
     })
   })
 
-const readImageData = (filePath, onProgress) => {
-  // HEIC/HEIF can't be rendered by Chromium, so hand them to main for a JPEG
-  // transcode (cached there by path+mtime). No mid-read progress for these —
-  // the WASM decode, not the byte read, is the cost. Everything else is read
-  // straight off disk here — the fast path, no IPC round-trip.
-  if (
-    transcodedImageExtensions.has(
-      path.extname(filePath).toLowerCase(),
-    )
-  ) {
-    return ipcRenderer.invoke("readHeicAsJpeg", {
-      filePath,
-    })
-  }
+const createCanceledReadError = () => {
+  const error = new Error("The image read was canceled.")
 
-  return readImageDataStreamed(filePath, onProgress)
+  error.name = "AbortError"
+
+  return error
 }
 
-contextBridge.exposeInMainWorld("api", {
+// HEIC/HEIF can't be rendered by Chromium, so hand them to main for a JPEG
+// transcode (queued and cached there by path+mtime). No mid-read progress for
+// these — the WASM decode, not the byte read, is the cost. Aborting tells main
+// no view holds the image any more, so it can drop the decode.
+const readHeicAsJpeg = (
+  filePath: string,
+  requestId: string | undefined,
+  signal: AbortSignal,
+): Promise<ImageBytes> => {
+  if (requestId !== undefined) {
+    signal.addEventListener(
+      "abort",
+      () => {
+        ipcRenderer.send("readHeicAsJpeg:cancel", requestId)
+      },
+      { once: true },
+    )
+  }
+
+  // Main answers null for a canceled decode, rather than throwing, so its log
+  // does not fill with routine cancels.
+  return ipcRenderer
+    .invoke("readHeicAsJpeg", {
+      filePath,
+      requestId,
+    })
+    .then((imageBytes: ImageBytes | null) => {
+      if (!imageBytes) {
+        throw createCanceledReadError()
+      }
+
+      return imageBytes
+    })
+}
+
+// Reads in flight, by the renderer's request id, so `cancelReadImageData` can
+// stop one whose image no view holds any more.
+const readAbortControllersByRequestId = new Map<
+  string,
+  AbortController
+>()
+
+const readImageData: Window["api"]["readImageData"] = (
+  filePath,
+  onProgress,
+  requestId,
+) => {
+  const abortController = new AbortController()
+
+  if (requestId !== undefined) {
+    readAbortControllersByRequestId.set(
+      requestId,
+      abortController,
+    )
+  }
+
+  // Everything but HEIC is read straight off disk here — the fast path, no
+  // IPC round-trip.
+  const read = transcodedImageExtensions.has(
+    path.extname(filePath).toLowerCase(),
+  )
+    ? readHeicAsJpeg(
+        filePath,
+        requestId,
+        abortController.signal,
+      )
+    : readImageDataStreamed(
+        filePath,
+        onProgress,
+        abortController.signal,
+      )
+
+  return read.finally(() => {
+    if (
+      requestId !== undefined &&
+      readAbortControllersByRequestId.get(requestId) ===
+        abortController
+    ) {
+      readAbortControllersByRequestId.delete(requestId)
+    }
+  })
+}
+
+const cancelReadImageData = (requestId: string) => {
+  readAbortControllersByRequestId.get(requestId)?.abort()
+}
+
+// Typed as the declaration the renderer compiles against (windowApi.d.ts), so
+// the bridge and its declaration cannot drift apart.
+const api: Window["api"] = {
+  cancelReadImageData: fakeFileSystem
+    ? fakeFileSystem.cancelReadImageData
+    : cancelReadImageData,
   cliFilePath,
   countFolderImages: fakeFileSystem
     ? fakeFileSystem.countFolderImages
@@ -539,8 +656,10 @@ contextBridge.exposeInMainWorld("api", {
   fullScreen: {
     get: () => ipcRenderer.invoke("window:isFullScreen"),
     onChanged: (callback) => {
-      const listener = (_event, isFullScreen) =>
-        callback(isFullScreen)
+      const listener = (
+        _event: Electron.IpcRendererEvent,
+        isFullScreen: boolean,
+      ) => callback(isFullScreen)
 
       ipcRenderer.on("window:fullScreenChanged", listener)
 
@@ -576,7 +695,10 @@ contextBridge.exposeInMainWorld("api", {
   openFolders: {
     get: () => ipcRenderer.invoke("get-open-folders"),
     onChanged: (callback) => {
-      const listener = (_event, paths) => callback(paths)
+      const listener = (
+        _event: Electron.IpcRendererEvent,
+        paths: string[],
+      ) => callback(paths)
 
       ipcRenderer.on("openFolders:changed", listener)
 
@@ -590,7 +712,7 @@ contextBridge.exposeInMainWorld("api", {
     set: (paths) =>
       ipcRenderer.send("set-open-folders", paths),
   },
-  // The shared, cross-window folder queue (lives in main; see main.js). Mutations
+  // The shared, cross-window folder queue (lives in main; see main.ts). Mutations
   // go to main and come back to every window via `onChanged`. Not branched on the
   // fake FS — the queue holds only folder identity and uses no disk, so fake and
   // real windows can even share one queue in `start:fake`.
@@ -612,23 +734,30 @@ contextBridge.exposeInMainWorld("api", {
     // Main seeds its own "where I left off" store; in fake mode that store is
     // the fake filesystem's (see `getFolderLastIndex` below), so seed it here.
     load: () =>
-      ipcRenderer.invoke("queue:load").then((saved) => {
-        if (fakeFileSystem) {
-          for (const [folderPath, index] of Object.entries(
-            saved?.lastIndexByPath ?? {},
-          )) {
-            fakeFileSystem.setFolderLastIndex(
+      ipcRenderer
+        .invoke("queue:load")
+        .then((saved: SavedQueue | null) => {
+          if (fakeFileSystem) {
+            for (const [
               folderPath,
               index,
-            )
+            ] of Object.entries(
+              saved?.lastIndexByPath ?? {},
+            )) {
+              fakeFileSystem.setFolderLastIndex(
+                folderPath,
+                index,
+              )
+            }
           }
-        }
 
-        return saved
-      }),
+          return saved
+        }),
     onChanged: (callback) => {
-      const listener = (_event, folders) =>
-        callback(folders)
+      const listener = (
+        _event: Electron.IpcRendererEvent,
+        folders: QueuedFolder[],
+      ) => callback(folders)
 
       ipcRenderer.on("queue:changed", listener)
 
@@ -642,8 +771,10 @@ contextBridge.exposeInMainWorld("api", {
     // Fires with a boolean whenever the saved slot appears/changes, so the
     // "Load queue" button can enable across every window when one saves.
     onSavedChanged: (callback) => {
-      const listener = (_event, isSaved) =>
-        callback(isSaved)
+      const listener = (
+        _event: Electron.IpcRendererEvent,
+        isSaved: boolean,
+      ) => callback(isSaved)
 
       ipcRenderer.on("queue:savedChanged", listener)
 
@@ -721,4 +852,6 @@ contextBridge.exposeInMainWorld("api", {
     resolve: (...segments) => path.resolve(...segments),
     sep: path.sep,
   },
-})
+}
+
+contextBridge.exposeInMainWorld("api", api)

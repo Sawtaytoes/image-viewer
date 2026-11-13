@@ -99,3 +99,17 @@ HEIC decoded to a valid JPEG both under plain Node (~2.6 s) and under Electron's
   opening one image; a large HEIC folder fills its grid slowly on first browse (cached afterward).
   Future: extract the embedded JPEG preview for tiles, and/or move the decode off the main thread
   (`utilityProcess`/worker) so back-to-back decodes don't block other main-process IPC.
+
+### 2026-11-13 — the decode moved off the main thread
+
+The follow-up above is done. The decode runs in an Electron `utilityProcess`
+(`src/heicDecoding/heicDecodeWorker.ts`, its own Forge build entry), and main only queues, caches,
+and cancels (`src/heicDecoding/heicDecodeQueue.ts`). The renderer cancels the read when no view
+holds the image any more (a hidden tile is only demoted, per the 2026-06-04 decision), and main
+drops a queued decode or stops a running one that nobody waits for.
+The output is byte-identical: the same `heic-convert` call at quality 0.92.
+
+Measured on the audit host with a generated 4032x3024 HEIC: the decode took about 4 s, and the
+old main-thread decode stalled main's event loop for 3,987 ms. In the packaged app after the
+move, a synchronous IPC round trip from the renderer took at most 47 ms during the same decode.
+See [the decision](../decisions/2026-11-13-heic-decodes-in-a-utility-process.md).

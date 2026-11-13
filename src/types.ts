@@ -1,6 +1,6 @@
 // Shared domain types that cross the preload → renderer boundary. Imported by
-// both the preload bridge (eventually `preload.ts`) and renderer code, and by
-// the `Window.api` augmentation in `preload.d.ts`. This is the single source of
+// both the preload bridge (`preload.ts`) and renderer code, and by
+// the `Window.api` augmentation in `windowApi.d.ts`. This is the single source of
 // truth for the shapes `window.api` traffics in — keep it in sync with the real
 // preload implementation.
 

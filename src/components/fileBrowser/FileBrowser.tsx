@@ -59,7 +59,7 @@ import VirtualizedList from "./VirtualizedList"
 // whole page scroll sideways.
 //
 // The title-bar strip is `--title-bar-height` in `src/styles/tailwind.css`, the
-// same value `titleBarHeight.ts` and `main.js` carry — reading the custom
+// same value `titleBarHeight.ts` and `main.ts` carry — reading the custom
 // property here is what lets the browser sit below the bar without an arbitrary
 // pixel literal in the markup.
 const fileBrowserClassName =

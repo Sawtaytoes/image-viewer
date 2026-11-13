@@ -81,8 +81,11 @@ loaded a *different app* from another agent's `:5173`. Build for `file://` inste
 pnpm vite build --config vite.renderer.config.ts \
   --outDir .vite/renderer/main_window --base ./ --emptyOutDir
 
-# main + preload → cjs lib build, electron + node builtins external, and
-# define MAIN_WINDOW_VITE_DEV_SERVER_URL=undefined + MAIN_WINDOW_VITE_NAME='"main_window"'
+# main + preload + the HEIC worker (src/heicDecoding/heicDecodeWorker.ts →
+# .vite/build/heicDecodeWorker.js) → cjs lib build, electron + node builtins
+# external, and define MAIN_WINDOW_VITE_DEV_SERVER_URL=undefined +
+# MAIN_WINDOW_VITE_NAME='"main_window"'. Or run `pnpm package` and launch
+# out/ImageViewer-linux-x64/ImageViewer, which builds all three the real way.
 
 IMAGE_VIEWER_FAKE_FS=1 xvfb-run -n 71 -s "-screen 0 1600x1000x24" \
   ./node_modules/.bin/electron . \
@@ -103,7 +106,7 @@ without a delay knob in `src/fakeFileSystem.ts`. Screenshots go in `__screenshot
 `contextIsolation` is **on**, `nodeIntegration` is **off**. The renderer (everything in
 `src/components/**`) **must NEVER** `import` from `electron`, `fs`, `path`, `os`, `child_process`, or
 read `process`. All of that goes through the preload bridge, exposed as **`window.api`**
-(see [`src/preload.js`](src/preload.js)).
+(see [`src/preload.ts`](src/preload.ts)).
 
 `window.api` surface:
 
@@ -115,7 +118,8 @@ read `process`. All of that goes through the preload bridge, exposed as **`windo
 | `statPath(p)` | `{ exists, isFile, isDirectory }` (sync) |
 | `readDirectory(dir)` | `Promise<[{ fileName, filePath, isDirectory, isFile }]>` |
 | `watchDirectory(dir, onChange)` | `fs.watch` on a folder's direct entries, settled per burst; returns an unsubscribe. The galleries re-read in place on a change (`useFolderListing(path, { isWatchingForChanges: true })`); an open image pane does not |
-| `readImageData(filePath)` | `Promise<{ data: ArrayBuffer, mimeType }>` — image bytes for the renderer Blob |
+| `readImageData(filePath, onProgress?, requestId?)` | `Promise<{ data: ArrayBuffer, mimeType }>` — image bytes for the renderer Blob |
+| `cancelReadImageData(requestId)` | stops that read because no view holds its image any more (its folder or pane closed; scrolling out of view does not cancel, per the 2026-06-04 decision); it rejects with an `AbortError`, and main drops a HEIC decode nobody else waits for |
 | `deleteFilePath({ filePath, isDirectory })` | `Promise<boolean>` — trash, then permanent-delete fallback |
 | `deleteItems.{summarize,start,stop}` | the app's delete: `summarize(targets)` counts files, folders and bytes for the confirmation (bounded, so a huge folder says "at least"); `start({ jobId, targets }, onProgress)` runs it with progress and resolves to how each item went; `stop(jobId)` halts what remains. Every delete button goes through `DeleteItemsProvider`'s `requestDelete` ([decision](docs/decisions/2026-11-13-delete-shows-what-it-removes-with-progress-and-a-stop-button.md)) |
 | `createNewWindow({ filePath })` | open another window |
@@ -124,11 +128,12 @@ read `process`. All of that goes through the preload bridge, exposed as **`windo
 | `queue.save(layout)` / `queue.load()` | the saved-queue slot: save takes the window's columns + last-viewed images (main adds its own folder list); load returns the whole slot or null and seeds the resume store. Old bare-array slots still load via `src/savedQueue.ts` ([decision](docs/decisions/2026-09-28-a-saved-queue-keeps-reading-positions-and-columns.md)) |
 | `path.{dirname,basename,join,resolve,extname,sep}` | path helpers |
 
-To add a privileged capability: add it to `src/preload.js` (and an `ipcMain` handler in
-`src/main.js` if it needs the main process), then call `window.api.*` from the renderer. Keep
+To add a privileged capability: declare it in `src/windowApi.d.ts`, add it to `src/preload.ts`
+(and an `ipcMain` handler in `src/main.ts` if it needs the main process), then call `window.api.*`
+from the renderer. Keep
 everything crossing `contextBridge` **plain/serializable** (map `Dirent`/`Stats` to plain objects).
 
-## Main process invariants (`src/main.js`)
+## Main process invariants (`src/main.ts`)
 
 - **IPC channels:** `get-windows-drives` (sync), `createNewWindow` (send), `deleteFilePath` (invoke),
   `delete:summarize` + `delete:start` (invoke), `delete:stop` (send) + `delete:progress` (to the
@@ -143,6 +148,11 @@ everything crossing `contextBridge` **plain/serializable** (map `Dirent`/`Stats`
   and asks no second question. (`moveItemToTrash` was removed in Electron 13.) Keep delete going to
   the Recycle Bin first. See
   [`delete-shows-what-it-removes-with-progress-and-a-stop-button`](docs/decisions/2026-11-13-delete-shows-what-it-removes-with-progress-and-a-stop-button.md).
+- **HEIC/HEIF decode in a utility process, never in main** (`src/heicDecoding/`). `readHeicAsJpeg`
+  (invoke) queues one decode at a time in `heicDecodeWorker.ts`, shares duplicate requests, and
+  caches by path and modification time; `readHeicAsJpeg:cancel` (send) drops a decode no window
+  still waits for, and stops a running one by ending the worker. Do not import `heic-convert`
+  into main. See [`heic-decodes-in-a-utility-process`](docs/decisions/2026-11-13-heic-decodes-in-a-utility-process.md).
 - **Image bytes** are read off disk in preload via `window.api.readImageData(filePath)` (returns
   `{ data: ArrayBuffer, mimeType }`) and turned into a `Blob` in
   ([`createFileDownloadObservable.js`](src/components/imageLoader/createFileDownloadObservable.js)).
@@ -162,7 +172,8 @@ The short version:
 
 - **File extensions:** JSX → **`.tsx`**, pure logic → **`.ts`**. `tsconfig.json` sets
   `allowJs: false`, so a `.js` under `src/` is a module `tsc` **cannot resolve** — not one it
-  silently skips. The only survivors are `src/main.js` and `src/preload.js`, excluded by name.
+  silently skips. There are no exceptions: `src/main.ts` and `src/preload.ts` are TypeScript too
+  ([decision](docs/decisions/2026-11-13-main-and-preload-are-typescript.md)).
   Imports are extensionless, so renaming a file never touches its callers.
 - **Props are types, not `prop-types`.** Write the type inline on the parameter; do not use
   `FC<Props>` (its implicit `children` is how a component that forgot to render them passed).
@@ -191,9 +202,10 @@ The short version:
   `@charcuterie/eslint-config`'s component-choice block (`no-raw-button`, `no-raw-anchor`,
   `no-clickable-non-interactive`) is **not** on yet — the tab strip and gallery tiles would go
   red. Run `pnpm lint` before committing.
-- **Entry points** referenced by `forge.config.ts`: `src/main.js`, `src/preload.js`, and the root
+- **Entry points** referenced by `forge.config.ts`: `src/main.ts`, `src/preload.ts`,
+  `src/heicDecoding/heicDecodeWorker.ts` (main forks it as `heicDecodeWorker.js`), and the root
   `index.html` → `/src/renderer.tsx`. Don't move these without updating the config.
-- **`window.api` is fully typed** by [`src/preload.d.ts`](src/preload.d.ts), with the payload
+- **`window.api` is fully typed** by [`src/windowApi.d.ts`](src/windowApi.d.ts), with the payload
   shapes in [`src/types.ts`](src/types.ts). If a call site needs a cast, **the declaration is
   wrong** — fix the declaration. It has been wrong before: it had never been told about
   `fullScreen`, `searchFolders` or the four saved-queue members.
@@ -217,11 +229,17 @@ The short version:
 
 ## Tests
 
-Vitest + jsdom + Testing Library. `vitest.setup.ts` stubs `window.api` — typed as the real
+Vitest + jsdom + Testing Library. `vitest.setup.renderer.ts` (loaded by `vitest.setup.ts` for
+every jsdom suite) stubs `window.api` — typed as the real
 `Window["api"]`, so a member the bridge exposes and the stub forgets is a typecheck failure
 rather than an `undefined is not a function` in whichever test reaches it first. Pure logic
 (reducers, natural sort, image filtering) is the easiest to cover — add tests there when
 changing behavior.
+
+The privileged code is tested in the Node environment (`// @vitest-environment node`):
+`src/main.test.ts` runs main's IPC handlers against a temporary folder with Electron mocked
+(the trash is a mock, so a test never sends real files to it), and `src/preload.test.ts` does
+the same for the bridge. Add a test there for any new handler that touches the disk.
 
 Two tests exist only to stop a copied constant drifting, because nothing else can see it:
 

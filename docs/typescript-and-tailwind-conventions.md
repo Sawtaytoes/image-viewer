@@ -11,9 +11,9 @@ the settled calls behind individual rules are in [`decisions/`](decisions/).
 | --- | --- |
 | JSX | `.tsx` |
 | Pure logic (hooks, reducers, epics, contexts, utilities, tests) | `.ts` |
-| The Node-side programs `src/main.js`, `src/preload.js` | `.js`, for now |
+| The Node-side programs `src/main.ts`, `src/preload.ts` | `.ts` too, since 2026-11-13 |
 
-There is no `.jsx` any more and no `.js` under `src/` except those two.
+There is no `.jsx` any more and no `.js` under `src/` at all.
 `tsconfig.json` sets `allowJs: false`, so a stray `.js` is a module `tsc` **cannot
 resolve** — a hard error, not a silently-unchecked file. That is deliberate: the
 previous setting (`allowJs: true`, `checkJs: false`) is what let a half-finished
@@ -196,7 +196,8 @@ is locked: generics and correct DOM types, **not** `as` / `any` / `unknown`.
   — React's synthetic event is not the DOM one, and the second form typechecks while
   being wrong about `currentTarget`.
 - A ref is `useRef<HTMLImageElement>(null)`, and the null check is real code, not `!`.
-- `window.api` is fully typed by `src/preload.d.ts`. If a call site needs a cast, the
+- `window.api` is fully typed by `src/windowApi.d.ts`, and `preload.ts` types its bridge
+  object as `Window["api"]`, so the two cannot drift. If a call site needs a cast, the
   declaration is wrong — fix the declaration. It has been wrong before: the typed
   `vitest.setup.ts` found three whole members `preload.js` exposes that the types had
   never heard of.

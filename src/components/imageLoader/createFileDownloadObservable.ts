@@ -17,20 +17,45 @@ export interface FileDownloadUpdate {
 // streams the read in chunks and calls `onProgress` with a byte-level percent,
 // so the loading bar advances for large files exactly as the old XHR `progress`
 // events made it — small files read in one chunk and jump straight to 100.
+//
+// Unsubscribing means no view holds the image any more (its folder or pane
+// closed), so the read is canceled through `window.api.cancelReadImageData`.
+// For a HEIC that drops its decode in main, which is the slow part. A tile that
+// only scrolls out of view keeps its download; see
+// docs/decisions/2026-06-04-dont-cancel-in-flight-downloads-on-hide.md.
+//
+// The ids carry a token for this page load, so a read after a reload never
+// reuses an id main may still be tracking from before it.
+const pageLoadToken = Math.random().toString(36).slice(2)
+
+let readCount = 0
+
 const createFileDownloadObservable = (filePath: string) =>
   new Observable<FileDownloadUpdate>((observer) => {
+    readCount += 1
+
+    const requestId = `image-read-${pageLoadToken}-${readCount}`
+
     let isCanceled = false
+    let isSettled = false
 
     window.api
-      .readImageData(filePath, (downloadPercentage) => {
-        if (isCanceled) {
-          return
-        }
+      .readImageData(
+        filePath,
+        (downloadPercentage) => {
+          if (isCanceled) {
+            return
+          }
 
-        observer.next({
-          downloadPercentage,
-          filePath,
-        })
+          observer.next({
+            downloadPercentage,
+            filePath,
+          })
+        },
+        requestId,
+      )
+      .finally(() => {
+        isSettled = true
       })
       .then(({ data, mimeType }) => {
         if (isCanceled) {
@@ -70,6 +95,10 @@ const createFileDownloadObservable = (filePath: string) =>
 
     return () => {
       isCanceled = true
+
+      if (!isSettled) {
+        window.api.cancelReadImageData(requestId)
+      }
     }
   })
 

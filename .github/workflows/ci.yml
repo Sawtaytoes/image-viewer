@@ -1,7 +1,12 @@
 name: CI
 
+# A branch with a pull request runs once, through the pull request. Pushing
+# to every branch as well ran the whole suite twice for each pull request.
+# `master` still runs on push, which is what keeps its own status and the
+# `vrt` baseline current after a merge.
 on:
   push:
+    branches: [master]
   pull_request:
 
 jobs:

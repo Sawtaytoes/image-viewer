@@ -16,7 +16,7 @@ const pathApi = window.api.path
 // Reserve room for the native window controls the `titleBarOverlay` paints, so
 // nothing of ours sits underneath them. Windows and Linux put them on the right,
 // where the fullscreen button hugs them; macOS puts its three traffic lights on
-// the left (at `trafficLightPosition` in main.js), ahead of the app name. In
+// the left (at `trafficLightPosition` in main.ts), ahead of the app name. In
 // fullscreen the OS hides the controls, so the bar reclaims the space (see
 // `barStyle` below).
 const WINDOW_CONTROLS_WIDTH = 140
@@ -38,7 +38,7 @@ const EDGE_PADDING = 10
 // the `TITLE_BAR_HEIGHT` constant into the template literal and Tailwind cannot
 // interpolate anything, so the number lives in `src/styles/tailwind.css` as a
 // custom property. `titleBarHeight.test.ts` fails if the constant, the variable
-// and `main.js`'s `titleBarOverlay.height` ever disagree — hardcoding the pixels
+// and `main.ts`'s `titleBarOverlay.height` ever disagree — hardcoding the pixels
 // here is exactly what that test exists to catch.
 //
 // `transition-transform` animates the one transition the bar still makes: sliding

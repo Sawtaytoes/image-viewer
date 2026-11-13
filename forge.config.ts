@@ -82,14 +82,22 @@ const config: ForgeConfig = {
     new VitePlugin({
       build: [
         {
-          entry: "src/main.js",
+          entry: "src/main.ts",
           config: "vite.main.config.ts",
           target: "main",
         },
         {
-          entry: "src/preload.js",
+          entry: "src/preload.ts",
           config: "vite.preload.config.ts",
           target: "preload",
+        },
+        // The HEIC decoder runs in its own utility process, so its slow WASM
+        // decode never blocks main. Built beside `main.js` as
+        // `heicDecodeWorker.js`, the name main forks.
+        {
+          entry: "src/heicDecoding/heicDecodeWorker.ts",
+          config: "vite.main.config.ts",
+          target: "main",
         },
       ],
       renderer: [
