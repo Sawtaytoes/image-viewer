@@ -221,9 +221,28 @@ const scenes = {
     await openFolder(page, "Cats")
     await waitForImagesToSettle(page)
     await page.locator("img").nth(2).click()
-    await page
-      .getByRole("button", { name: "Add column" })
-      .waitFor()
+
+    const addColumnButton = page.getByRole("button", {
+      name: "Add column",
+    })
+
+    await addColumnButton.waitFor()
+
+    // The viewer's bar hides itself 3 s after the viewer opens, unless the
+    // pointer rests on it. The click above leaves the pointer on the image,
+    // so on a slow runner the shot could land after the bar hid (pull request
+    // #56). Rest the pointer on the bar's empty middle, which holds it up and
+    // puts no button into its hover state. `viewer-two-columns` needs none of
+    // this: its last click is on the bar.
+    const addColumnBox = await addColumnButton.boundingBox()
+    const viewport = page.viewportSize()
+
+    if (addColumnBox && viewport) {
+      await page.mouse.move(
+        viewport.width / 2,
+        addColumnBox.y + addColumnBox.height / 2,
+      )
+    }
   },
   "viewer-two-columns": async (page) => {
     await openFolder(page, "Cats")
