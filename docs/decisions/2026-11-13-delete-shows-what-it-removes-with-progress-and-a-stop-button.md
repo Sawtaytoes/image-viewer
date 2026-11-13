@@ -66,9 +66,12 @@ and Stop left the 81,964 files that had not been reached.
   the same counted, stoppable way. Never fall back to a recursive `fs.rm`, which can neither
   report nor stop. A folder that became a link after it was listed is removed as a link.
 - The job records each folder's identity (device and inode) when it lists the folder. Before it
-  removes anything inside, it checks that the folder still has that identity. A folder that was
-  moved, or replaced with a link to another tree (itself or a folder above it), fails the item
-  instead of sending a removal into that other tree. This costs one extra lookup per file.
+  removes anything, it looks up every folder from the item down to the entry's folder, all at
+  once. Each one must still be a real folder, not a link, with the identity it had when listed.
+  A folder moved or replaced with a link, at any level, fails the item instead of sending a
+  removal into another tree. Because a link shows as a link at every level, this also works on a
+  share that reports no identity. A tiny window remains between the check and the removal,
+  which Node cannot close.
 - Main stops a job when its window closes, reloads, or crashes, because the dialog with the
   Stop button is gone.
 - Stop cannot interrupt a trash call that is already running, because the OS offers no way to do

@@ -267,6 +267,13 @@ interface ListedEntry {
   path: string
 }
 
+// A folder as it was when listed: its identity (null when the disk cannot
+// say) and the folder it is in (null for the item being deleted).
+interface ListedFolder {
+  identity: string | null
+  parentPath: string | null
+}
+
 // Thrown when a folder is no longer the one that was listed: it was moved, or
 // it (or a folder above it) was replaced with a link. Removing by the old path
 // then could reach a tree outside the delete, so the item stops there.
@@ -277,12 +284,12 @@ const createFolderChangedError = (name: string) =>
 
 // Every entry under a folder, files first in walk order and folders deepest
 // first, so removing them in this order only ever removes an empty folder.
-// Each folder's identity goes into `folderIdentities` as it is read.
+// Each folder goes into `listedFolders` as it is read.
 const listFolderContents = async ({
   assertFolderUnchanged,
   directoryPath,
   fileSystem,
-  folderIdentities,
+  listedFolders,
   onEntryFound,
   signal,
 }: {
@@ -291,7 +298,7 @@ const listFolderContents = async ({
   ) => Promise<void>
   directoryPath: string
   fileSystem: DeleteFileSystem
-  folderIdentities: Map<string, string | null>
+  listedFolders: Map<string, ListedFolder>
   onEntryFound: (entryCount: number) => void
   signal: AbortSignal
 }): Promise<{
@@ -328,6 +335,11 @@ const listFolderContents = async ({
         nextDirectory.path,
       )
 
+      // The folders above must still be the listed ones after the lookup
+      // too. Otherwise a swap during the lookup would record the identity of
+      // a folder in another tree as this folder's.
+      await assertFolderUnchanged(nextDirectory.parentPath)
+
       if (!info.isDirectory) {
         directoryPaths.splice(
           directoryPaths.indexOf(nextDirectory),
@@ -338,10 +350,10 @@ const listFolderContents = async ({
         continue
       }
 
-      folderIdentities.set(
-        nextDirectory.path,
-        info.identity,
-      )
+      listedFolders.set(nextDirectory.path, {
+        identity: info.identity,
+        parentPath: nextDirectory.parentPath,
+      })
     }
 
     const entries = await fileSystem.listDirectory(
@@ -598,28 +610,60 @@ const deletePermanently = async ({
   let entriesRemoved = 0
   let entriesTotal: number | null = null
 
-  // Each folder's identity from when it was listed. Before anything inside a
-  // folder is removed, the folder must still be that folder: a folder (or one
-  // above it) swapped for a link would send a removal by the old path into
-  // the tree the link points at. A tiny window remains between this check and
-  // the removal itself, which Node offers no way to close.
-  const folderIdentities = new Map<string, string | null>()
+  // Every folder listed so far, from the item being deleted down. Before
+  // anything inside a folder is removed, that folder and every folder above
+  // it, up to the item, must still be real folders (not links) with the
+  // identity they had when listed. A folder at any level swapped for a link,
+  // or moved, would otherwise send a removal by the old path into another
+  // tree. Checking every level also covers a disk that gives no identity,
+  // because a link at any level shows as a link. A tiny window remains
+  // between this check and the removal itself, which Node offers no way to
+  // close.
+  const listedFolders = new Map<string, ListedFolder>()
 
+  const getFolderChain = (folderPath: string) => {
+    const folderChain: [string, ListedFolder][] = []
+    let chainPath: string | null = folderPath
+
+    while (chainPath !== null) {
+      const listedFolder = listedFolders.get(chainPath)
+
+      if (!listedFolder) {
+        throw new Error(
+          `"${fileSystem.basename(chainPath)}" was never listed.`,
+        )
+      }
+
+      folderChain.push([chainPath, listedFolder])
+      chainPath = listedFolder.parentPath
+    }
+
+    return folderChain
+  }
+
+  // The lookups run together, so a deeper folder costs no more waiting than
+  // one directly inside the item.
   const assertFolderUnchanged = async (
     folderPath: string,
   ) => {
-    const info = await fileSystem.getEntryInfo(folderPath)
-    const listedIdentity = folderIdentities.get(folderPath)
+    await Promise.all(
+      getFolderChain(folderPath).map(
+        async ([chainPath, listedFolder]) => {
+          const info =
+            await fileSystem.getEntryInfo(chainPath)
 
-    if (
-      !info.isDirectory ||
-      (listedIdentity != null &&
-        info.identity !== listedIdentity)
-    ) {
-      throw createFolderChangedError(
-        fileSystem.basename(folderPath),
-      )
-    }
+          if (
+            !info.isDirectory ||
+            (listedFolder.identity !== null &&
+              info.identity !== listedFolder.identity)
+          ) {
+            throw createFolderChangedError(
+              fileSystem.basename(chainPath),
+            )
+          }
+        },
+      ),
+    )
   }
 
   const toStoppedResult = () => ({
@@ -723,7 +767,7 @@ const deletePermanently = async ({
       assertFolderUnchanged,
       directoryPath: folderPath,
       fileSystem,
-      folderIdentities,
+      listedFolders,
       onEntryFound: (entryCount) => {
         reportProgress({
           ...baseProgress,
@@ -779,6 +823,11 @@ const deletePermanently = async ({
   ): Promise<boolean> => {
     if (parentPath !== null) {
       await assertFolderUnchanged(parentPath)
+
+      // Stop may have arrived during that lookup.
+      if (signal.aborted) {
+        return false
+      }
     }
 
     try {
@@ -842,7 +891,10 @@ const deletePermanently = async ({
     // The folder itself is the last entry.
     entriesTotal = 1
 
-    folderIdentities.set(target.filePath, info.identity)
+    listedFolders.set(target.filePath, {
+      identity: info.identity,
+      parentPath: null,
+    })
 
     const isEmptied = await removeFolderContents(
       target.filePath,
