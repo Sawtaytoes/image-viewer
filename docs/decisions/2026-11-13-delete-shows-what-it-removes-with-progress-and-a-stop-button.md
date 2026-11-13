@@ -65,6 +65,10 @@ and Stop left the 81,964 files that had not been reached.
   `rmdir` with ENOTEMPTY. The job lists it again, up to three times, and removes the new entries
   the same counted, stoppable way. Never fall back to a recursive `fs.rm`, which can neither
   report nor stop. A folder that became a link after it was listed is removed as a link.
+- The job records each folder's identity (device and inode) when it lists the folder. Before it
+  removes anything inside, it checks that the folder still has that identity. A folder that was
+  moved, or replaced with a link to another tree (itself or a folder above it), fails the item
+  instead of sending a removal into that other tree. This costs one extra lookup per file.
 - Main stops a job when its window closes, reloads, or crashes, because the dialog with the
   Stop button is gone.
 - Stop cannot interrupt a trash call that is already running, because the OS offers no way to do

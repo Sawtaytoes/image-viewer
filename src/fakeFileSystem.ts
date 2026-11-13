@@ -769,6 +769,27 @@ const createFakeFileSystem = ({
         })
       : Promise.resolve()
 
+  // A stand-in for a device and inode: one id per node object, so a node
+  // replaced at the same path gets a new identity.
+  const nodeIdentities = new WeakMap<object, string>()
+  let nextNodeIdentity = 0
+
+  const getNodeIdentity = (node: object) => {
+    const knownIdentity = nodeIdentities.get(node)
+
+    if (knownIdentity) {
+      return knownIdentity
+    }
+
+    nextNodeIdentity += 1
+
+    const identity = `fake-${nextNodeIdentity}`
+
+    nodeIdentities.set(node, identity)
+
+    return identity
+  }
+
   const getExistingNode = (filePath: string) => {
     const node = nodesByPath.get(filePath)
 
@@ -791,6 +812,7 @@ const createFakeFileSystem = ({
         const node = getExistingNode(filePath)
 
         return {
+          identity: getNodeIdentity(node),
           isDirectory: node.isDirectory,
           size: node.isDirectory
             ? 0

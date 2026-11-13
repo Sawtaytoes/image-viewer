@@ -27,6 +27,10 @@ export interface DeleteTarget {
 // What one entry on disk is. A symbolic link or a junction is never a
 // directory here, so a delete never follows a link into another tree.
 export interface DeleteEntryInfo {
+  // Which folder or file this is on its disk (device and inode on a real
+  // disk), or null when the platform cannot say. The delete compares it to
+  // catch a folder that was moved or replaced after it was listed.
+  identity: string | null
   isDirectory: boolean
   size: number
 }
@@ -256,25 +260,49 @@ export const summarizeDeleteTargets = async ({
   }
 }
 
+// One entry found under a folder, with the folder it was found in. Before the
+// entry is removed, that folder is checked to still be the one listed.
+interface ListedEntry {
+  parentPath: string
+  path: string
+}
+
+// Thrown when a folder is no longer the one that was listed: it was moved, or
+// it (or a folder above it) was replaced with a link. Removing by the old path
+// then could reach a tree outside the delete, so the item stops there.
+const createFolderChangedError = (name: string) =>
+  new Error(
+    `"${name}" was moved or replaced during the delete, so the delete stopped there.`,
+  )
+
 // Every entry under a folder, files first in walk order and folders deepest
 // first, so removing them in this order only ever removes an empty folder.
+// Each folder's identity goes into `folderIdentities` as it is read.
 const listFolderContents = async ({
+  assertFolderUnchanged,
   directoryPath,
   fileSystem,
+  folderIdentities,
   onEntryFound,
   signal,
 }: {
+  assertFolderUnchanged: (
+    folderPath: string,
+  ) => Promise<void>
   directoryPath: string
   fileSystem: DeleteFileSystem
+  folderIdentities: Map<string, string | null>
   onEntryFound: (entryCount: number) => void
   signal: AbortSignal
 }): Promise<{
-  directoryPaths: string[]
-  filePaths: string[]
+  directoryPaths: ListedEntry[]
+  filePaths: ListedEntry[]
 } | null> => {
-  const filePaths: string[] = []
-  const directoryPaths: string[] = []
-  const pendingDirectories = [directoryPath]
+  const filePaths: ListedEntry[] = []
+  const directoryPaths: ListedEntry[] = []
+  const pendingDirectories: ListedEntry[] = [
+    { parentPath: "", path: directoryPath },
+  ]
 
   while (pendingDirectories.length > 0) {
     if (signal.aborted) {
@@ -289,10 +317,16 @@ const listFolderContents = async ({
 
     // A folder found earlier is checked again just before it is read. If it
     // became a link in the meantime, reading it would walk into the tree the
-    // link points at, so it is removed as a link instead.
-    if (nextDirectory !== directoryPath) {
-      const info =
-        await fileSystem.getEntryInfo(nextDirectory)
+    // link points at, so it is removed as a link instead. The top folder was
+    // already identified, so it only has to still be that folder.
+    if (nextDirectory.path === directoryPath) {
+      await assertFolderUnchanged(directoryPath)
+    } else {
+      await assertFolderUnchanged(nextDirectory.parentPath)
+
+      const info = await fileSystem.getEntryInfo(
+        nextDirectory.path,
+      )
 
       if (!info.isDirectory) {
         directoryPaths.splice(
@@ -303,17 +337,28 @@ const listFolderContents = async ({
 
         continue
       }
+
+      folderIdentities.set(
+        nextDirectory.path,
+        info.identity,
+      )
     }
 
-    const entries =
-      await fileSystem.listDirectory(nextDirectory)
+    const entries = await fileSystem.listDirectory(
+      nextDirectory.path,
+    )
 
     for (const entry of entries) {
+      const listedEntry = {
+        parentPath: nextDirectory.path,
+        path: entry.path,
+      }
+
       if (entry.isDirectory) {
-        directoryPaths.push(entry.path)
-        pendingDirectories.push(entry.path)
+        directoryPaths.push(listedEntry)
+        pendingDirectories.push(listedEntry)
       } else {
-        filePaths.push(entry.path)
+        filePaths.push(listedEntry)
       }
     }
 
@@ -553,6 +598,30 @@ const deletePermanently = async ({
   let entriesRemoved = 0
   let entriesTotal: number | null = null
 
+  // Each folder's identity from when it was listed. Before anything inside a
+  // folder is removed, the folder must still be that folder: a folder (or one
+  // above it) swapped for a link would send a removal by the old path into
+  // the tree the link points at. A tiny window remains between this check and
+  // the removal itself, which Node offers no way to close.
+  const folderIdentities = new Map<string, string | null>()
+
+  const assertFolderUnchanged = async (
+    folderPath: string,
+  ) => {
+    const info = await fileSystem.getEntryInfo(folderPath)
+    const listedIdentity = folderIdentities.get(folderPath)
+
+    if (
+      !info.isDirectory ||
+      (listedIdentity != null &&
+        info.identity !== listedIdentity)
+    ) {
+      throw createFolderChangedError(
+        fileSystem.basename(folderPath),
+      )
+    }
+  }
+
   const toStoppedResult = () => ({
     entriesRemoved,
     entriesTotal,
@@ -582,7 +651,7 @@ const deletePermanently = async ({
   // Removes files from a shared index with a small pool of workers. Each one
   // checks Stop before it takes the next file, so Stop halts the run after
   // at most `removalConcurrency` files that were already under way.
-  const removeFiles = async (filePaths: string[]) => {
+  const removeFiles = async (filePaths: ListedEntry[]) => {
     let nextFileIndex = 0
     let firstError: unknown = null
 
@@ -592,16 +661,26 @@ const deletePermanently = async ({
         firstError === null &&
         nextFileIndex < filePaths.length
       ) {
-        const filePath = filePaths[nextFileIndex]
+        const listedFile = filePaths[nextFileIndex]
 
         nextFileIndex += 1
 
+        if (!listedFile) {
+          break
+        }
+
         try {
-          await fileSystem.removeFile(filePath)
+          await assertFolderUnchanged(listedFile.parentPath)
+
+          if (signal.aborted) {
+            break
+          }
+
+          await fileSystem.removeFile(listedFile.path)
 
           entriesRemoved += 1
 
-          reportRemoval(filePath)
+          reportRemoval(listedFile.path)
         } catch (error) {
           firstError ??= error
         }
@@ -641,8 +720,10 @@ const deletePermanently = async ({
     })
 
     const contents = await listFolderContents({
+      assertFolderUnchanged,
       directoryPath: folderPath,
       fileSystem,
+      folderIdentities,
       onEntryFound: (entryCount) => {
         reportProgress({
           ...baseProgress,
@@ -668,13 +749,14 @@ const deletePermanently = async ({
 
     await removeFiles(contents.filePaths)
 
-    for (const directoryPath of contents.directoryPaths) {
+    for (const listedFolder of contents.directoryPaths) {
       if (signal.aborted) {
         return false
       }
 
       const isRemoved = await removeEmptiedFolder(
-        directoryPath,
+        listedFolder.path,
+        listedFolder.parentPath,
         relistCount,
       )
 
@@ -692,8 +774,13 @@ const deletePermanently = async ({
   // same counted, stoppable removal, never one opaque recursive call.
   const removeEmptiedFolder = async (
     folderPath: string,
+    parentPath: string | null,
     relistCount: number,
   ): Promise<boolean> => {
+    if (parentPath !== null) {
+      await assertFolderUnchanged(parentPath)
+    }
+
     try {
       await fileSystem.removeDirectory(folderPath)
     } catch (error) {
@@ -710,7 +797,11 @@ const deletePermanently = async ({
       )
 
       return isEmptied
-        ? removeEmptiedFolder(folderPath, relistCount + 1)
+        ? removeEmptiedFolder(
+            folderPath,
+            parentPath,
+            relistCount + 1,
+          )
         : false
     }
 
@@ -751,6 +842,8 @@ const deletePermanently = async ({
     // The folder itself is the last entry.
     entriesTotal = 1
 
+    folderIdentities.set(target.filePath, info.identity)
+
     const isEmptied = await removeFolderContents(
       target.filePath,
       0,
@@ -758,7 +851,7 @@ const deletePermanently = async ({
 
     if (
       !isEmptied ||
-      !(await removeEmptiedFolder(target.filePath, 0))
+      !(await removeEmptiedFolder(target.filePath, null, 0))
     ) {
       return toStoppedResult()
     }

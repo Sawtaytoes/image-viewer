@@ -202,6 +202,51 @@ describe("nodeDeleteFileSystem", () => {
     expect(fs.existsSync(folderPath)).toBe(false)
     expect(fs.readdirSync(outsidePath)).toHaveLength(3)
   })
+
+  test("a listed folder swapped for a link mid-delete never lets the delete reach the linked folder", async () => {
+    const folderPath = path.join(workPath, "Album")
+    const outsidePath = path.join(workPath, "Outside")
+
+    writeTree(folderPath, 6)
+    writeTree(outsidePath, 6)
+
+    let isSwapped = false
+
+    const result = await runDeleteJob({
+      fileSystem: {
+        ...nodeDeleteFileSystem,
+        removeFile: async (filePath) => {
+          await nodeDeleteFileSystem.removeFile(filePath)
+
+          // After the listing and the first removal, "inner" is moved away
+          // and a link to the outside folder takes its name.
+          if (!isSwapped) {
+            isSwapped = true
+            fs.renameSync(
+              path.join(folderPath, "inner"),
+              path.join(workPath, "Moved"),
+            )
+            fs.symlinkSync(
+              path.join(outsidePath, "inner"),
+              path.join(folderPath, "inner"),
+              "dir",
+            )
+          }
+        },
+      },
+      removalConcurrency: 1,
+      signal: new AbortController().signal,
+      targets: [
+        { filePath: folderPath, isDirectory: true },
+      ],
+      trashItem: refuseTrash,
+    })
+
+    expect(
+      fs.readdirSync(path.join(outsidePath, "inner")),
+    ).toHaveLength(3)
+    expect(result.items[0]?.outcome).toBe("failed")
+  })
 })
 
 describe("toSafeDeleteTargets", () => {

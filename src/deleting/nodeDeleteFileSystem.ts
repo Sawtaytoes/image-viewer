@@ -42,12 +42,21 @@ export const nodeDeleteFileSystem: DeleteFileSystem = {
   basename: (filePath) => path.basename(filePath),
   // `lstat`, not `stat`: a link reports as a link, so the delete removes the
   // link and never walks into the tree it points at.
+  // `bigint`, because an NTFS file id does not fit in a JavaScript number. A
+  // share that reports no inode (0) gives no identity, and the delete then
+  // checks only that the folder is still a folder.
   getEntryInfo: async (filePath) => {
-    const stats = await fs.promises.lstat(filePath)
+    const stats = await fs.promises.lstat(filePath, {
+      bigint: true,
+    })
 
     return {
+      identity:
+        stats.ino === 0n
+          ? null
+          : `${stats.dev}:${stats.ino}`,
       isDirectory: stats.isDirectory(),
-      size: stats.size,
+      size: Number(stats.size),
     }
   },
   listDirectory: async (directoryPath) => {

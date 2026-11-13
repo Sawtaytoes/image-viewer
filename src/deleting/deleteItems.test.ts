@@ -38,39 +38,78 @@ const createMemoryFileSystem = (
   const exists = (entryPath: string) =>
     directories.has(entryPath) || sizesByPath.has(entryPath)
 
+  // Every removal, by the path it really reached after links are followed.
   const removed: string[] = []
+
+  // Links to folders: a path through one resolves into the folder it points
+  // at, the way the OS resolves every folder above the last name.
+  const linkTargetsByPath = new Map<string, string>()
+
+  const resolve = (
+    entryPath: string,
+    { isFollowingLast = false } = {},
+  ) => {
+    let resolvedPath = entryPath
+
+    for (const [
+      linkPath,
+      targetPath,
+    ] of linkTargetsByPath) {
+      if (resolvedPath.startsWith(`${linkPath}/`)) {
+        resolvedPath =
+          targetPath + resolvedPath.slice(linkPath.length)
+      } else if (
+        isFollowingLast &&
+        resolvedPath === linkPath
+      ) {
+        resolvedPath = targetPath
+      }
+    }
+
+    return resolvedPath
+  }
 
   const fileSystem: DeleteFileSystem = {
     basename: (entryPath) =>
       entryPath.slice(entryPath.lastIndexOf("/") + 1),
     getEntryInfo: async (entryPath) => {
-      if (!exists(entryPath)) {
+      const resolvedPath = resolve(entryPath)
+
+      if (!exists(resolvedPath)) {
         throw new Error(`missing: ${entryPath}`)
       }
 
       return {
-        isDirectory: directories.has(entryPath),
-        size: sizesByPath.get(entryPath) ?? 0,
+        identity: resolvedPath,
+        isDirectory: directories.has(resolvedPath),
+        size: sizesByPath.get(resolvedPath) ?? 0,
       }
     },
-    listDirectory: async (directoryPath) =>
-      [...directories, ...sizesByPath.keys()]
+    listDirectory: async (directoryPath) => {
+      const resolvedPath = resolve(directoryPath, {
+        isFollowingLast: true,
+      })
+
+      return [...directories, ...sizesByPath.keys()]
         .filter(
           (entryPath) =>
-            parentOf(entryPath) === directoryPath,
+            parentOf(entryPath) === resolvedPath,
         )
         .sort()
         .map((entryPath) => ({
           isDirectory: directories.has(entryPath),
-          path: entryPath,
-        })),
+          path:
+            directoryPath +
+            entryPath.slice(resolvedPath.length),
+        }))
+    },
     removeDirectory: async (directoryPath) => {
+      const resolvedPath = resolve(directoryPath)
       const hasChildren = [
         ...directories,
         ...sizesByPath.keys(),
       ].some(
-        (entryPath) =>
-          parentOf(entryPath) === directoryPath,
+        (entryPath) => parentOf(entryPath) === resolvedPath,
       )
 
       if (hasChildren) {
@@ -80,18 +119,21 @@ const createMemoryFileSystem = (
         )
       }
 
-      directories.delete(directoryPath)
-      removed.push(directoryPath)
-      onRemove?.(directoryPath)
+      directories.delete(resolvedPath)
+      removed.push(resolvedPath)
+      onRemove?.(resolvedPath)
     },
     removeFile: async (filePath) => {
       if (filePath === failingPath) {
         throw new Error(`locked: ${filePath}`)
       }
 
-      sizesByPath.delete(filePath)
-      removed.push(filePath)
-      onRemove?.(filePath)
+      const resolvedPath = resolve(filePath)
+
+      sizesByPath.delete(resolvedPath)
+      linkTargetsByPath.delete(resolvedPath)
+      removed.push(resolvedPath)
+      onRemove?.(resolvedPath)
     },
   }
 
@@ -116,12 +158,23 @@ const createMemoryFileSystem = (
     sizesByPath.set(folderPath, 0)
   }
 
+  // A folder swapped for a link to another folder, so paths through it now
+  // reach that other folder.
+  const replaceFolderWithLinkTo = (
+    folderPath: string,
+    targetPath: string,
+  ) => {
+    replaceFolderWithLink(folderPath)
+    linkTargetsByPath.set(folderPath, targetPath)
+  }
+
   return {
     addFile,
     exists,
     fileSystem,
     removed,
     replaceFolderWithLink,
+    replaceFolderWithLinkTo,
   }
 }
 
@@ -767,6 +820,101 @@ describe("runDeleteJob when the tree changes underneath it", () => {
     expect(memory.removed).toContain("/share/Cats/Kittens")
     expect(result.items[0]?.outcome).toBe(
       "deletedPermanently",
+    )
+  })
+
+  test("a listed subfolder swapped for a link to another tree never removes anything in that tree", async () => {
+    let isSwapped = false
+
+    const memory = createMemoryFileSystem(
+      {
+        ...shareTree,
+        "/outside/": 0,
+        "/outside/d.jpg": 1,
+        "/outside/e.jpg": 1,
+      },
+      {
+        onRemove: () => {
+          // After the listing, during the removal, Kittens becomes a link.
+          if (!isSwapped) {
+            isSwapped = true
+            memory.replaceFolderWithLinkTo(
+              "/share/Cats/Kittens",
+              "/outside",
+            )
+          }
+        },
+      },
+    )
+
+    const result = await runDeleteJob({
+      fileSystem: memory.fileSystem,
+      removalConcurrency: 1,
+      signal: new AbortController().signal,
+      targets: [
+        { filePath: "/share/Cats", isDirectory: true },
+      ],
+      trashItem: refuseTrash,
+    })
+
+    expect(memory.exists("/outside/d.jpg")).toBe(true)
+    expect(memory.exists("/outside/e.jpg")).toBe(true)
+    expect(
+      memory.removed.filter((removedPath) =>
+        removedPath.startsWith("/outside"),
+      ),
+    ).toEqual([])
+    expect(result.items[0]?.outcome).toBe("failed")
+    expect(result.items[0]?.errorMessage).toContain(
+      '"Kittens" was moved or replaced',
+    )
+  })
+
+  test("a folder higher up swapped for a link never lets a deeper removal reach the other tree", async () => {
+    let isSwapped = false
+
+    const memory = createMemoryFileSystem(
+      {
+        "/share/": 0,
+        "/share/Cats/": 0,
+        "/share/Cats/a.jpg": 1,
+        "/share/Cats/Kittens/": 0,
+        "/share/Cats/Kittens/Tiny/": 0,
+        "/share/Cats/Kittens/Tiny/f.jpg": 1,
+        "/outside/": 0,
+        "/outside/Tiny/": 0,
+        "/outside/Tiny/f.jpg": 1,
+      },
+      {
+        onRemove: () => {
+          if (!isSwapped) {
+            isSwapped = true
+            memory.replaceFolderWithLinkTo(
+              "/share/Cats/Kittens",
+              "/outside",
+            )
+          }
+        },
+      },
+    )
+
+    const result = await runDeleteJob({
+      fileSystem: memory.fileSystem,
+      removalConcurrency: 1,
+      signal: new AbortController().signal,
+      targets: [
+        { filePath: "/share/Cats", isDirectory: true },
+      ],
+      trashItem: refuseTrash,
+    })
+
+    // "Tiny" still resolves to a folder, but to a different one, so only its
+    // identity gives the swap away.
+    expect(memory.exists("/outside/Tiny/f.jpg")).toBe(true)
+    expect(memory.removed).toEqual(["/share/Cats/a.jpg"])
+    expect(result.items[0]?.outcome).toBe("failed")
+    expect(result.items[0]?.errorMessage).toContain(
+      '"Tiny" was moved or replaced',
     )
   })
 })
