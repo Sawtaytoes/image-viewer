@@ -1,3 +1,10 @@
+## [2.15.1](https://github.com/Sawtaytoes/image-viewer/compare/v2.15.0...v2.15.1) (2026-11-13)
+
+
+### Performance Improvements
+
+* decode HEIC in a utility process, and type-check main and preload ([#56](https://github.com/Sawtaytoes/image-viewer/issues/56)) ([d3111c0](https://github.com/Sawtaytoes/image-viewer/commit/d3111c064e19ec8445124b4b27fbdca1baecc83e))
+
 # [2.15.0](https://github.com/Sawtaytoes/image-viewer/compare/v2.14.1...v2.15.0) (2026-11-13)
 
 
