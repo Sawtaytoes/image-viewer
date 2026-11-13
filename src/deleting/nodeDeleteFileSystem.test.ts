@@ -142,6 +142,41 @@ describe("nodeDeleteFileSystem", () => {
     )
   })
 
+  test("a file written into the folder mid-delete is removed too, not left behind", async () => {
+    const folderPath = path.join(workPath, "Album")
+
+    writeTree(folderPath, 6)
+
+    let hasWritten = false
+
+    const result = await runDeleteJob({
+      fileSystem: nodeDeleteFileSystem,
+      onProgress: ({ phase }) => {
+        // The listing is done; a program saves a new file into a subfolder.
+        if (phase === "removing" && !hasWritten) {
+          hasWritten = true
+          fs.writeFileSync(
+            path.join(folderPath, "inner", "Thumbs.db"),
+            "x",
+          )
+        }
+      },
+      progressIntervalMs: 0,
+      signal: new AbortController().signal,
+      targets: [
+        { filePath: folderPath, isDirectory: true },
+      ],
+      trashItem: refuseTrash,
+    })
+
+    expect(fs.existsSync(folderPath)).toBe(false)
+    expect(result.items[0]).toMatchObject({
+      entriesRemoved: 9,
+      entriesTotal: 9,
+      outcome: "deletedPermanently",
+    })
+  })
+
   test("removes a link inside the folder without touching what it points at", async () => {
     const folderPath = path.join(workPath, "Album")
     const outsidePath = path.join(workPath, "Outside")

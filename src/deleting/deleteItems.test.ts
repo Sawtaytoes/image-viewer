@@ -74,7 +74,10 @@ const createMemoryFileSystem = (
       )
 
       if (hasChildren) {
-        throw new Error(`not empty: ${directoryPath}`)
+        throw Object.assign(
+          new Error(`not empty: ${directoryPath}`),
+          { code: "ENOTEMPTY" },
+        )
       }
 
       directories.delete(directoryPath)
@@ -92,7 +95,34 @@ const createMemoryFileSystem = (
     },
   }
 
-  return { exists, fileSystem, removed }
+  // Another program writing into the tree mid-delete.
+  const addFile = (filePath: string, size = 1) => {
+    sizesByPath.set(filePath, size)
+  }
+
+  // A folder swapped for a link (a file-like entry) mid-delete.
+  const replaceFolderWithLink = (folderPath: string) => {
+    for (const entryPath of [
+      ...directories,
+      ...sizesByPath.keys(),
+    ]) {
+      if (entryPath.startsWith(`${folderPath}/`)) {
+        directories.delete(entryPath)
+        sizesByPath.delete(entryPath)
+      }
+    }
+
+    directories.delete(folderPath)
+    sizesByPath.set(folderPath, 0)
+  }
+
+  return {
+    addFile,
+    exists,
+    fileSystem,
+    removed,
+    replaceFolderWithLink,
+  }
 }
 
 // "/share/Cats" with 3 photos and a subfolder of 2, plus a loose file.
@@ -545,6 +575,199 @@ describe("runDeleteJob", () => {
       ["listing", 0],
       ["removing", 0],
     ])
+  })
+})
+
+describe("runDeleteJob when the tree changes underneath it", () => {
+  test("Stop while a file target is looked up never removes it", async () => {
+    const abortController = new AbortController()
+
+    const { exists, fileSystem, removed } =
+      createMemoryFileSystem(shareTree)
+
+    const getEntryInfo = fileSystem.getEntryInfo
+
+    fileSystem.getEntryInfo = async (entryPath) => {
+      const info = await getEntryInfo(entryPath)
+
+      abortController.abort()
+
+      return info
+    }
+
+    const result = await runDeleteJob({
+      fileSystem,
+      signal: abortController.signal,
+      targets: [
+        {
+          filePath: "/share/notes.txt",
+          isDirectory: false,
+        },
+      ],
+      trashItem: refuseTrash,
+    })
+
+    expect(removed).toEqual([])
+    expect(exists("/share/notes.txt")).toBe(true)
+    expect(result).toMatchObject({
+      isStopped: true,
+      items: [
+        expect.objectContaining({ outcome: "notDeleted" }),
+      ],
+    })
+  })
+
+  test("a file that appears after the listing is found, counted, and removed one by one", async () => {
+    let hasAdded = false
+
+    const memory = createMemoryFileSystem(shareTree, {
+      onRemove: (removedPath) => {
+        // Explorer drops a thumbnail cache into a folder mid-delete.
+        if (
+          !hasAdded &&
+          removedPath === "/share/Cats/a.jpg"
+        ) {
+          hasAdded = true
+          memory.addFile("/share/Cats/Kittens/Thumbs.db")
+        }
+      },
+    })
+
+    const result = await runDeleteJob({
+      fileSystem: memory.fileSystem,
+      removalConcurrency: 1,
+      signal: new AbortController().signal,
+      targets: [
+        { filePath: "/share/Cats", isDirectory: true },
+      ],
+      trashItem: refuseTrash,
+    })
+
+    expect(memory.exists("/share/Cats")).toBe(false)
+    expect(memory.removed).toContain(
+      "/share/Cats/Kittens/Thumbs.db",
+    )
+    expect(result.items[0]).toMatchObject({
+      entriesRemoved: 8,
+      entriesTotal: 8,
+      outcome: "deletedPermanently",
+    })
+  })
+
+  test("Stop still works while a re-listed folder's new entries are removed", async () => {
+    const abortController = new AbortController()
+
+    let hasAdded = false
+
+    const memory = createMemoryFileSystem(shareTree, {
+      onRemove: (removedPath) => {
+        if (
+          !hasAdded &&
+          removedPath === "/share/Cats/a.jpg"
+        ) {
+          hasAdded = true
+
+          for (let index = 0; index < 5; index += 1) {
+            memory.addFile(
+              `/share/Cats/Kittens/new-${index}.jpg`,
+            )
+          }
+        }
+
+        if (
+          removedPath === "/share/Cats/Kittens/new-1.jpg"
+        ) {
+          abortController.abort()
+        }
+      },
+    })
+
+    const result = await runDeleteJob({
+      fileSystem: memory.fileSystem,
+      removalConcurrency: 1,
+      signal: abortController.signal,
+      targets: [
+        { filePath: "/share/Cats", isDirectory: true },
+      ],
+      trashItem: refuseTrash,
+    })
+
+    expect(result.items[0]).toMatchObject({
+      outcome: "partlyDeleted",
+    })
+    expect(
+      memory.exists("/share/Cats/Kittens/new-2.jpg"),
+    ).toBe(true)
+    expect(memory.exists("/share/Cats/Kittens")).toBe(true)
+  })
+
+  test("a folder that keeps refilling fails after a few listings instead of looping", async () => {
+    let addCount = 0
+
+    const memory = createMemoryFileSystem(
+      { "/share/": 0, "/share/Busy/": 0 },
+      {
+        onRemove: () => {
+          addCount += 1
+          memory.addFile(
+            `/share/Busy/again-${addCount}.jpg`,
+          )
+        },
+      },
+    )
+
+    memory.addFile("/share/Busy/first.jpg")
+
+    const result = await runDeleteJob({
+      fileSystem: memory.fileSystem,
+      signal: new AbortController().signal,
+      targets: [
+        { filePath: "/share/Busy", isDirectory: true },
+      ],
+      trashItem: refuseTrash,
+    })
+
+    expect(result.items[0]).toMatchObject({
+      errorMessage: "not empty: /share/Busy",
+      outcome: "failed",
+    })
+  })
+
+  test("a folder swapped for a link after the listing is removed as a link, never read", async () => {
+    const memory = createMemoryFileSystem(shareTree)
+
+    const listDirectory = memory.fileSystem.listDirectory
+    const listedPaths: string[] = []
+
+    memory.fileSystem.listDirectory = async (
+      directoryPath,
+    ) => {
+      listedPaths.push(directoryPath)
+
+      const entries = await listDirectory(directoryPath)
+
+      // Right after the top folder is read, its subfolder becomes a link.
+      if (directoryPath === "/share/Cats") {
+        memory.replaceFolderWithLink("/share/Cats/Kittens")
+      }
+
+      return entries
+    }
+
+    const result = await runDeleteJob({
+      fileSystem: memory.fileSystem,
+      signal: new AbortController().signal,
+      targets: [
+        { filePath: "/share/Cats", isDirectory: true },
+      ],
+      trashItem: refuseTrash,
+    })
+
+    expect(listedPaths).toEqual(["/share/Cats"])
+    expect(memory.removed).toContain("/share/Cats/Kittens")
+    expect(result.items[0]?.outcome).toBe(
+      "deletedPermanently",
+    )
   })
 })
 

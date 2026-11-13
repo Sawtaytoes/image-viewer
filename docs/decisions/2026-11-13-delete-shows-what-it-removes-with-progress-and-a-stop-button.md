@@ -2,6 +2,9 @@
 
 - **Status:** Locked
 - **Date:** 2026-11-13
+- **Type:** Behavior
+- **Supersedes:** —
+- **Superseded by:** —
 - **Deciders:** Kevin (owner) + agent
 - **Source:** owner correction to a code audit finding, in chat, 2026-11-13
 
@@ -14,6 +17,12 @@ show its progress (items done out of total, entries removed out of total, and th
 removed now) and a Stop button. Stop halts the remaining work, and the dialog says plainly that
 it cannot undo what is already removed. When the delete ends, report each item and how it went:
 moved to the Recycle Bin, deleted permanently, stopped partway, untouched, or failed.
+
+## Context
+
+A code audit on 2026-11-12 listed the permanent fallback in `src/main.js` as a data-loss risk:
+when moving an item to the trash failed, the app deleted it permanently and still reported
+success. The owner answered the finding the next day, and his answer is this decision.
 
 ## What was rejected ("no, that's wrong")
 
@@ -52,6 +61,12 @@ and Stop left the 81,964 files that had not been reached.
   filesystem, and the browser build all run the same code. Each item goes to `shell.trashItem`
   first. When the trash refuses it, the job lists the folder and removes it one entry at a time,
   four at once, checking Stop before each one. It never follows a link out of the folder.
+- A folder that gains an entry during the delete (Explorer drops a `Thumbs.db`) fails its
+  `rmdir` with ENOTEMPTY. The job lists it again, up to three times, and removes the new entries
+  the same counted, stoppable way. Never fall back to a recursive `fs.rm`, which can neither
+  report nor stop. A folder that became a link after it was listed is removed as a link.
+- Main stops a job when its window closes, reloads, or crashes, because the dialog with the
+  Stop button is gone.
 - Stop cannot interrupt a trash call that is already running, because the OS offers no way to do
   that. A trash that fails after Stop must not fall through to the permanent delete.
 - Main checks every target: an absolute path, and never a drive or filesystem root.

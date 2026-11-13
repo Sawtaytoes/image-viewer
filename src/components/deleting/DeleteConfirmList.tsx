@@ -6,15 +6,11 @@ import {
   describeIncompleteCount,
   describeSummaryItem,
   describeSummaryTotal,
-  formatCount,
   getTrashNote,
 } from "./deleteItemsText"
 
-// Past this many, the list names the first few and counts the rest, so a
-// selection of hundreds of folders does not become a wall of names.
-const visibleTargetLimit = 50
-
 // The question's body: every item by name, with what it holds, and the total.
+// Every name is listed, however many there are; the dialog's body scrolls.
 const DeleteConfirmList = ({
   getName,
   summary,
@@ -28,47 +24,33 @@ const DeleteConfirmList = ({
   targets: readonly DeleteTarget[]
   trashName: string
 }) => {
-  const hiddenTargetCount = Math.max(
-    0,
-    targets.length - visibleTargetLimit,
-  )
-
   return (
     <div className="flex animate-fade-in flex-col gap-3">
       <ul className="flex flex-col gap-2">
-        {targets
-          .slice(0, visibleTargetLimit)
-          .map((target, targetIndex) => {
-            const summaryItem = summary?.items[targetIndex]
+        {targets.map((target, targetIndex) => {
+          const summaryItem = summary?.items[targetIndex]
 
-            return (
-              <li
-                className="flex flex-col"
-                key={target.filePath}
-              >
-                <span className="break-all font-semibold text-content-primary text-lg">
-                  {getName(target.filePath)}
-                </span>
+          return (
+            <li
+              className="flex flex-col"
+              key={target.filePath}
+            >
+              <span className="break-all font-semibold text-content-primary text-lg">
+                {getName(target.filePath)}
+              </span>
 
-                <span className="text-content-secondary text-sm">
-                  {target.isDirectory ? "Folder" : "File"}
-                  {" · "}
-                  {summaryItem
-                    ? describeSummaryItem(summaryItem)
-                    : summaryErrorMessage === null
-                      ? "Counting…"
-                      : "Not counted"}
-                </span>
-              </li>
-            )
-          })}
-
-        {hiddenTargetCount > 0 && (
-          <li className="text-content-secondary text-sm">
-            And{" "}
-            {formatCount(hiddenTargetCount, "more item")}
-          </li>
-        )}
+              <span className="text-content-secondary text-sm">
+                {target.isDirectory ? "Folder" : "File"}
+                {" · "}
+                {summaryItem
+                  ? describeSummaryItem(summaryItem)
+                  : summaryErrorMessage === null
+                    ? "Counting…"
+                    : "Not counted"}
+              </span>
+            </li>
+          )
+        })}
       </ul>
 
       {summary &&

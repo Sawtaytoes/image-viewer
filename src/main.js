@@ -811,10 +811,18 @@ ipcMain.handle(
     const abortController = new AbortController()
     const sender = event.sender
 
-    // A window that closes mid-delete can no longer show progress or a Stop
-    // button, so its delete stops after the current entry.
+    // A window that closes, reloads ([Ctrl][R]), or crashes mid-delete loses
+    // its dialog, so nothing could show progress or offer Stop any more. Its
+    // delete stops after the current entry. A hash-route change is a
+    // same-document navigation and keeps the page, so it does not stop it.
     const stopWhenWindowCloses = () => {
       abortController.abort()
+    }
+
+    const stopWhenPageIsReplaced = (details) => {
+      if (details?.isMainFrame && !details.isSameDocument) {
+        abortController.abort()
+      }
     }
 
     deleteJobAbortControllersById.set(
@@ -823,6 +831,11 @@ ipcMain.handle(
     )
 
     sender.once("destroyed", stopWhenWindowCloses)
+    sender.on("render-process-gone", stopWhenWindowCloses)
+    sender.on(
+      "did-start-navigation",
+      stopWhenPageIsReplaced,
+    )
 
     try {
       return await runDeleteJob({
@@ -843,6 +856,14 @@ ipcMain.handle(
         sender.removeListener(
           "destroyed",
           stopWhenWindowCloses,
+        )
+        sender.removeListener(
+          "render-process-gone",
+          stopWhenWindowCloses,
+        )
+        sender.removeListener(
+          "did-start-navigation",
+          stopWhenPageIsReplaced,
         )
       }
     }

@@ -32,32 +32,11 @@ const removeFile = async (filePath: string) => {
   }
 }
 
-// A folder should be empty by the time it is removed. Explorer can drop a
-// `Thumbs.db` or `desktop.ini` into it mid-delete, and a new file could land
-// there too, so a folder that is no longer empty falls back to `fs.rm` for
-// whatever appeared after the listing.
-const removeDirectory = async (directoryPath: string) => {
-  try {
-    await fs.promises.rmdir(directoryPath)
-  } catch (error) {
-    if (
-      error instanceof Error &&
-      "code" in error &&
-      (error.code === "ENOTEMPTY" ||
-        error.code === "EEXIST")
-    ) {
-      await fs.promises.rm(directoryPath, {
-        force: true,
-        maxRetries: 3,
-        recursive: true,
-      })
-
-      return
-    }
-
-    throw error
-  }
-}
+// Only ever removes an empty folder. A folder that gained an entry after it
+// was listed fails with ENOTEMPTY, and the delete job lists it again, so
+// whatever appeared is removed with progress and can still be stopped.
+const removeDirectory = (directoryPath: string) =>
+  fs.promises.rmdir(directoryPath)
 
 export const nodeDeleteFileSystem: DeleteFileSystem = {
   basename: (filePath) => path.basename(filePath),

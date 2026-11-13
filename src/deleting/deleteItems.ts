@@ -287,6 +287,24 @@ const listFolderContents = async ({
       break
     }
 
+    // A folder found earlier is checked again just before it is read. If it
+    // became a link in the meantime, reading it would walk into the tree the
+    // link points at, so it is removed as a link instead.
+    if (nextDirectory !== directoryPath) {
+      const info =
+        await fileSystem.getEntryInfo(nextDirectory)
+
+      if (!info.isDirectory) {
+        directoryPaths.splice(
+          directoryPaths.indexOf(nextDirectory),
+          1,
+        )
+        filePaths.push(nextDirectory)
+
+        continue
+      }
+    }
+
     const entries =
       await fileSystem.listDirectory(nextDirectory)
 
@@ -492,6 +510,17 @@ export const runDeleteJob = async ({
   }
 }
 
+// The error a filesystem gives for removing a folder that is not empty.
+// Node uses ENOTEMPTY, and some platforms use EEXIST for the same thing.
+export const isFolderNotEmptyError = (error: unknown) =>
+  error instanceof Error &&
+  "code" in error &&
+  (error.code === "ENOTEMPTY" || error.code === "EEXIST")
+
+// How many times one folder is listed again when something new appeared in
+// it during the delete, before the delete gives up on it.
+const maxFolderRelistCount = 3
+
 const deletePermanently = async ({
   baseProgress,
   fileSystem,
@@ -524,88 +553,36 @@ const deletePermanently = async ({
   let entriesRemoved = 0
   let entriesTotal: number | null = null
 
-  try {
-    const info = await fileSystem.getEntryInfo(
-      target.filePath,
-    )
+  const toStoppedResult = () => ({
+    entriesRemoved,
+    entriesTotal,
+    errorMessage: null,
+    outcome:
+      entriesRemoved === 0
+        ? ("notDeleted" as const)
+        : ("partlyDeleted" as const),
+  })
 
-    if (!info.isDirectory) {
-      entriesTotal = 1
-
-      reportProgress({
+  const reportRemoval = (
+    currentPath: string,
+    isForced = false,
+  ) => {
+    reportProgress(
+      {
         ...baseProgress,
-        currentPath: target.filePath,
+        currentPath,
+        entriesDone: entriesRemoved,
         entriesTotal,
         phase: "removing",
-      })
-
-      await fileSystem.removeFile(target.filePath)
-
-      entriesRemoved = 1
-
-      return {
-        entriesRemoved,
-        entriesTotal,
-        errorMessage: null,
-        outcome: "deletedPermanently",
-      }
-    }
-
-    reportProgress({ ...baseProgress, phase: "listing" })
-
-    const contents = await listFolderContents({
-      directoryPath: target.filePath,
-      fileSystem,
-      onEntryFound: (entryCount) => {
-        reportProgress({
-          ...baseProgress,
-          entriesTotal: null,
-          phase: "listing",
-          // The count found so far rides in `entriesDone` while listing.
-          entriesDone: entryCount,
-        })
       },
-      signal,
-    })
+      { isForced },
+    )
+  }
 
-    if (!contents) {
-      return {
-        entriesRemoved,
-        entriesTotal,
-        errorMessage: null,
-        outcome: "notDeleted",
-      }
-    }
-
-    // The folder itself is the last entry.
-    entriesTotal =
-      contents.filePaths.length +
-      contents.directoryPaths.length +
-      1
-
-    const totalForProgress = entriesTotal
-
-    const reportRemoval = (
-      currentPath: string,
-      isForced = false,
-    ) => {
-      reportProgress(
-        {
-          ...baseProgress,
-          currentPath,
-          entriesDone: entriesRemoved,
-          entriesTotal: totalForProgress,
-          phase: "removing",
-        },
-        { isForced },
-      )
-    }
-
-    reportRemoval(target.filePath, true)
-
-    // A small pool of workers pulls from one shared index. Each checks Stop
-    // before it takes the next file, so Stop halts the run after at most
-    // `removalConcurrency` files that were already under way.
+  // Removes files from a shared index with a small pool of workers. Each one
+  // checks Stop before it takes the next file, so Stop halts the run after
+  // at most `removalConcurrency` files that were already under way.
+  const removeFiles = async (filePaths: string[]) => {
     let nextFileIndex = 0
     let firstError: unknown = null
 
@@ -613,9 +590,9 @@ const deletePermanently = async ({
       while (
         !signal.aborted &&
         firstError === null &&
-        nextFileIndex < contents.filePaths.length
+        nextFileIndex < filePaths.length
       ) {
-        const filePath = contents.filePaths[nextFileIndex]
+        const filePath = filePaths[nextFileIndex]
 
         nextFileIndex += 1
 
@@ -636,10 +613,7 @@ const deletePermanently = async ({
         {
           length: Math.max(
             1,
-            Math.min(
-              removalConcurrency,
-              contents.filePaths.length,
-            ),
+            Math.min(removalConcurrency, filePaths.length),
           ),
         },
         removeNextFiles,
@@ -649,32 +623,144 @@ const deletePermanently = async ({
     if (firstError !== null) {
       throw firstError
     }
+  }
 
-    for (const directoryPath of [
-      ...contents.directoryPaths,
-      target.filePath,
-    ]) {
-      if (signal.aborted) {
-        break
-      }
+  // Lists a folder and removes everything inside it, deepest first. Resolves
+  // to false when Stop ended it early.
+  const removeFolderContents = async (
+    folderPath: string,
+    relistCount: number,
+  ): Promise<boolean> => {
+    const entriesBefore = entriesTotal ?? 0
 
-      await fileSystem.removeDirectory(directoryPath)
+    reportProgress({
+      ...baseProgress,
+      entriesDone: entriesRemoved,
+      entriesTotal: null,
+      phase: "listing",
+    })
 
-      entriesRemoved += 1
+    const contents = await listFolderContents({
+      directoryPath: folderPath,
+      fileSystem,
+      onEntryFound: (entryCount) => {
+        reportProgress({
+          ...baseProgress,
+          // The count found so far rides in `entriesDone` while listing.
+          entriesDone: entryCount,
+          entriesTotal: null,
+          phase: "listing",
+        })
+      },
+      signal,
+    })
 
-      reportRemoval(directoryPath)
+    if (!contents) {
+      return false
     }
 
-    if (entriesRemoved < entriesTotal) {
+    entriesTotal =
+      entriesBefore +
+      contents.filePaths.length +
+      contents.directoryPaths.length
+
+    reportRemoval(folderPath, true)
+
+    await removeFiles(contents.filePaths)
+
+    for (const directoryPath of contents.directoryPaths) {
+      if (signal.aborted) {
+        return false
+      }
+
+      const isRemoved = await removeEmptiedFolder(
+        directoryPath,
+        relistCount,
+      )
+
+      if (!isRemoved) {
+        return false
+      }
+    }
+
+    return !signal.aborted
+  }
+
+  // Removes a folder that should now be empty. When something appeared in it
+  // after it was listed (Explorer drops a `Thumbs.db`, another program saves
+  // a file), the folder is listed again and its new entries go through the
+  // same counted, stoppable removal, never one opaque recursive call.
+  const removeEmptiedFolder = async (
+    folderPath: string,
+    relistCount: number,
+  ): Promise<boolean> => {
+    try {
+      await fileSystem.removeDirectory(folderPath)
+    } catch (error) {
+      if (
+        !isFolderNotEmptyError(error) ||
+        relistCount >= maxFolderRelistCount
+      ) {
+        throw error
+      }
+
+      const isEmptied = await removeFolderContents(
+        folderPath,
+        relistCount + 1,
+      )
+
+      return isEmptied
+        ? removeEmptiedFolder(folderPath, relistCount + 1)
+        : false
+    }
+
+    entriesRemoved += 1
+
+    reportRemoval(folderPath)
+
+    return true
+  }
+
+  try {
+    const info = await fileSystem.getEntryInfo(
+      target.filePath,
+    )
+
+    // Stop may have arrived while the entry was being looked up.
+    if (signal.aborted) {
+      return toStoppedResult()
+    }
+
+    if (!info.isDirectory) {
+      entriesTotal = 1
+
+      reportRemoval(target.filePath, true)
+
+      await fileSystem.removeFile(target.filePath)
+
+      entriesRemoved = 1
+
       return {
         entriesRemoved,
         entriesTotal,
         errorMessage: null,
-        outcome:
-          entriesRemoved === 0
-            ? "notDeleted"
-            : "partlyDeleted",
+        outcome: "deletedPermanently",
       }
+    }
+
+    // The folder itself is the last entry.
+    entriesTotal = 1
+
+    const isEmptied = await removeFolderContents(
+      target.filePath,
+      0,
+    )
+
+    if (
+      !isEmptied ||
+      !(await removeEmptiedFolder(target.filePath, 0))
+    ) {
+      return toStoppedResult()
     }
 
     return {

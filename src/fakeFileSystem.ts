@@ -828,8 +828,12 @@ const createFakeFileSystem = ({
         }
 
         if (directory.children.size > 0) {
-          throw new Error(
-            `Fake folder is not empty: ${directoryPath}`,
+          // The code Node gives, so the delete job lists the folder again.
+          throw Object.assign(
+            new Error(
+              `Fake folder is not empty: ${directoryPath}`,
+            ),
+            { code: "ENOTEMPTY" },
           )
         }
 
