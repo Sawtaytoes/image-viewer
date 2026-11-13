@@ -117,6 +117,7 @@ read `process`. All of that goes through the preload bridge, exposed as **`windo
 | `watchDirectory(dir, onChange)` | `fs.watch` on a folder's direct entries, settled per burst; returns an unsubscribe. The galleries re-read in place on a change (`useFolderListing(path, { isWatchingForChanges: true })`); an open image pane does not |
 | `readImageData(filePath)` | `Promise<{ data: ArrayBuffer, mimeType }>` — image bytes for the renderer Blob |
 | `deleteFilePath({ filePath, isDirectory })` | `Promise<boolean>` — trash, then permanent-delete fallback |
+| `deleteItems.{summarize,start,stop}` | the app's delete: `summarize(targets)` counts files, folders and bytes for the confirmation (bounded, so a huge folder says "at least"); `start({ jobId, targets }, onProgress)` runs it with progress and resolves to how each item went; `stop(jobId)` halts what remains. Every delete button goes through `DeleteItemsProvider`'s `requestDelete` ([decision](docs/decisions/2026-11-13-delete-shows-what-it-removes-with-progress-and-a-stop-button.md)) |
 | `createNewWindow({ filePath })` | open another window |
 | `colorScheme.get()` | `"light" \| "dark"` — the OS scheme from main's `nativeTheme` (sync); the seam Charcuterie's colour-scheme resolver reads instead of `matchMedia` |
 | `colorScheme.onChanged(cb)` | subscribe to OS light/dark flips (main's `nativeTheme` `updated`); returns an unsubscribe |
@@ -130,13 +131,18 @@ everything crossing `contextBridge` **plain/serializable** (map `Dirent`/`Stats`
 ## Main process invariants (`src/main.js`)
 
 - **IPC channels:** `get-windows-drives` (sync), `createNewWindow` (send), `deleteFilePath` (invoke),
-  `get-native-theme` (sync) + `native-theme-updated` (broadcast) for the OS colour scheme.
+  `delete:summarize` + `delete:start` (invoke), `delete:stop` (send) + `delete:progress` (to the
+  window, with the job id), `get-native-theme` (sync) + `native-theme-updated` (broadcast) for the
+  OS colour scheme.
   Don't rename without updating preload + renderer.
 - **OS colour scheme** is read from `nativeTheme` here and bridged as `window.api.colorScheme` — the
   renderer has no reliable `matchMedia` for the OS. `nativeTheme.themeSource` stays `"system"` (read,
   never override). See [`docs/decisions/2026-08-03-follow-the-os-scheme-via-electron-nativetheme.md`](docs/decisions/2026-08-03-follow-the-os-scheme-via-electron-nativetheme.md).
-- **Delete** = `shell.trashItem` → on failure, `fs.promises.rm({recursive,force})`. (`moveItemToTrash`
-  was removed in Electron 13.) Keep delete going to the Recycle Bin.
+- **Delete** = `shell.trashItem` → on failure, a permanent delete, one entry at a time, so it can
+  report progress and stop (`src/deleting/deleteItems.ts`). The permanent fallback is intentional
+  and asks no second question. (`moveItemToTrash` was removed in Electron 13.) Keep delete going to
+  the Recycle Bin first. See
+  [`delete-shows-what-it-removes-with-progress-and-a-stop-button`](docs/decisions/2026-11-13-delete-shows-what-it-removes-with-progress-and-a-stop-button.md).
 - **Image bytes** are read off disk in preload via `window.api.readImageData(filePath)` (returns
   `{ data: ArrayBuffer, mimeType }`) and turned into a `Blob` in
   ([`createFileDownloadObservable.js`](src/components/imageLoader/createFileDownloadObservable.js)).
