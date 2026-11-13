@@ -214,6 +214,7 @@ pnpmfileChecksum: sha256-FQGS1e8vv/LVajaqL3KYiWCsC7lnvw6DNrWk/h8C/MI=
 
 patchedDependencies:
   braces@3.0.3: 9710a2a1b9a756a9bc67162b23471075c25b76be46b0b6618e5e23e7a2b57550
+  electron-installer-redhat@3.4.0: f74ffe51e767ae4b73d961bb11801960828e4e870040e5509eb91d1888d54297
   http-cache-semantics@4.3.0: a91de1a6a31b41a33d601b32a442c0ccea02a0e927f068890ffcf93c27e4b988
   npm@11.16.0: 130f1fcc42bebb9283b0cd841826a201cece32fdd31518757386c60dfc2c176d
 
@@ -5041,7 +5042,7 @@ snapshots:
       '@electron-forge/maker-base': 8.0.0-alpha.10(supports-color@10.2.2)
       '@electron-forge/shared-types': 8.0.0-alpha.10(supports-color@10.2.2)
     optionalDependencies:
-      electron-installer-redhat: 3.4.0(supports-color@10.2.2)
+      electron-installer-redhat: 3.4.0(patch_hash=f74ffe51e767ae4b73d961bb11801960828e4e870040e5509eb91d1888d54297)(supports-color@10.2.2)
     transitivePeerDependencies:
       - supports-color
 
@@ -6859,7 +6860,7 @@ snapshots:
       - supports-color
     optional: true
 
-  electron-installer-redhat@3.4.0(supports-color@10.2.2):
+  electron-installer-redhat@3.4.0(patch_hash=f74ffe51e767ae4b73d961bb11801960828e4e870040e5509eb91d1888d54297)(supports-color@10.2.2):
     dependencies:
       '@malept/cross-spawn-promise': 1.1.1
       debug: 4.4.3(supports-color@10.2.2)

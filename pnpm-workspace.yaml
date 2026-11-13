@@ -13,5 +13,9 @@ overrides:
   "http-cache-semantics@^4.1.1": "4.3.0"
 patchedDependencies:
   "braces@3.0.3": "patches/braces-npm-3.0.3-582c14023c.patch"
+  # rpm 4.20 and later (the runner image has rpm 6) run `%install` in a
+  # per-package build folder, so the spec's relative `cp usr/*` finds nothing.
+  # `%{_builddir}` is the top build folder in every rpm version.
+  "electron-installer-redhat@3.4.0": "patches/electron-installer-redhat@3.4.0.patch"
   "http-cache-semantics@4.3.0": "patches/http-cache-semantics-npm-4.3.0-ee45f76976.patch"
   "npm@11.16.0": "patches/npm-11.16.0-unbundle.patch"
