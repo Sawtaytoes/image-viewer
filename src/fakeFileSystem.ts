@@ -15,6 +15,10 @@
 // distinct shades. The root's loose images are near-gray to mark "you're at
 // the top".
 
+import {
+  createInProcessDeleteItemsApi,
+  type DeleteFileSystem,
+} from "./deleting/deleteItems"
 import { imageMimeTypesByExtension } from "./imageMimeTypes"
 import type {
   DirectoryEntry,
@@ -260,9 +264,19 @@ const fakeTreeSpec: FakeTreeSpec = {
 
 // Builds the flat path → node map. `path` is node's path module (passed in so
 // path semantics exactly match the host OS: `\` on Windows, `/` elsewhere).
+//
+// The two delete options exist so the delete dialog's progress can be seen:
+// `deleteDelayMs` pauses on every removed entry (the tree otherwise deletes
+// within one tick, faster than a frame), and `isTrashUnavailable` makes the
+// trash refuse every item, the way a network share does, so each delete takes
+// the permanent, file-by-file path.
 const createFakeFileSystem = ({
+  deleteDelayMs = 0,
+  isTrashUnavailable = false,
   path,
 }: {
+  deleteDelayMs?: number
+  isTrashUnavailable?: boolean
   path: PathModule
 }) => {
   const rootPath = path.sep === "\\" ? "C:\\" : "/"
@@ -705,18 +719,13 @@ const createFakeFileSystem = ({
     }
   }
 
-  // Virtual delete: drop the node and its whole subtree, and unlink it from its
-  // parent. Mutates the in-memory map only — never disk.
-  const deleteFilePath = ({
-    filePath,
-  }: {
-    filePath: string
-    isDirectory?: boolean
-  }): Promise<boolean> => {
+  // Unlink a node from its parent and drop it with its whole subtree. Mutates
+  // the in-memory map only — never disk.
+  const detachSubtree = (filePath: string) => {
     const node = nodesByPath.get(filePath)
 
     if (!node) {
-      return Promise.resolve(false)
+      return false
     }
 
     const removeSubtree = (targetPath: string) => {
@@ -741,14 +750,128 @@ const createFakeFileSystem = ({
       notifyDirectoryChanged(node.parent)
     }
 
-    return Promise.resolve(true)
+    return true
   }
+
+  // Virtual delete: the whole subtree goes at once, like the trash.
+  const deleteFilePath = ({
+    filePath,
+  }: {
+    filePath: string
+    isDirectory?: boolean
+  }): Promise<boolean> =>
+    Promise.resolve(detachSubtree(filePath))
+
+  const pauseForDelete = (multiplier = 1) =>
+    deleteDelayMs > 0
+      ? new Promise<void>((resolve) => {
+          setTimeout(resolve, deleteDelayMs * multiplier)
+        })
+      : Promise.resolve()
+
+  const getExistingNode = (filePath: string) => {
+    const node = nodesByPath.get(filePath)
+
+    if (!node) {
+      throw new Error(`Fake file not found: ${filePath}`)
+    }
+
+    return node
+  }
+
+  // The fake tree seen through the delete job's eyes. A fake image's size is
+  // the size of the BMP `readImageData` would make for it.
+  const deleteFileSystem: DeleteFileSystem = {
+    basename: (filePath) =>
+      nodesByPath.get(filePath)?.name ??
+      filePath.split(path.sep).filter(Boolean).at(-1) ??
+      filePath,
+    getEntryInfo: (filePath) =>
+      Promise.resolve().then(() => {
+        const node = getExistingNode(filePath)
+
+        return {
+          isDirectory: node.isDirectory,
+          size: node.isDirectory
+            ? 0
+            : 54 +
+              Math.floor((24 * node.width + 31) / 32) *
+                4 *
+                node.height,
+        }
+      }),
+    listDirectory: (directoryPath) =>
+      Promise.resolve().then(() => {
+        const directory = getDirectory(directoryPath)
+
+        if (!directory) {
+          throw new Error(
+            `Fake folder not found: ${directoryPath}`,
+          )
+        }
+
+        return [...directory.children].map((childPath) => ({
+          isDirectory:
+            nodesByPath.get(childPath)?.isDirectory ??
+            false,
+          path: childPath,
+        }))
+      }),
+    removeDirectory: (directoryPath) =>
+      pauseForDelete().then(() => {
+        const directory = getDirectory(directoryPath)
+
+        if (!directory) {
+          throw new Error(
+            `Fake folder not found: ${directoryPath}`,
+          )
+        }
+
+        if (directory.children.size > 0) {
+          throw new Error(
+            `Fake folder is not empty: ${directoryPath}`,
+          )
+        }
+
+        detachSubtree(directoryPath)
+      }),
+    removeFile: (filePath) =>
+      pauseForDelete().then(() => {
+        if (getExistingNode(filePath).isDirectory) {
+          throw new Error(
+            `Fake path is a folder: ${filePath}`,
+          )
+        }
+
+        detachSubtree(filePath)
+      }),
+  }
+
+  // The trash takes an item whole, after a pause as long as several file
+  // removals, or refuses it when the trash is switched off.
+  const trashItem = (filePath: string) =>
+    pauseForDelete(10).then(() => {
+      if (isTrashUnavailable) {
+        throw new Error(
+          "The trash is not available for this location.",
+        )
+      }
+
+      getExistingNode(filePath)
+      detachSubtree(filePath)
+    })
+
+  const deleteItems = createInProcessDeleteItemsApi({
+    fileSystem: deleteFileSystem,
+    trashItem,
+  })
 
   return {
     // Open straight into the fake root so the gallery has content immediately.
     cliFilePath: rootPath,
     countFolderImages,
     deleteFilePath,
+    deleteItems,
     findFirstImage,
     getFolderLastIndex,
     getDriveRoots: () => [rootPath],

@@ -32,6 +32,31 @@ const api: Window["api"] = {
   countFolderImages: () => Promise.resolve(0),
   createNewWindow: () => {},
   deleteFilePath: () => Promise.resolve(true),
+  deleteItems: {
+    start: ({ targets }) =>
+      Promise.resolve({
+        isStopped: false,
+        items: targets.map(({ filePath, isDirectory }) => ({
+          entriesRemoved: 0,
+          entriesTotal: null,
+          errorMessage: null,
+          filePath,
+          isDirectory,
+          name: filePath,
+          outcome: "movedToTrash" as const,
+          trashErrorMessage: null,
+        })),
+      }),
+    stop: () => {},
+    summarize: () =>
+      Promise.resolve({
+        fileCount: 0,
+        folderCount: 0,
+        isComplete: true,
+        items: [],
+        totalBytes: 0,
+      }),
+  },
   findFirstImage: () =>
     Promise.resolve<ImageFile | null>(null),
   fullScreen: {

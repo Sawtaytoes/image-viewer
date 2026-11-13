@@ -8,15 +8,14 @@ import {
   useLayoutEffect,
   useMemo,
   useRef,
-  useState,
 } from "react"
 
-import type { QueuedFolder } from "../../types"
+import { isTargetRemoved } from "../../deleting/deleteItems"
+import DeleteItemsContext from "../deleting/DeleteItemsContext"
 import CloseIcon from "../icons/CloseIcon"
 import DeleteForeverIcon from "../icons/DeleteForeverIcon"
 import FolderIcon from "../icons/FolderIcon"
 import GridIcon from "../icons/GridIcon"
-import DeleteFileModal from "../toolkit/DeleteFileModal"
 import WorkspaceContext from "../workspace/WorkspaceContext"
 
 // A menu row, minus its colours. The destructive row and the ordinary rows
@@ -79,7 +78,6 @@ const FolderPickerPopover = ({
 }: FolderPickerPopoverProps) => {
   const {
     assignFolderToPane,
-    deleteFolder,
     panes,
     queuedFolders,
     removeFolder,
@@ -87,10 +85,7 @@ const FolderPickerPopover = ({
     setActivePaneId,
   } = useContext(WorkspaceContext)
 
-  // The folder pending disk deletion (the bottom "Delete folder" action opens
-  // the confirm); null when no confirm is showing.
-  const [folderPendingDelete, setFolderPendingDelete] =
-    useState<QueuedFolder | null>(null)
+  const { requestDelete } = useContext(DeleteItemsContext)
 
   // This column's loaded folder, if any — the target of the "Delete folder"
   // action and the row that gets the active highlight.
@@ -227,37 +222,34 @@ const FolderPickerPopover = ({
     [paneId, removePane],
   )
 
-  // Deliberate folder delete: only arms the confirm; the actual disk delete
-  // waits for the modal's "Yes" (see `confirmDeleteFolder`).
+  // Deliberate folder delete: it only opens the shared delete dialog, which
+  // asks first, shows progress, and reports. A folder that is fully gone also
+  // leaves the queue, which severs its panes and auto-loads the next ready
+  // folder into the emptied column. After a Stop or a failure the folder is
+  // still on disk, so it stays queued.
   const openDeleteFolderConfirm = useCallback<
     MouseEventHandler<HTMLButtonElement>
   >(
     (event) => {
       event.stopPropagation()
 
-      setFolderPendingDelete(currentFolder)
+      if (!currentFolder) {
+        return
+      }
+
+      requestDelete([
+        { filePath: currentFolder.path, isDirectory: true },
+      ]).then((result) => {
+        if (
+          result &&
+          isTargetRemoved(result, currentFolder.path)
+        ) {
+          removeFolder(currentFolder.id)
+        }
+      })
     },
-    [currentFolder],
+    [currentFolder, removeFolder, requestDelete],
   )
-
-  const closeDeleteFolderModal = useCallback(() => {
-    setFolderPendingDelete(null)
-  }, [])
-
-  // Trash the folder from disk, then dismiss the modal. `deleteFolder` also
-  // dequeues it and auto-loads the next ready folder into the emptied column, so
-  // the menu can stay open over the refreshed queue.
-  const confirmDeleteFolder = useCallback(() => {
-    if (!folderPendingDelete) {
-      return
-    }
-
-    Promise.resolve(
-      deleteFolder(folderPendingDelete.id),
-    ).then(() => {
-      setFolderPendingDelete(null)
-    })
-  }, [deleteFolder, folderPendingDelete])
 
   return (
     // Rendered inside the pane (no portal): a translucent backdrop over the
@@ -386,12 +378,6 @@ const FolderPickerPopover = ({
           Close column
         </button>
       </div>
-
-      <DeleteFileModal
-        isVisible={folderPendingDelete !== null}
-        onClose={closeDeleteFolderModal}
-        onConfirm={confirmDeleteFolder}
-      />
     </div>
   )
 }

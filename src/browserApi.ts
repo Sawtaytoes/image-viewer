@@ -526,7 +526,20 @@ const handleQueueMessage = (
 // evaluated (provider modules read `window.api` at import time) — see
 // `browserEntry.tsx`.
 export const installBrowserApi = (): void => {
+  // The fake delete's two knobs (see `createFakeFileSystem`) ride on the
+  // launch URL, so a screenshot run can slow the delete down enough to catch
+  // its progress: `?fakeDeleteDelayMs=150&fakeTrashUnavailable=1`.
+  const launchSearchParams = new URLSearchParams(
+    window.location.search,
+  )
+
   const fakeFileSystem = createFakeFileSystem({
+    deleteDelayMs:
+      Number(launchSearchParams.get("fakeDeleteDelayMs")) ||
+      0,
+    isTrashUnavailable: launchSearchParams.has(
+      "fakeTrashUnavailable",
+    ),
     path: posixPath,
   })
 

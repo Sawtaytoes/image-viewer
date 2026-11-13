@@ -2,6 +2,7 @@ import FullScreenProvider from "./convenience/FullScreenProvider"
 import TitleBar from "./convenience/TitleBar"
 import useDisableScrollKeyFunctions from "./convenience/useDisableScrollKeyFunctions"
 import useWindowRefreshKeys from "./convenience/useWindowRefreshKeys"
+import DeleteItemsProvider from "./deleting/DeleteItemsProvider"
 import FileBrowser from "./fileBrowser/FileBrowser"
 import FileSystemProvider from "./fileBrowser/FileSystemProvider"
 import ImageLoaderProvider from "./imageLoader/ImageLoaderProvider"
@@ -22,19 +23,21 @@ const App = () => {
 
   return (
     <SettingsProvider>
-      <WorkspaceProvider>
-        <ImageViewerProvider>
-          <FileSystemProvider>
-            <ImageLoaderProvider>
-              <FullScreenProvider>
-                <TitleBar />
-                <FileBrowser />
-                <ImageViewer />
-              </FullScreenProvider>
-            </ImageLoaderProvider>
-          </FileSystemProvider>
-        </ImageViewerProvider>
-      </WorkspaceProvider>
+      <DeleteItemsProvider>
+        <WorkspaceProvider>
+          <ImageViewerProvider>
+            <FileSystemProvider>
+              <ImageLoaderProvider>
+                <FullScreenProvider>
+                  <TitleBar />
+                  <FileBrowser />
+                  <ImageViewer />
+                </FullScreenProvider>
+              </ImageLoaderProvider>
+            </FileSystemProvider>
+          </ImageViewerProvider>
+        </WorkspaceProvider>
+      </DeleteItemsProvider>
     </SettingsProvider>
   )
 }

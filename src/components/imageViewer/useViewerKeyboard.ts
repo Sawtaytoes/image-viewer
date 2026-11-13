@@ -1,4 +1,6 @@
-import { useEffect } from "react"
+import { useContext, useEffect } from "react"
+
+import DeleteItemsContext from "../deleting/DeleteItemsContext"
 
 export interface UseViewerKeyboardOptions {
   goToNextImage: () => void
@@ -32,8 +34,14 @@ const useViewerKeyboard = ({
   onExitFullScreen,
   onOpenMenu,
 }: UseViewerKeyboardOptions) => {
+  // The delete dialog's keys are its own. Enter, Backspace, and Escape answer
+  // it, and must not also leave the viewer behind it.
+  const { isDeleteDialogVisible } = useContext(
+    DeleteItemsContext,
+  )
+
   useEffect(() => {
-    if (!isEnabled) {
+    if (!isEnabled || isDeleteDialogVisible) {
       return undefined
     }
 
@@ -92,6 +100,7 @@ const useViewerKeyboard = ({
   }, [
     goToNextImage,
     goToPreviousImage,
+    isDeleteDialogVisible,
     isEnabled,
     isFullScreen,
     onClose,

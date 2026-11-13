@@ -27,9 +27,54 @@ const isSpawnedViewer = process.argv.includes(
   "--spawnedViewer",
 )
 
+// The fake delete's two knobs (see `createFakeFileSystem`), forwarded by main
+// from `IMAGE_VIEWER_FAKE_DELETE_DELAY_MS` and
+// `IMAGE_VIEWER_FAKE_TRASH_UNAVAILABLE`.
+const fakeDeleteDelayMs =
+  Number(
+    (
+      process.argv.find((arg) =>
+        arg.startsWith("--fakeDeleteDelayMs="),
+      ) ?? ""
+    ).replace("--fakeDeleteDelayMs=", ""),
+  ) || 0
+
 const fakeFileSystem = isFakeFileSystem
-  ? createFakeFileSystem({ path })
+  ? createFakeFileSystem({
+      deleteDelayMs: fakeDeleteDelayMs,
+      isTrashUnavailable: process.argv.includes(
+        "--fakeTrashUnavailable",
+      ),
+      path,
+    })
   : null
+
+// Delete with progress and Stop, over main's `delete:*` channels. Progress for
+// every job arrives on one channel, so each `start` listens for its own job id
+// and stops listening when the job ends.
+const diskDeleteItems = {
+  start: ({ jobId, targets }, onProgress) => {
+    const listener = (_event, progressJobId, progress) => {
+      if (progressJobId === jobId) {
+        onProgress(progress)
+      }
+    }
+
+    ipcRenderer.on("delete:progress", listener)
+
+    return ipcRenderer
+      .invoke("delete:start", { jobId, targets })
+      .finally(() => {
+        ipcRenderer.removeListener(
+          "delete:progress",
+          listener,
+        )
+      })
+  },
+  stop: (jobId) => ipcRenderer.send("delete:stop", jobId),
+  summarize: (targets) =>
+    ipcRenderer.invoke("delete:summarize", targets),
+}
 
 // File/folder path the window was launched with (passed via
 // `additionalArguments` from main). Replaces the old renderer process.argv +
@@ -622,6 +667,11 @@ contextBridge.exposeInMainWorld("api", {
     ? fakeFileSystem.deleteFilePath
     : (payload) =>
         ipcRenderer.invoke("deleteFilePath", payload),
+  // Files and folders with a summary first, then progress and Stop. In fake
+  // mode the same job runs over the in-memory tree.
+  deleteItems: fakeFileSystem
+    ? fakeFileSystem.deleteItems
+    : diskDeleteItems,
   findFirstImage: fakeFileSystem
     ? fakeFileSystem.findFirstImage
     : findFirstImage,
