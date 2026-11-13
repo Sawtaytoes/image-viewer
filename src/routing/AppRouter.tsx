@@ -13,7 +13,7 @@ import { BrowserRouter, HashRouter } from "react-router"
  * - **Browser mode** (`yarn dev:browser`, `index.browser.html`) is served over
  *   http by Vite. Path URLs work, so `BrowserRouter`.
  * - **Electron** loads the packaged renderer with `mainWindow.loadFile(...)`
- *   (`src/main.js`), so the window's origin is `file://`. `BrowserRouter` cannot
+ *   (`src/main.ts`), so the window's origin is `file://`. `BrowserRouter` cannot
  *   work there: there is no server to answer `/settings`, and a `pushState` URL
  *   does not survive a reload — the file at that path simply does not exist.
  *   So: a hash history.

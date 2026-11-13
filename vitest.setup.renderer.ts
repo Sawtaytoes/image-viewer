@@ -1,5 +1,5 @@
-import "@testing-library/jest-dom/vitest"
-
+// The renderer half of the test setup, loaded by `vitest.setup.ts` for every
+// suite that runs in jsdom: the `window.api` stub and the jsdom shims.
 import type { ImageFile, QueuedFolder } from "./src/types"
 
 // Minimal stub of the preload bridge (`window.api`). Renderer modules read
@@ -8,9 +8,9 @@ import type { ImageFile, QueuedFolder } from "./src/types"
 //
 // It is typed as the real `Window["api"]` rather than left inferred, which is
 // the one thing the `.js` version could not do — and that immediately found two
-// holes: `readImageData` was absent from the stub entirely, and `preload.d.ts`
+// holes: `readImageData` was absent from the stub entirely, and the declaration
 // had never been told about `fullScreen`, `searchFolders` or the four
-// saved-queue members that `preload.js` has exposed for weeks.
+// saved-queue members that the preload had exposed for weeks.
 const extname = (filePath: string) => {
   const base = filePath.slice(
     Math.max(
@@ -24,6 +24,7 @@ const extname = (filePath: string) => {
 }
 
 const api: Window["api"] = {
+  cancelReadImageData: () => {},
   cliFilePath: "",
   colorScheme: {
     get: () => "dark",

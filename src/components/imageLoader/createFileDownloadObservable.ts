@@ -17,20 +17,38 @@ export interface FileDownloadUpdate {
 // streams the read in chunks and calls `onProgress` with a byte-level percent,
 // so the loading bar advances for large files exactly as the old XHR `progress`
 // events made it — small files read in one chunk and jump straight to 100.
+//
+// Unsubscribing means the image is no longer shown, so the read is canceled
+// through `window.api.cancelReadImageData`. For a HEIC that drops its decode in
+// main, which is the slow part.
+let readCount = 0
+
 const createFileDownloadObservable = (filePath: string) =>
   new Observable<FileDownloadUpdate>((observer) => {
+    readCount += 1
+
+    const requestId = `image-read-${readCount}`
+
     let isCanceled = false
+    let isSettled = false
 
     window.api
-      .readImageData(filePath, (downloadPercentage) => {
-        if (isCanceled) {
-          return
-        }
+      .readImageData(
+        filePath,
+        (downloadPercentage) => {
+          if (isCanceled) {
+            return
+          }
 
-        observer.next({
-          downloadPercentage,
-          filePath,
-        })
+          observer.next({
+            downloadPercentage,
+            filePath,
+          })
+        },
+        requestId,
+      )
+      .finally(() => {
+        isSettled = true
       })
       .then(({ data, mimeType }) => {
         if (isCanceled) {
@@ -70,6 +88,10 @@ const createFileDownloadObservable = (filePath: string) =>
 
     return () => {
       isCanceled = true
+
+      if (!isSettled) {
+        window.api.cancelReadImageData(requestId)
+      }
     }
   })
 

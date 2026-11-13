@@ -16,8 +16,9 @@
     // (`docs/decisions/2026-06-02-typescript-tooling-now-convert-later.md`).
     // With it false, a stray `.js` under `src/` is not "unchecked", it is a
     // module `tsc` cannot resolve — so the conversion cannot silently
-    // half-finish. The two survivors, `src/main.js` and `src/preload.js`, are
-    // the Node-side programs and are excluded below by name.
+    // half-finish. The Node-side programs, `src/main.ts` and `src/preload.ts`,
+    // were the last `.js` files and are checked like the rest since 2026-11-13
+    // (`docs/decisions/2026-11-13-main-and-preload-are-typescript.md`).
     "allowJs": false,
     "resolveJsonModule": true,
     "types": [
@@ -41,7 +42,8 @@
     "vite.preload.config.ts",
     "vite.renderer.config.ts",
     "vitest.config.ts",
-    "vitest.setup.ts"
+    "vitest.setup.ts",
+    "vitest.setup.renderer.ts"
   ],
   "exclude": ["node_modules", ".vite", "out", "dist"]
 }

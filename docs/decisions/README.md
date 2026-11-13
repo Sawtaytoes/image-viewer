@@ -170,3 +170,8 @@ to apply here); everything else is sourced from Image Viewer's own chats, commit
 ### 2026-11-13 — Delete feedback
 
 - [2026-11-13 — Delete shows what it removes, with progress and a Stop button](2026-11-13-delete-shows-what-it-removes-with-progress-and-a-stop-button.md) ← **the permanent fallback stays, with no second question; the confirmation names each item with counts and size, the delete shows progress and a Stop button, and the report says how each item went**
+
+### 2026-11-13 — Main-process work
+
+- [2026-11-13 — HEIC decodes in a utility process, never in main](2026-11-13-heic-decodes-in-a-utility-process.md) ← **`heic-convert` runs in `heicDecodeWorker.ts`, a `utilityProcess`; main queues one decode at a time, shares duplicate requests, caches by path and modification time, and drops or stops a decode no window still waits for**
+- [2026-11-13 — Main and preload are TypeScript, so every file under `src/` is](2026-11-13-main-and-preload-are-typescript.md) ← **`main.ts` and `preload.ts` are type-checked, the bridge is typed as `Window["api"]` from `windowApi.d.ts`, and the file-system IPC handlers have unit tests**

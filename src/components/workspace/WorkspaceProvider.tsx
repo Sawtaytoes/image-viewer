@@ -437,7 +437,7 @@ const WorkspaceProvider = ({
     [resumePaneToFolderIndex],
   )
 
-  // The queue lives in main and is shared across windows (see main.js). Hydrate
+  // The queue lives in main and is shared across windows (see main.ts). Hydrate
   // this window's mirror once on mount, then keep it in sync with main's
   // `queue:changed` broadcasts. Panes/activePaneId stay local — each window owns
   // its own columns.

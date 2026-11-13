@@ -17,7 +17,7 @@ export interface Pane {
 export type UnqueuedFolder = Omit<QueuedFolder, "id">
 
 // What `WorkspaceProvider` supplies. The queue itself lives in the main process
-// and is shared across windows (see `src/main.js`); `queuedFolders` is this
+// and is shared across windows (see `src/main.ts`); `queuedFolders` is this
 // window's mirror of it, while `panes` and `activePaneId` are this window's
 // alone.
 export interface WorkspaceContextValue {

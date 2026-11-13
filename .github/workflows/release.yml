@@ -17,8 +17,11 @@ on:
       - pnpm-lock.yaml
       - pnpm-workspace.yaml
       - scripts/appIcon.ts
-      - src/main.js
-      - src/preload.js
+      - src/heicDecoding/**
+      - src/main.ts
+      - src/preload.ts
+      - vite.main.config.ts
+      - vite.preload.config.ts
 
 # Two Release runs on the same branch must never overlap: semantic-release
 # pushes a version-bump commit and a tag, so a second run racing the first

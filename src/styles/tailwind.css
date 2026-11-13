@@ -62,7 +62,7 @@
 /* The height of the custom title bar, as a custom property.
 
    It is ALSO `TITLE_BAR_HEIGHT` in `src/components/convenience/titleBarHeight.ts`
-   and `titleBarOverlay.height` in `src/main.js`, and all three must agree or the
+   and `titleBarOverlay.height` in `src/main.ts`, and all three must agree or the
    native window controls stop lining up with our strip. The TypeScript constant
    stays because two call sites do arithmetic with it; this variable exists so a
    Tailwind class can say `top-(--title-bar-height)` without an arbitrary

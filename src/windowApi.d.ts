@@ -1,7 +1,9 @@
-// Types the `window.api` bridge that `preload.js` exposes via
+// Types the `window.api` bridge that `preload.ts` exposes via
 // `contextBridge.exposeInMainWorld`, so every renderer `window.api.*` call site
-// is checked without a cast. The shapes mirror `src/preload.js`; the domain
-// payloads live in `src/types.ts`.
+// is checked without a cast. `preload.ts` types its bridge object as
+// `Window["api"]`, so the two cannot drift; the domain payloads live in
+// `src/types.ts`. It is not named `preload.d.ts`, because TypeScript would read
+// that as the declaration file of `preload.ts` and skip it.
 
 import type { DeleteItemsApi } from "./deleting/deleteItems"
 import type {
@@ -148,7 +150,16 @@ declare global {
         // Streams byte-level read progress (0–100) as the file loads; omitted
         // for the fake FS and the HEIC transcode path, which resolve in one go.
         onProgress?: (downloadPercentage: number) => void,
+        // Names this read, unique within the window, so
+        // `cancelReadImageData` can stop it. A read with no id cannot be
+        // canceled.
+        requestId?: string,
       ) => Promise<ImageBytes>
+      // Stops the read named `requestId` because its image is no longer
+      // shown. The read rejects with an `AbortError`. A HEIC decode that no
+      // other window waits for is dropped from main's queue. Does nothing
+      // once the read has settled.
+      cancelReadImageData: (requestId: string) => void
       // Recursive folder-name search under `rootPath` (folders only, every
       // depth, bounded). `onBatch` streams each directory level's matches as
       // they are found; the promise settles on the authoritative full list —

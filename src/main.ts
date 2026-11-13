@@ -4,10 +4,15 @@ import path from "node:path"
 import {
   app,
   BrowserWindow,
+  type Event,
   ipcMain,
   nativeTheme,
+  type Rectangle,
   screen,
   shell,
+  utilityProcess,
+  type WebContents,
+  type WebContentsDidStartNavigationEventParams,
 } from "electron"
 import started from "electron-squirrel-startup"
 
@@ -20,7 +25,16 @@ import {
   toSafeDeleteTargets,
 } from "./deleting/nodeDeleteFileSystem"
 import getDriveRoots from "./driveRoots"
+import {
+  createHeicDecodeQueue,
+  heicCanceledErrorName,
+  isHeicDecodeReply,
+} from "./heicDecoding/heicDecodeQueue"
 import normalizeSavedQueue from "./savedQueue"
+import type {
+  QueuedFolder,
+  SavedQueueLayout,
+} from "./types"
 
 // Handle creating/removing shortcuts on Windows when installing/uninstalling.
 if (started) {
@@ -37,7 +51,7 @@ app.setPath(
 
 const isDevelopment = !app.isPackaged
 
-// Opt-in in-memory sandbox (see fakeFileSystem.js / preload.js). Detected here
+// Opt-in in-memory sandbox (see fakeFileSystem.ts / preload.ts). Detected here
 // in the main process — where `process.env` reliably reflects the real OS
 // environment (same as IMAGE_VIEWER_DEFAULT_DIRECTORY) — and forwarded to the
 // preload via `additionalArguments`, because a Vite-bundled preload can't read
@@ -73,7 +87,7 @@ const loadDotEnv = () => {
     return
   }
 
-  let envFileContents
+  let envFileContents: string
 
   try {
     envFileContents = fs.readFileSync(
@@ -121,7 +135,7 @@ const getDefaultDirectory = () =>
 
 // The home screen's tiles: drive letters on Windows; the root, the home folder
 // and the mounted volumes on macOS and Linux (see driveRoots.ts).
-const listChildDirectories = (directoryPath) => {
+const listChildDirectories = (directoryPath: string) => {
   try {
     return fs
       .readdirSync(directoryPath, { withFileTypes: true })
@@ -158,13 +172,28 @@ const getLaunchFilePath = () => {
   return launchArg
 }
 
+// What the renderer may ask for when it opens a window (`createNewWindow`).
+interface NewWindowRequest {
+  displayId?: number
+  filePath?: string
+  // The IPC payload field the renderer sends; see `createNewWindow` in
+  // windowApi.d.ts.
+  // eslint-disable-next-line @typescript-eslint/naming-convention
+  spawnedViewer?: boolean
+}
+
+interface CreateWindowOptions extends NewWindowRequest {
+  isFullScreenInherited?: boolean
+  isMaximizedInherited?: boolean
+}
+
 const createWindow = ({
   filePath,
   displayId,
-  inheritFullScreen = false,
-  inheritMaximized = false,
-  spawnedViewer = false,
-} = {}) => {
+  isFullScreenInherited = false,
+  isMaximizedInherited = false,
+  spawnedViewer: isSpawnedViewer = false,
+}: CreateWindowOptions = {}) => {
   // When spawned onto a chosen display, fill that monitor's work area. Otherwise
   // keep the original placement: the right half of the primary display's work
   // area (so the app sits beside whatever launched it).
@@ -175,7 +204,7 @@ const createWindow = ({
           .find((display) => display.id === displayId)
       : null
 
-  let bounds
+  let bounds: Rectangle
 
   if (targetDisplay) {
     const { x, y, width, height } = targetDisplay.workArea
@@ -195,7 +224,6 @@ const createWindow = ({
 
   const mainWindow = new BrowserWindow({
     autoHideMenuBar: true,
-    backgroundThrottling: true,
     // Windows and macOS take the window icon from the executable and the app
     // bundle. Linux takes it from the window, so pass the PNG Forge generated
     // (see forge.config.ts): beside the app once packaged, `build/` in dev.
@@ -232,9 +260,12 @@ const createWindow = ({
     x: bounds.x,
     y: bounds.y,
     webPreferences: {
+      // This was a top-level window option, where Electron ignores it. It
+      // belongs here, and `true` is also Electron's default.
+      backgroundThrottling: true,
       additionalArguments: [
         ...(filePath ? [`--filePath=${filePath}`] : []),
-        ...(spawnedViewer ? ["--spawnedViewer"] : []),
+        ...(isSpawnedViewer ? ["--spawnedViewer"] : []),
         ...(isFakeFileSystem ? ["--fakeFs"] : []),
         ...fakeDeleteArguments,
       ],
@@ -259,9 +290,9 @@ const createWindow = ({
   mainWindow.once("ready-to-show", () => {
     // Match the originating window's presentation so a spawn from a maximized or
     // fullscreen window opens the same way on the target display.
-    if (inheritFullScreen) {
+    if (isFullScreenInherited) {
       mainWindow.setFullScreen(true)
-    } else if (inheritMaximized) {
+    } else if (isMaximizedInherited) {
       mainWindow.maximize()
     } else if (targetDisplay) {
       // Re-assert the target monitor's work area now that the window is realized
@@ -320,11 +351,11 @@ ipcMain.handle("window:toggleFullScreen", (event) => {
     return false
   }
 
-  const nextIsFullScreen = !senderWindow.isFullScreen()
+  const isFullScreenNext = !senderWindow.isFullScreen()
 
-  senderWindow.setFullScreen(nextIsFullScreen)
+  senderWindow.setFullScreen(isFullScreenNext)
 
-  return nextIsFullScreen
+  return isFullScreenNext
 })
 
 ipcMain.handle("window:isFullScreen", (event) =>
@@ -370,18 +401,18 @@ nativeTheme.on("updated", () => {
 // shared store). In-memory in main: it survives across windows for one app run
 // but isn't persisted to disk. Last-one-wins — whoever lands a new index for a
 // path overwrites the single stored value.
-const folderLastIndexByPath = new Map()
+const folderLastIndexByPath = new Map<string, number>()
 
-ipcMain.handle("get-folder-last-index", (_event, path) =>
-  folderLastIndexByPath.has(path)
-    ? folderLastIndexByPath.get(path)
-    : null,
+ipcMain.handle(
+  "get-folder-last-index",
+  (_event, folderPath: string) =>
+    folderLastIndexByPath.get(folderPath) ?? null,
 )
 
 ipcMain.on(
   "set-folder-last-index",
-  (_event, path, index) => {
-    folderLastIndexByPath.set(path, index)
+  (_event, folderPath: string, index: number) => {
+    folderLastIndexByPath.set(folderPath, index)
   },
 )
 
@@ -389,19 +420,24 @@ ipcMain.on(
 // or spawned onto a chosen display sharing the live queue (spawnedViewer). The
 // new window inherits the originating window's fullscreen/maximized state so a
 // spawn from a maximized window opens maximized on the target display too.
-ipcMain.on("createNewWindow", (event, data = {}) => {
-  const originWindow = BrowserWindow.fromWebContents(
-    event.sender,
-  )
+ipcMain.on(
+  "createNewWindow",
+  (event, data: NewWindowRequest = {}) => {
+    const originWindow = BrowserWindow.fromWebContents(
+      event.sender,
+    )
 
-  createWindow({
-    ...data,
-    inheritFullScreen: Boolean(
-      originWindow?.isFullScreen(),
-    ),
-    inheritMaximized: Boolean(originWindow?.isMaximized()),
-  })
-})
+    createWindow({
+      ...data,
+      isFullScreenInherited: Boolean(
+        originWindow?.isFullScreen(),
+      ),
+      isMaximizedInherited: Boolean(
+        originWindow?.isMaximized(),
+      ),
+    })
+  },
+)
 
 // Cross-window folder queue. The queue — the folders lined up to view — is the
 // persistent, shared thing; panes/columns stay per-window in each renderer. Like
@@ -412,7 +448,7 @@ ipcMain.on("createNewWindow", (event, data = {}) => {
 // window. In-memory and session-only: the live queue itself isn't auto-saved —
 // the user explicitly saves/loads a single snapshot from the title bar (see the
 // "saved slot" handlers below), so a fresh launch starts empty until they load.
-let queuedFolders = []
+let queuedFolders: QueuedFolder[] = []
 
 const broadcastQueue = () => {
   for (const browserWindow of BrowserWindow.getAllWindows()) {
@@ -457,25 +493,28 @@ const broadcastSavedQueueState = () => {
 // load brings the reading positions back too. The folder list is always main's
 // own — the canonical queue — never the renderer's mirror of it. Returns
 // whether it stuck.
-ipcMain.handle("queue:save", (_event, layout = {}) => {
-  try {
-    fs.writeFileSync(
-      savedQueueFilePath(),
-      JSON.stringify(
-        normalizeSavedQueue({
-          ...layout,
-          folders: queuedFolders,
-        }),
-      ),
-    )
+ipcMain.handle(
+  "queue:save",
+  (_event, layout: Partial<SavedQueueLayout> = {}) => {
+    try {
+      fs.writeFileSync(
+        savedQueueFilePath(),
+        JSON.stringify(
+          normalizeSavedQueue({
+            ...layout,
+            folders: queuedFolders,
+          }),
+        ),
+      )
 
-    broadcastSavedQueueState()
+      broadcastSavedQueueState()
 
-    return true
-  } catch {
-    return false
-  }
-})
+      return true
+    } catch {
+      return false
+    }
+  },
+)
 
 // Replace the live queue with the saved slot and broadcast, so every window's
 // mirror (and its panes) reconciles to the loaded list. The saved positions go
@@ -533,49 +572,55 @@ ipcMain.handle("queue:get", () => queuedFolders)
 
 // Append one folder unless its path is already queued; return the resulting
 // record (existing or new) so the caller can reference its canonical id.
-ipcMain.handle("queue:add", (_event, folder) => {
-  const existing = queuedFolders.find(
-    (queued) => queued.path === folder.path,
-  )
+ipcMain.handle(
+  "queue:add",
+  (_event, folder: QueuedFolder) => {
+    const existing = queuedFolders.find(
+      (queued) => queued.path === folder.path,
+    )
 
-  if (existing) {
-    return existing
-  }
-
-  queuedFolders = [...queuedFolders, folder]
-
-  broadcastQueue()
-
-  return folder
-})
-
-// Batch add, deduped by path; returns the full resulting queue.
-ipcMain.handle("queue:addMany", (_event, folders) => {
-  const queuedPaths = new Set(
-    queuedFolders.map((queued) => queued.path),
-  )
-
-  const added = []
-
-  for (const folder of folders) {
-    if (queuedPaths.has(folder.path)) {
-      continue
+    if (existing) {
+      return existing
     }
 
-    queuedPaths.add(folder.path)
-    added.push(folder)
-  }
-
-  if (added.length > 0) {
-    queuedFolders = [...queuedFolders, ...added]
+    queuedFolders = [...queuedFolders, folder]
 
     broadcastQueue()
-  }
 
-  return queuedFolders
-})
+    return folder
+  },
+)
 
-ipcMain.on("queue:remove", (_event, folderId) => {
+// Batch add, deduped by path; returns the full resulting queue.
+ipcMain.handle(
+  "queue:addMany",
+  (_event, folders: QueuedFolder[]) => {
+    const queuedPaths = new Set(
+      queuedFolders.map((queued) => queued.path),
+    )
+
+    const added: QueuedFolder[] = []
+
+    for (const folder of folders) {
+      if (queuedPaths.has(folder.path)) {
+        continue
+      }
+
+      queuedPaths.add(folder.path)
+      added.push(folder)
+    }
+
+    if (added.length > 0) {
+      queuedFolders = [...queuedFolders, ...added]
+
+      broadcastQueue()
+    }
+
+    return queuedFolders
+  },
+)
+
+ipcMain.on("queue:remove", (_event, folderId: string) => {
   const next = queuedFolders.filter(
     (folder) => folder.id !== folderId,
   )
@@ -600,7 +645,10 @@ ipcMain.on("queue:clear", () => {
 // window — auto-fill the next queued folder that isn't already open in ANY window
 // (the cross-window version of skipping folders open in other columns). Cleaned
 // up when a window closes (see `createWindow`).
-const openFolderPathsByWindowId = new Map()
+const openFolderPathsByWindowId = new Map<
+  number,
+  string[]
+>()
 
 // Tell every window which paths are open in the *other* windows (never its own),
 // so each can exclude those when auto-filling a fresh column/window.
@@ -608,7 +656,7 @@ const broadcastOpenFolders = () => {
   for (const browserWindow of BrowserWindow.getAllWindows()) {
     const selfId = browserWindow.webContents.id
 
-    const openElsewhere = new Set()
+    const openElsewhere = new Set<string>()
 
     for (const [
       windowId,
@@ -634,7 +682,7 @@ const broadcastOpenFolders = () => {
 ipcMain.handle("get-open-folders", (event) => {
   const selfId = event.sender.id
 
-  const openElsewhere = new Set()
+  const openElsewhere = new Set<string>()
 
   for (const [
     windowId,
@@ -654,7 +702,7 @@ ipcMain.handle("get-open-folders", (event) => {
 
 // A window reports the folder paths it currently has open whenever its panes
 // change.
-ipcMain.on("set-open-folders", (event, paths) => {
+ipcMain.on("set-open-folders", (event, paths: string[]) => {
   openFolderPathsByWindowId.set(event.sender.id, paths)
 
   broadcastOpenFolders()
@@ -683,7 +731,7 @@ ipcMain.handle("get-displays", () => describeDisplays())
 // screen they're about to target (like the OS "Identify displays" affordance).
 // Frameless, always-on-top, non-focusable, and ignores mouse events so it never
 // steals focus or clicks.
-let identifyOverlayWindow = null
+let identifyOverlayWindow: BrowserWindow | null = null
 
 const destroyIdentifyOverlay = () => {
   if (
@@ -696,7 +744,7 @@ const destroyIdentifyOverlay = () => {
   identifyOverlayWindow = null
 }
 
-const showIdentifyOverlay = (displayId) => {
+const showIdentifyOverlay = (displayId: number) => {
   const display = screen
     .getAllDisplays()
     .find((candidate) => candidate.id === displayId)
@@ -775,9 +823,12 @@ const showIdentifyOverlay = (displayId) => {
   })
 }
 
-ipcMain.on("identify-display:show", (_event, displayId) => {
-  showIdentifyOverlay(displayId)
-})
+ipcMain.on(
+  "identify-display:show",
+  (_event, displayId: number) => {
+    showIdentifyOverlay(displayId)
+  },
+)
 
 ipcMain.on("identify-display:hide", () => {
   destroyIdentifyOverlay()
@@ -792,21 +843,30 @@ ipcMain.on("identify-display:hide", () => {
 // replacement. The work lives in `src/deleting/deleteItems.ts`, which removes
 // one entry at a time with promises, so this process never blocks on a large
 // folder and the renderer gets progress as it goes.
-const trashItem = (filePath) => shell.trashItem(filePath)
+const trashItem = (filePath: string) =>
+  shell.trashItem(filePath)
 
 // Running delete jobs, by the id the renderer chose, so Stop can find them.
-const deleteJobAbortControllersById = new Map()
+const deleteJobAbortControllersById = new Map<
+  string,
+  AbortController
+>()
 
-ipcMain.handle("delete:summarize", (_event, targets) =>
-  summarizeDeleteTargets({
-    fileSystem: nodeDeleteFileSystem,
-    targets: toSafeDeleteTargets(targets),
-  }),
+ipcMain.handle(
+  "delete:summarize",
+  (_event, targets: unknown) =>
+    summarizeDeleteTargets({
+      fileSystem: nodeDeleteFileSystem,
+      targets: toSafeDeleteTargets(targets),
+    }),
 )
 
 ipcMain.handle(
   "delete:start",
-  async (event, { jobId, targets }) => {
+  async (
+    event,
+    { jobId, targets }: { jobId: string; targets: unknown },
+  ) => {
     const safeTargets = toSafeDeleteTargets(targets)
     const abortController = new AbortController()
     const sender = event.sender
@@ -819,8 +879,10 @@ ipcMain.handle(
       abortController.abort()
     }
 
-    const stopWhenPageIsReplaced = (details) => {
-      if (details?.isMainFrame && !details.isSameDocument) {
+    const stopWhenPageIsReplaced = (
+      details: Event<WebContentsDidStartNavigationEventParams>,
+    ) => {
+      if (details.isMainFrame && !details.isSameDocument) {
         abortController.abort()
       }
     }
@@ -870,7 +932,7 @@ ipcMain.handle(
   },
 )
 
-ipcMain.on("delete:stop", (_event, jobId) => {
+ipcMain.on("delete:stop", (_event, jobId: string) => {
   deleteJobAbortControllersById.get(jobId)?.abort()
 })
 
@@ -879,7 +941,13 @@ ipcMain.on("delete:stop", (_event, jobId) => {
 // delete buttons use the `delete:*` channels above for progress and Stop.
 ipcMain.handle(
   "deleteFilePath",
-  async (_event, { filePath, isDirectory }) => {
+  async (
+    _event,
+    {
+      filePath,
+      isDirectory,
+    }: { filePath: string; isDirectory?: boolean },
+  ) => {
     try {
       const { items } = await runDeleteJob({
         fileSystem: nodeDeleteFileSystem,
@@ -893,14 +961,14 @@ ipcMain.handle(
       const [item] = items
 
       if (
-        item.outcome !== "movedToTrash" &&
-        item.outcome !== "deletedPermanently"
+        item?.outcome !== "movedToTrash" &&
+        item?.outcome !== "deletedPermanently"
       ) {
         console.error(
           "Failed to delete",
           filePath,
-          item.trashErrorMessage,
-          item.errorMessage,
+          item?.trashErrorMessage,
+          item?.errorMessage,
         )
 
         return false
@@ -916,78 +984,140 @@ ipcMain.handle(
 )
 
 // HEIC/HEIF decode. Chromium can't render HEIC, so iPhone photos never fire an
-// <img> load event and silently stay blank. The renderer's `readImageData`
+// <img> load event and silently stay blank. The preload's `readImageData`
 // routes only `.heic`/`.heif` here and gets JPEG bytes back; every other format
-// stays on the fast preload `fs` path untouched. `heic-convert` (libheif WASM)
-// is loaded lazily — so it never slows startup — and kept external from the Vite
-// bundle (see vite.main.config.ts). Decoded JPEGs are cached by path+mtime, with
-// a small LRU bound, so re-browsing a folder of HEICs doesn't re-run the slow
-// WASM decode. See docs/workers/feature-heic-support.md.
-const heicJpegCacheByKey = new Map()
-const heicJpegCacheMaxEntries = 64
+// stays on the fast preload `fs` path untouched. The decode is slow,
+// synchronous WASM, so it runs in a utility process, one image at a time, and
+// this process only queues, caches, and cancels (see
+// src/heicDecoding/heicDecodeQueue.ts). The worker starts on the first HEIC
+// request, so it never slows startup. See docs/workers/feature-heic-support.md.
+const heicDecodeQueue = createHeicDecodeQueue({
+  getModifiedTime: async (filePath) =>
+    (await fs.promises.stat(filePath)).mtimeMs,
+  spawnWorker: ({ onExit, onReply }) => {
+    const worker = utilityProcess.fork(
+      path.join(__dirname, "heicDecodeWorker.js"),
+      [],
+      { serviceName: "Image Viewer HEIC decoder" },
+    )
 
-let heicConvertModulePromise
+    worker.on("message", (message: unknown) => {
+      if (isHeicDecodeReply(message)) {
+        onReply(message)
+      }
+    })
+    worker.once("exit", onExit)
 
-const loadHeicConvert = () => {
-  if (!heicConvertModulePromise) {
-    heicConvertModulePromise = import("heic-convert")
+    return {
+      kill: () => {
+        worker.kill()
+      },
+      postMessage: (request) => {
+        worker.postMessage(request)
+      },
+    }
+  },
+})
+
+// The HEIC requests each window still waits on. A window that closes,
+// reloads, or crashes cannot show those images any more, so its requests are
+// canceled. A hash-route change keeps the page, so it cancels nothing.
+const heicRequestIdsBySender = new Map<
+  WebContents,
+  Set<string>
+>()
+
+const trackHeicRequestsOf = (sender: WebContents) => {
+  const trackedRequestIds =
+    heicRequestIdsBySender.get(sender)
+
+  if (trackedRequestIds) {
+    return trackedRequestIds
   }
 
-  return heicConvertModulePromise.then(
-    (module) => module.default ?? module,
-  )
+  const requestIds = new Set<string>()
+
+  const cancelAllRequests = () => {
+    for (const requestId of requestIds) {
+      heicDecodeQueue.cancel(requestId)
+    }
+
+    requestIds.clear()
+  }
+
+  heicRequestIdsBySender.set(sender, requestIds)
+
+  sender.once("destroyed", () => {
+    cancelAllRequests()
+    heicRequestIdsBySender.delete(sender)
+  })
+  sender.on("render-process-gone", cancelAllRequests)
+  sender.on("did-start-navigation", (details) => {
+    if (details.isMainFrame && !details.isSameDocument) {
+      cancelAllRequests()
+    }
+  })
+
+  return requestIds
 }
+
+// Request ids are the renderer's, unique within its window, so the queue's id
+// adds the window. A caller with no id still decodes; it just cannot cancel.
+let nextAnonymousHeicRequestNumber = 1
+
+const toHeicQueueRequestId = (
+  sender: WebContents,
+  requestId: string,
+) => `${sender.id}:${requestId}`
 
 ipcMain.handle(
   "readHeicAsJpeg",
-  async (_event, { filePath }) => {
-    const { mtimeMs } = await fs.promises.stat(filePath)
-    const cacheKey = `${filePath}:${mtimeMs}`
-
-    const cachedArrayBuffer =
-      heicJpegCacheByKey.get(cacheKey)
-
-    if (cachedArrayBuffer) {
-      // Refresh LRU recency (delete + re-set moves it to the newest slot).
-      heicJpegCacheByKey.delete(cacheKey)
-      heicJpegCacheByKey.set(cacheKey, cachedArrayBuffer)
-
-      return {
-        data: cachedArrayBuffer,
-        mimeType: "image/jpeg",
-      }
-    }
-
-    const inputBuffer = await fs.promises.readFile(filePath)
-    const convert = await loadHeicConvert()
-    const jpegBuffer = await convert({
-      buffer: inputBuffer,
-      format: "JPEG",
-      quality: 0.92,
-    })
-
-    // `convert` hands back a Node Buffer that may be a view into a larger pool;
-    // slice out exactly this image's bytes as a standalone ArrayBuffer so the
-    // structured clone across IPC carries only the JPEG.
-    const arrayBuffer = jpegBuffer.buffer.slice(
-      jpegBuffer.byteOffset,
-      jpegBuffer.byteOffset + jpegBuffer.byteLength,
+  async (
+    event,
+    {
+      filePath,
+      requestId,
+    }: { filePath: string; requestId?: string },
+  ) => {
+    const queueRequestId = toHeicQueueRequestId(
+      event.sender,
+      requestId ??
+        `anonymous-${nextAnonymousHeicRequestNumber++}`,
     )
+    const requestIds = trackHeicRequestsOf(event.sender)
 
-    heicJpegCacheByKey.set(cacheKey, arrayBuffer)
+    requestIds.add(queueRequestId)
 
-    if (heicJpegCacheByKey.size > heicJpegCacheMaxEntries) {
-      // Evict the least-recently-used entry (Map preserves insertion order).
-      const oldestKey = heicJpegCacheByKey
-        .keys()
-        .next().value
-      heicJpegCacheByKey.delete(oldestKey)
+    try {
+      return await heicDecodeQueue.decode({
+        filePath,
+        requestId: queueRequestId,
+      })
+    } catch (error) {
+      // A canceled read is routine (the image scrolled away), and Electron
+      // logs every handler that throws. Null tells the preload it was
+      // canceled.
+      if (
+        error instanceof Error &&
+        error.name === heicCanceledErrorName
+      ) {
+        return null
+      }
+
+      throw error
+    } finally {
+      requestIds.delete(queueRequestId)
     }
+  },
+)
 
-    return {
-      data: arrayBuffer,
-      mimeType: "image/jpeg",
-    }
+// The image is no longer shown: drop its decode if nobody else waits for it.
+ipcMain.on(
+  "readHeicAsJpeg:cancel",
+  (event, requestId: string) => {
+    heicDecodeQueue.cancel(
+      toHeicQueueRequestId(event.sender, requestId),
+    )
   },
 )
 

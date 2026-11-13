@@ -12,7 +12,7 @@ import TITLE_BAR_HEIGHT from "./titleBarHeight"
 //      class cannot interpolate a JS constant the way an Emotion template
 //      literal could — that interpolation is exactly what the Tailwind swap
 //      took away, and this variable is what replaced it
-//   3. `titleBarOverlay.height` in `src/main.js`, which is Electron's own
+//   3. `titleBarOverlay.height` in `src/main.ts`, which is Electron's own
 //      native window-controls strip and runs in a different process entirely
 //
 // Drift between 1 and 2 puts the chrome bar behind the title bar. Drift between
@@ -38,9 +38,9 @@ describe("TITLE_BAR_HEIGHT", () => {
 
   test("matches titleBarOverlay.height in the main process", () => {
     // Read the `titleBarOverlay` block first, then the height out of
-    // it — `main.js` is 800 lines and a bare /height:\s*(\d+)/ would
+    // it — `main.ts` is 1,000 lines and a bare /height:\s*(\d+)/ would
     // happily match the window's own dimensions.
-    const overlayBlock = readRepoFile("src/main.js").match(
+    const overlayBlock = readRepoFile("src/main.ts").match(
       /titleBarOverlay:\s*\{[^}]*\}/,
     )
 

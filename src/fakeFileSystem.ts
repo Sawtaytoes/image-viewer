@@ -1,5 +1,5 @@
 // In-memory fake filesystem for safe manual verification. Enabled by setting
-// the IMAGE_VIEWER_FAKE_FS environment variable (see preload.js); when it's
+// the IMAGE_VIEWER_FAKE_FS environment variable (see preload.ts); when it's
 // unset the app uses the real disk and this module is never constructed.
 //
 // The whole tree lives in the preload (renderer) process so a virtual delete
@@ -893,6 +893,8 @@ const createFakeFileSystem = ({
   })
 
   return {
+    // Reads resolve within the tick, so there is never one to stop.
+    cancelReadImageData: (_requestId: string) => {},
     // Open straight into the fake root so the gallery has content immediately.
     cliFilePath: rootPath,
     countFolderImages,

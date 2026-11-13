@@ -1,6 +1,6 @@
 // Height (px) of the custom title bar. Shared so the bar and the two main views
 // that reserve space beneath it (FileBrowser, ImageViewer) never drift apart —
-// and must match `titleBarOverlay.height` in main.js so native window controls
+// and must match `titleBarOverlay.height` in main.ts so native window controls
 // line up with our strip.
 //
 // It is now also `--title-bar-height` in `src/styles/tailwind.css`, because a

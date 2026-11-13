@@ -36,9 +36,9 @@ from the original `TASKS.md` or the kickoff conversation is lost.
    ([decision](decisions/2026-11-13-delete-shows-what-it-removes-with-progress-and-a-stop-button.md)).
 5. **Full TypeScript conversion** of `src/**` — ✅ **the renderer is done** (M6c, 2026-07-31;
    [decision](decisions/2026-07-31-the-renderer-is-typescript.md)). `allowJs` is off, so a `.js`
-   under `src/` is now a hard error. **Still open:** `src/main.js` and `src/preload.js`, the two
-   Node-side programs — see [the M6c handoff](2026-07-31-m6c-typescript-and-tailwind.md) for what
-   converting them costs and why it was not done in the same pass.
+   under `src/` is now a hard error. ✅ **`src/main.ts` and `src/preload.ts` followed on
+   2026-11-13**, with unit tests for the IPC handlers that touch the disk
+   ([decision](decisions/2026-11-13-main-and-preload-are-typescript.md)).
 
 ## Carried over from the original `TASKS.md`
 
