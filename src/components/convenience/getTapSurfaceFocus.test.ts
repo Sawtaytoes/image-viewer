@@ -21,6 +21,18 @@ const readFocusOnEnter = (target: Element) => {
   return focus
 }
 
+const pressKey = (code: string) => {
+  window.dispatchEvent(
+    new KeyboardEvent("keydown", { code }),
+  )
+}
+
+const pressPointer = (target: Element) => {
+  target.dispatchEvent(
+    new Event("pointerdown", { bubbles: true }),
+  )
+}
+
 const createSurface = () => {
   const surface = document.createElement("button")
   const label = document.createElement("span")
@@ -37,30 +49,48 @@ describe(getTapSurfaceFocus.name, () => {
     document.body.replaceChildren()
   })
 
-  test("is pointer when a pointer press focused the surface", () => {
+  test("is keyboard when Tab moved focus to the surface", () => {
     const { label, surface } = createSurface()
 
-    surface.dispatchEvent(
-      new Event("pointerdown", { bubbles: true }),
-    )
-    surface.focus()
-
-    expect(readFocusOnEnter(surface)).toBe("pointer")
-    expect(readFocusOnEnter(label)).toBe("pointer")
-  })
-
-  test("is keyboard when a key press came before the focus", () => {
-    const { surface } = createSurface()
-
-    surface.dispatchEvent(
-      new Event("pointerdown", { bubbles: true }),
-    )
-    window.dispatchEvent(
-      new KeyboardEvent("keydown", { code: "Tab" }),
-    )
+    pressKey("Tab")
     surface.focus()
 
     expect(readFocusOnEnter(surface)).toBe("keyboard")
+    expect(readFocusOnEnter(label)).toBe("keyboard")
+  })
+
+  test("is pointer when a pointer press focused the surface", () => {
+    const { surface } = createSurface()
+
+    pressPointer(surface)
+    surface.focus()
+
+    expect(readFocusOnEnter(surface)).toBe("pointer")
+  })
+
+  test("is pointer after a pointer press on a surface that Tab had focused", () => {
+    const { label, surface } = createSurface()
+
+    pressKey("Tab")
+    surface.focus()
+    pressPointer(label)
+
+    expect(readFocusOnEnter(surface)).toBe("pointer")
+  })
+
+  test("stays pointer when code restores focus after other keys", () => {
+    const { surface } = createSurface()
+    const other = document.createElement("button")
+
+    document.body.append(other)
+    pressPointer(surface)
+    surface.focus()
+    other.focus()
+    pressKey("Delete")
+    pressKey("Backspace")
+    surface.focus()
+
+    expect(readFocusOnEnter(surface)).toBe("pointer")
   })
 
   test("is null for any other button", () => {

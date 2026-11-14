@@ -62,10 +62,11 @@ button's defaults differ from a `<div>`'s.
 - **A button keeps focus after a click, and Enter on a focused button clicks it.** The window
   shortcuts already own Enter: the home gallery opens its keyboard selection, and the viewer
   leaves. Each new button carries `data-tap-surface`, and a shortcut that handles Enter asks
-  `getTapSurfaceFocus(event)` how that surface got focus. If the keyboard focused it (Tab), the
-  shortcut stands aside and Enter clicks the surface. If a tap left it focused, the shortcut runs
-  and calls `preventDefault()`, which cancels the button's click, so Enter does what it did when
-  these were `<div>`s. `:focus-visible` cannot make this choice: Chromium makes the focused
+  `getTapSurfaceFocus(event)` how the user reached that surface. If the user tabbed to it and
+  has not pressed it with a pointer since, the shortcut stands aside and Enter clicks the
+  surface. In every other case (a tap left it focused, or code such as a closing dialog put
+  focus back on it), the shortcut runs and calls `preventDefault()`, which cancels the button's
+  click, so Enter does what it did when these were `<div>`s. `:focus-visible` cannot make this choice: Chromium makes the focused
   element match it on any key press, before `keydown` listeners run. Space, which no shortcut
   uses, always clicks the focused surface. A new tap surface gets the attribute too.
 - The home gallery's image tile is named by its file name (`aria-label`), because `Image` draws
