@@ -117,7 +117,10 @@ jobs:
     permissions: { contents: read, statuses: write, pull-requests: write }
     uses: Sawtaytoes/charcuterie/.github/workflows/shared-vrt.yml@workflows-v1
     with:
-      # No Electron binary: the capture shoots the browser build only.
-      setupCommand: npm install --global --force --allow-scripts=pnpm pnpm@12.9.1 && export PATH="$(npm prefix -g)/bin:$PATH" && printf '%s\n' "$(npm prefix -g)/bin" >> "$GITHUB_PATH" && ELECTRON_SKIP_BINARY_DOWNLOAD=1 pnpm install --frozen-lockfile --store-dir "$HOME/.cache/pnpm/store"
+      # No Electron binary: the capture shoots the browser build only. The
+      # shared workflow has already put pnpm 12.9.1 on the PATH. Its store,
+      # `$VRT_PNPM_STORE_DIR`, is in the runner's tool cache on the same volume
+      # as the checkout, so pnpm links packages instead of copying each one.
+      setupCommand: ELECTRON_SKIP_BINARY_DOWNLOAD=1 pnpm install --frozen-lockfile --store-dir "$VRT_PNPM_STORE_DIR"
       captureCommand: node scripts/vrtCapture.mjs
     secrets: inherit

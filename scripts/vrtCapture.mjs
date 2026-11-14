@@ -33,6 +33,7 @@ import {
   normalize,
   resolve,
 } from "node:path"
+import { pathToFileURL } from "node:url"
 
 import { build } from "vite"
 
@@ -92,6 +93,42 @@ const loadChromium = () => {
   )
 
   return require("playwright").chromium
+}
+
+// Where Chromium keeps its shared memory. Playwright's default launch flag,
+// `--disable-dev-shm-usage`, puts it in deleted files under `/tmp`, which on
+// the VRT runner is the container's overlay on a ZFS pool, so every frame was
+// written to disk. The shared tools' `sharedMemory.js` drops the flag when
+// `/dev/shm` has at least 512 MiB free (the runner has a 2 GiB tmpfs) and
+// says which one it chose. Tools without that module keep the default.
+const chooseLaunchSharedMemory = async () => {
+  if (!process.env.VRT_TOOLS) {
+    return { ignoreDefaultArgs: [] }
+  }
+
+  let sharedMemoryModule
+
+  try {
+    sharedMemoryModule = await import(
+      pathToFileURL(
+        join(process.env.VRT_TOOLS, "sharedMemory.js"),
+      ).href
+    )
+  } catch {
+    console.log(
+      "[vrt] Chromium shared memory: temp files, because the shared tools have no sharedMemory.js.",
+    )
+
+    return { ignoreDefaultArgs: [] }
+  }
+
+  const choice = sharedMemoryModule.chooseSharedMemory(
+    await sharedMemoryModule.readAvailableSharedMemory(),
+  )
+
+  console.log(choice.message)
+
+  return choice
 }
 
 const buildBrowserEntry = () =>
@@ -328,8 +365,10 @@ const main = async () => {
 
   const server = await serve()
   const origin = `http://127.0.0.1:${server.address().port}`
+  const sharedMemory = await chooseLaunchSharedMemory()
   const browser = await chromium.launch({
     chromiumSandbox: false,
+    ignoreDefaultArgs: sharedMemory.ignoreDefaultArgs,
   })
   const failures = []
   const shots = Object.keys(scenes).flatMap((scene) =>
