@@ -92,8 +92,8 @@ const useViewerKeyboard = ({
         return
       }
 
-      // A focused tap surface was reached from the keyboard, so it answers
-      // Enter itself instead of leaving the viewer (see `tapSurfaces`).
+      // A tap surface that Tab reached answers Enter itself instead of
+      // leaving the viewer (see `tapSurfaces`).
       if (
         event.code === "Enter" &&
         isTapSurfaceEvent(event)

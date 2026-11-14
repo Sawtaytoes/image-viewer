@@ -673,8 +673,7 @@ const FileBrowser = () => {
     } else if (code === "Backspace" || code === "Escape") {
       navigateUpFolderTree()
     } else if (code === "Enter") {
-      // A focused tile was reached from the keyboard, so it answers Enter
-      // itself (see `tapSurfaces`).
+      // A tile that Tab reached answers Enter itself (see `tapSurfaces`).
       if (isTapSurfaceEvent(event)) {
         return
       }

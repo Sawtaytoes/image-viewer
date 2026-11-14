@@ -67,13 +67,20 @@ button's defaults differ from a `<div>`'s.
   surface when a pointer press on it ends, or when a pointer focuses it after the press (a touch
   tap focuses on release). It waits for the press to end because blurring during the press
   cancels a native drag of the thumbnail, and the release then opens the image. So after a tap, every key does what it did
-  on `master`, in every mode (multi-select, search, the date view, the viewer). A tap surface
-  that has focus was reached from the keyboard, so Enter and Space are meant for it: a shortcut
-  that handles Enter stands aside when `isTapSurfaceEvent(event)` is true, and the button's own
-  click runs once. Two earlier designs failed review: cancelling the button's Enter inside each
-  shortcut missed the branches that return early (multi-select) and missed Space, and
-  `:focus-visible` cannot tell keyboard focus from a tap, because Chromium makes the focused
-  element match it on any key press, before `keydown` listeners run.
+  on `master`, in every mode (multi-select, search, the date view, the viewer). Until that
+  release runs, or while the press is held, a pressed surface still has focus. The module
+  remembers each surface a pointer pressed, and a later key press does not change that. It
+  cancels that surface's own click on Enter and Space (`keydown` and `keyup`, because a button
+  that the pointer still holds clicks on the Space `keyup`), and the key still reaches the
+  window shortcuts, as it did on the body. A surface that Tab focused, and that no pointer has
+  pressed since, was reached from the keyboard, so Enter and Space are meant for it: a
+  shortcut that handles Enter stands aside when `isTapSurfaceEvent(event)` is true, and the
+  button's own click runs once. Three earlier designs failed review: cancelling the button's
+  Enter inside each shortcut missed the branches that return early (multi-select) and missed
+  Space; `:focus-visible` cannot tell keyboard focus from a tap, because Chromium makes the
+  focused element match it on any key press, before `keydown` listeners run; and treating any
+  key press as keyboard input let a key that arrived before the release click the pressed
+  surface.
 - The file browser is `inert` while the viewer covers it, so Tab cannot walk into tiles (or the
   search box) that nobody can see.
 - The home gallery's image tile is named by its file name (`aria-label`), because `Image` draws

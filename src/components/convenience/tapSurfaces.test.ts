@@ -104,6 +104,51 @@ describe("tap surfaces", () => {
     expect(document.activeElement).toBe(button)
   })
 
+  test("cancels the click on Enter and Space for a pressed surface, but not for one Tab reached", () => {
+    const { surface } = createSurface()
+
+    const pressOn = (code: string, type = "keydown") => {
+      const event = new KeyboardEvent(type, {
+        bubbles: true,
+        cancelable: true,
+        code,
+      })
+
+      surface.dispatchEvent(event)
+
+      return event.defaultPrevented
+    }
+
+    pressPointer(surface)
+    surface.focus()
+
+    expect(pressOn("Delete")).toBe(false)
+    expect(pressOn("Enter")).toBe(true)
+    expect(pressOn("Space")).toBe(true)
+    expect(pressOn("Space", "keyup")).toBe(true)
+
+    pressKey("Tab")
+    surface.blur()
+    pressKey("Tab")
+    surface.focus()
+
+    expect(pressOn("Enter")).toBe(false)
+
+    releasePointer(surface)
+  })
+
+  test("a key press does not make a pressed surface keyboard-reached", async () => {
+    const { surface } = createSurface()
+
+    pressPointer(surface)
+    surface.focus()
+    pressKey("Enter")
+    releasePointer(surface)
+    await settle()
+
+    expect(document.activeElement).toBe(document.body)
+  })
+
   test("names a key event from a surface or from inside one", () => {
     const { label, surface } = createSurface()
     const other = document.createElement("button")
@@ -132,5 +177,11 @@ describe("tap surfaces", () => {
     expect(read(surface)).toBe(true)
     expect(read(label)).toBe(true)
     expect(read(other)).toBe(false)
+
+    pressPointer(label)
+
+    expect(read(surface)).toBe(false)
+
+    releasePointer(label)
   })
 })

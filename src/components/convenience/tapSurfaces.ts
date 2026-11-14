@@ -15,21 +15,45 @@
 // drag of the `<img>` inside it, and the release then becomes a click; a
 // thumbnail dragged on `master` must not open.
 //
-// So a tap surface that HAS focus was reached from the keyboard (Tab), or put
-// back by code after a key press. Enter and Space are meant for it then, and a
-// window shortcut that handles Enter stands aside when `isTapSurfaceEvent` is
-// true, so the button's own click runs once.
+// Until that release runs (or while the press is held), a pressed surface
+// still has focus, so its own click on Enter or Space is cancelled and the key
+// goes to the window shortcuts, as it did on the body.
+//
+// A tap surface that Tab focused, and no pointer has pressed since, was reached
+// from the keyboard. Enter and Space are meant for it, and a window shortcut
+// that handles Enter stands aside when `isTapSurfaceEvent` is true, so the
+// button's own click runs once.
 
 const tapSurfaceSelector = "[data-tap-surface]"
 
-let isPointerTheLastInput = false
+// Activation keys a focused `<button>` answers with a click.
+const activationKeyCodes: readonly string[] = [
+  "Enter",
+  "NumpadEnter",
+  "Space",
+]
+
+// Surfaces a pointer pressed, until Tab focuses them. A later key press does
+// not take a surface out: a key that arrives while the press is held, or
+// before the release below runs, must still not click it.
+const pointerPressedSurfaces = new WeakSet<Element>()
 
 let isPointerPressed = false
+
+// Set by a Tab key press and used up by the next focus change, so only the
+// focus that Tab itself causes counts as reaching a surface from the keyboard.
+let isTabFocusPending = false
 
 const findTapSurface = (target: EventTarget | null) =>
   target instanceof Element
     ? target.closest(tapSurfaceSelector)
     : null
+
+const isPointerPressedSurface = (
+  surface: Element | null,
+): surface is HTMLElement =>
+  surface instanceof HTMLElement &&
+  pointerPressedSurfaces.has(surface)
 
 // After the current event and its default action, so a `click` that the
 // release is about to fire still fires.
@@ -38,8 +62,7 @@ const releaseFocusedTapSurface = () => {
     const surface = findTapSurface(document.activeElement)
 
     if (
-      isPointerTheLastInput &&
-      surface instanceof HTMLElement &&
+      isPointerPressedSurface(surface) &&
       document.activeElement === surface
     ) {
       surface.blur()
@@ -48,19 +71,49 @@ const releaseFocusedTapSurface = () => {
 }
 
 const keepTapsFromFocusingTapSurfaces = () => {
+  // Until the release runs, a surface a pointer pressed still has focus. Its
+  // own click on an activation key is cancelled; the event still reaches the
+  // window shortcuts, as it did when focus was on the body. Space clicks on
+  // `keyup`, and a button the pointer is still holding down clicks on that
+  // `keyup` even when its `keydown` was cancelled, so both are cancelled.
+  const cancelPressedSurfaceActivation = (
+    event: KeyboardEvent,
+  ) => {
+    if (
+      activationKeyCodes.includes(event.code) &&
+      isPointerPressedSurface(findTapSurface(event.target))
+    ) {
+      event.preventDefault()
+    }
+  }
+
   window.addEventListener(
     "keydown",
-    () => {
-      isPointerTheLastInput = false
+    (event) => {
+      isTabFocusPending = event.code === "Tab"
+
+      cancelPressedSurfaceActivation(event)
     },
     { capture: true },
   )
 
   window.addEventListener(
+    "keyup",
+    cancelPressedSurfaceActivation,
+    { capture: true },
+  )
+
+  window.addEventListener(
     "pointerdown",
-    () => {
-      isPointerTheLastInput = true
+    (event) => {
       isPointerPressed = true
+      isTabFocusPending = false
+
+      const surface = findTapSurface(event.target)
+
+      if (surface) {
+        pointerPressedSurfaces.add(surface)
+      }
     },
     { capture: true },
   )
@@ -84,10 +137,26 @@ const keepTapsFromFocusingTapSurfaces = () => {
   window.addEventListener(
     "focusin",
     (event) => {
+      const surface = findTapSurface(event.target)
+      const isTabFocus = isTabFocusPending
+
+      isTabFocusPending = false
+
+      if (!surface) {
+        return
+      }
+
+      if (isTabFocus) {
+        pointerPressedSurfaces.delete(surface)
+
+        return
+      }
+
+      // A touch tap focuses on release, and code (a dialog closing) can put
+      // focus back. Neither makes a pressed surface keyboard-reached.
       if (
-        isPointerTheLastInput &&
         !isPointerPressed &&
-        findTapSurface(event.target)
+        pointerPressedSurfaces.has(surface)
       ) {
         releaseFocusedTapSurface()
       }
@@ -98,9 +167,15 @@ const keepTapsFromFocusingTapSurfaces = () => {
 
 keepTapsFromFocusingTapSurfaces()
 
-// Whether a key event came from a focused tap surface, which means the user
-// reached it from the keyboard and the key is meant for it.
-const isTapSurfaceEvent = (event: KeyboardEvent) =>
-  findTapSurface(event.target) !== null
+// Whether a key event came from a tap surface the user reached from the
+// keyboard, which means the key is meant for it. A surface a pointer pressed
+// is not one: the key belongs to the window shortcuts, as it did on the body.
+const isTapSurfaceEvent = (event: KeyboardEvent) => {
+  const surface = findTapSurface(event.target)
+
+  return (
+    surface !== null && !pointerPressedSurfaces.has(surface)
+  )
+}
 
 export default isTapSurfaceEvent
