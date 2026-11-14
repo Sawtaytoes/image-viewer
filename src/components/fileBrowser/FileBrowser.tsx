@@ -26,6 +26,7 @@ import type {
   ImageFile as ImageFileEntry,
 } from "../../types"
 import FullScreenContext from "../convenience/FullScreenContext"
+import isTapSurfaceEvent from "../convenience/isTapSurfaceEvent"
 import useKeyboardControls from "../convenience/useKeyboardControls"
 import DeleteItemsContext from "../deleting/DeleteItemsContext"
 import CloseIcon from "../icons/CloseIcon"
@@ -672,6 +673,12 @@ const FileBrowser = () => {
     } else if (code === "Backspace" || code === "Escape") {
       navigateUpFolderTree()
     } else if (code === "Enter") {
+      // Enter opens the keyboard selection, and only that: a focused tile
+      // must not also open itself (see `isTapSurfaceEvent`).
+      if (isTapSurfaceEvent(event)) {
+        event.preventDefault()
+      }
+
       const numberOfDirectories = directories.length
 
       if (isShiftKeyHeld) {

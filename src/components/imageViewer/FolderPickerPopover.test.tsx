@@ -316,6 +316,26 @@ describe("FolderPickerPopover (per-column menu)", () => {
     ).not.toBeInTheDocument()
   })
 
+  test("closes on a tap on the backdrop, and not on a tap inside the menu", () => {
+    const { onClose } = renderPopover({
+      queuedFolders: [],
+    })
+
+    fireEvent.click(
+      screen.getByText("No folders queued yet."),
+    )
+
+    expect(onClose).not.toHaveBeenCalled()
+
+    fireEvent.click(
+      screen.getByRole("button", {
+        name: "Close the menu",
+      }),
+    )
+
+    expect(onClose).toHaveBeenCalledTimes(1)
+  })
+
   test("closes on Escape", () => {
     const { onClose } = renderPopover()
 

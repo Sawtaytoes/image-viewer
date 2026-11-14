@@ -1,5 +1,6 @@
 import { useContext, useEffect } from "react"
 
+import isTapSurfaceEvent from "../convenience/isTapSurfaceEvent"
 import DeleteItemsContext from "../deleting/DeleteItemsContext"
 
 export interface UseViewerKeyboardOptions {
@@ -88,6 +89,15 @@ const useViewerKeyboard = ({
       const handler = keyConfigurations[event.code]
 
       if (handler) {
+        // Enter leaves the viewer, and only that: a focused tap surface must
+        // not also click itself (see `isTapSurfaceEvent`).
+        if (
+          event.code === "Enter" &&
+          isTapSurfaceEvent(event)
+        ) {
+          event.preventDefault()
+        }
+
         handler()
       }
     }

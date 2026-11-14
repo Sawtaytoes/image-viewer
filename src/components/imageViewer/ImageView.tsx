@@ -8,6 +8,7 @@ import {
 } from "react"
 
 import FillRing from "../fileBrowser/FillRing"
+import getTapPoint from "./getTapPoint"
 import Image from "./Image"
 import type { TapPoint } from "./TapFeedback"
 import type { LongPressEvent } from "./useLongPress"
@@ -28,6 +29,8 @@ const NAVIGATION_ZONE_CLASSES =
   "absolute top-0 h-full w-[30%] focus:opacity-0 active:opacity-0"
 
 interface ImageViewProps {
+  // The center zone's accessible name: what a tap on it does here.
+  centerTapLabel: string
   goToNextImage: () => void
   goToPreviousImage: () => void
   imageFileName: string
@@ -38,10 +41,12 @@ interface ImageViewProps {
   // `onCenterTap`). When omitted, a hold does nothing special and still ends as
   // a tap on release (the legacy single-image column has no hold action).
   onCenterHold?: (point: TapPoint) => void
-  onCenterTap: (point: TapPoint) => void
+  // No point when the center zone was activated from the keyboard.
+  onCenterTap: (point?: TapPoint) => void
 }
 
 const ImageView = ({
+  centerTapLabel,
   goToNextImage,
   goToPreviousImage,
   imageFileName,
@@ -64,7 +69,7 @@ const ImageView = ({
     useRef<HTMLDivElement>(null)
   const navigatePreviousOverlayRef =
     useRef<HTMLDivElement>(null)
-  const centerZoneRef = useRef<HTMLDivElement>(null)
+  const centerZoneRef = useRef<HTMLButtonElement>(null)
 
   // A completed hold opens the menu mid-gesture; swallow the trailing `click`
   // (fired on release) so it doesn't also fire the tap action.
@@ -111,7 +116,7 @@ const ImageView = ({
   // (the "double-tap to gallery then opens an image" bug). A `click` is
   // delivered to this zone as one unit, and React only re-renders afterward.
   const onCenterClick = useCallback<
-    MouseEventHandler<HTMLDivElement>
+    MouseEventHandler<HTMLButtonElement>
   >(
     (event) => {
       event.stopPropagation()
@@ -122,7 +127,7 @@ const ImageView = ({
         return
       }
 
-      onCenterTap({ x: event.clientX, y: event.clientY })
+      onCenterTap(getTapPoint(event))
     },
     [onCenterTap],
   )
@@ -181,16 +186,20 @@ const ImageView = ({
       </div>
 
       {/* Bounded close zone sitting between the two 30% nav zones, so edge taps
-          navigate and only a center tap closes. */}
-      <div
+          navigate and only a center tap closes. A real `<button>`, so Enter or
+          Space on it does what a tap does. */}
+      <button
+        aria-label={centerTapLabel}
         className="absolute top-0 right-[30%] bottom-0 left-[30%]"
+        data-tap-surface
         onClick={onCenterClick}
         ref={centerZoneRef}
+        type="button"
       >
         {centerHoldProgress > 0 && (
           <FillRing progress={centerHoldProgress} />
         )}
-      </div>
+      </button>
 
       <div
         className={`${NAVIGATION_ZONE_CLASSES} right-0 ${

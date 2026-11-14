@@ -37,10 +37,16 @@ const ImageFile = ({
     }
   }, [fileName, filePath, setImageFile])
 
+  // A real `<button>`, so a tile is in the accessibility tree with a role and
+  // Enter or Space on it does what a tap does. Tailwind's preflight strips the
+  // button's own background, border and padding, so it paints as the `<div>`
+  // it replaced.
   return (
-    <div
+    <button
       className="relative flex w-full cursor-pointer items-center justify-center pb-[100%]"
+      data-tap-surface
       onClick={goToImage}
+      type="button"
     >
       <div className="absolute top-0 left-0 h-full w-full">
         <Image
@@ -49,7 +55,7 @@ const ImageFile = ({
           hasVisibilityDetection
         />
       </div>
-    </div>
+    </button>
   )
 }
 

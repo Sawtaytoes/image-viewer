@@ -20,8 +20,13 @@ import useLongPress from "./useLongPress"
 // sets its own, and two `bg-*` utilities on one element resolve by stylesheet
 // order rather than by the order they appear here. Same split, same tokens, as
 // the home gallery's `fileBrowser/Directory` — this is that tile in a column.
+//
+// A real `<button>`, so a tile is in the accessibility tree with a role and
+// Enter or Space on it does what a tap does. `block` and `text-left` undo the
+// two things a `<button>` does differently from the `<div>` it replaced
+// (inline-block, centered text); Tailwind's preflight resets the rest.
 const TILE_CLASSES =
-  "relative w-full cursor-pointer touch-pan-y pb-[100%] font-light text-content-primary"
+  "relative block w-full cursor-pointer touch-pan-y pb-[100%] text-left font-light text-content-primary"
 
 const UNSELECTED_TILE_CLASSES = `${TILE_CLASSES} bg-surface-raised`
 
@@ -41,7 +46,7 @@ const PaneGalleryFolderTile = ({
   directoryPath,
   onOpen,
 }: PaneGalleryFolderTileProps) => {
-  const tileRef = useRef<HTMLDivElement>(null)
+  const tileRef = useRef<HTMLButtonElement>(null)
   // A completed hold is still followed by a `click`; swallow that one click so
   // it doesn't immediately toggle the selection back off.
   const suppressNextClickRef = useRef(false)
@@ -138,14 +143,19 @@ const PaneGalleryFolderTile = ({
   })
 
   return (
-    <div
+    <button
+      aria-pressed={
+        isMultiSelectMode ? isSelected : undefined
+      }
       className={
         isSelected
           ? SELECTED_TILE_CLASSES
           : UNSELECTED_TILE_CLASSES
       }
+      data-tap-surface
       onClick={onClick}
       ref={tileRef}
+      type="button"
     >
       <div className="absolute inset-0 flex flex-col px-2.5 py-1.5">
         <div className="overflow-hidden pb-1.5 text-ellipsis whitespace-nowrap">
@@ -171,7 +181,7 @@ const PaneGalleryFolderTile = ({
           ✓
         </div>
       )}
-    </div>
+    </button>
   )
 }
 

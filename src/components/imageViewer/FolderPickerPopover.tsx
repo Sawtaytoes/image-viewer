@@ -156,15 +156,13 @@ const FolderPickerPopover = ({
   // firing on press would let the trailing tap events reach whatever ends up
   // under the finger after the menu unmounts.
   const onBackdropClick = useCallback<
-    MouseEventHandler<HTMLDivElement>
+    MouseEventHandler<HTMLButtonElement>
   >(
     (event) => {
       // Don't let the tap fall through to the column behind the backdrop.
       event.stopPropagation()
 
-      if (event.target === event.currentTarget) {
-        onClose()
-      }
+      onClose()
     },
     [onClose],
   )
@@ -259,8 +257,20 @@ const FolderPickerPopover = ({
     <div
       className="absolute inset-0 z-[1] flex animate-backdrop-in items-center justify-center bg-scrim"
       data-viewer-overlay
-      onClick={onBackdropClick}
     >
+      {/* The backdrop's tap target: a real `<button>` under the menu, filling
+          the overlay, so a tap outside the menu closes it and a tap inside never
+          reaches it. It is not a tab stop, because Escape already closes the
+          menu from the keyboard (the `keydown` listener above). The menu after
+          it is `relative`, so it paints on top. */}
+      <button
+        aria-label="Close the menu"
+        className="absolute inset-0"
+        onClick={onBackdropClick}
+        tabIndex={-1}
+        type="button"
+      />
+
       {/* Sized generously: this is the primary touch target in multi-view, so it
           gets a real minimum width and large rows rather than shrinking to its
           content. Icons are forced larger here (the shared SvgIcon is a fixed
