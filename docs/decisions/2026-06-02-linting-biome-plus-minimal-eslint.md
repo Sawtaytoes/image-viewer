@@ -1,15 +1,23 @@
 # 2026-06-02 — Lint and format with Biome + minimal ESLint
 
-- **Status:** Locked
+- **Status:** Locked (in part superseded; see below)
 - **Date:** 2026-06-02
+- **Type:** Tooling
 - **Deciders:** Kevin (owner) + agent
 - **Source:** Migrated from `docs/research/0003-linting-and-formatting.md` (Phase 1 modernization)
-- **Superseded in part by:** [2026-08-11 — An action creator's `toString` is an OWN property](2026-08-11-action-creator-tostring-is-an-own-property-not-prototype.md) — only the `complexity/useArrowFunction` bullet below. The rule is back **on**; the `.prototype.toString` it was protecting turned out to be a no-op. Everything else here stands.
-- **Superseded in part by:** [2026-11-14 — Every lint rule is at the preset's level, and a tap surface is a real button](2026-11-14-every-lint-rule-is-at-the-preset-level-and-tap-surfaces-are-buttons.md) — only the "Disabled rules" bullet below. All three rules are back **on**, and the clickable `<div>`s are `<button>`s.
+- **Supersedes:** —
+- **Superseded by:** In part, two later records. [2026-08-11 — An action creator's `toString` is an OWN property](2026-08-11-action-creator-tostring-is-an-own-property-not-prototype.md) — only the `complexity/useArrowFunction` bullet below. The rule is back **on**; the `.prototype.toString` it was protecting turned out to be a no-op. [2026-11-14 — Every lint rule is at the preset's level, and a tap surface is a real button](2026-11-14-every-lint-rule-is-at-the-preset-level-and-tap-surfaces-are-buttons.md) — only the "Disabled rules" bullet below. All three rules are back **on**, and the clickable `<div>`s are `<button>`s. Everything else here stands.
 
 ## Decision (the rule)
 
 Adopt **Biome 2** as the primary formatter + linter, with a **minimal ESLint flat config** for the few rules Biome can't express — both copied from `mux-magic` and adapted to this single-package repo. Accept Biome's output as the new house style.
+
+## Context
+
+From the original ADR (`docs/research/0003-linting-and-formatting.md`, `d7fcb47`): the repo used
+a private `@ghadyani-eslint/*` config (the owner's old personal config) on ESLint 7, run through
+the now-removed `eslint-loader` inside Webpack. It enforced an unusual "vertical" formatting
+style. ESLint 9/10 + the loss of `eslint-loader` break this setup.
 
 ## What was rejected ("no, that's wrong")
 
