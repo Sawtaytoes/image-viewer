@@ -93,7 +93,9 @@ button's defaults differ from a `<div>`'s.
   selects it.
 - The menu's backdrop is a `<button>` under the menu, with `tabIndex={-1}`, because Escape already
   closes the menu from the keyboard. A press still focuses it, so it carries `data-tap-surface`
-  too: a button that is not a tab stop is still a tap surface.
+  too: a button that is not a tab stop is still a tap surface. A press and release that land on
+  the backdrop and the menu make a `click` on the overlay itself, which holds both, and a
+  listener on the overlay closes the menu for it, as the overlay's handler did on `master`.
 - Do not turn a rule off for a file or a folder. A per-line suppression is allowed only for a shape
   that something outside this repo fixes, with that contract in its reason.
 

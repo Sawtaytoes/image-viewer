@@ -340,6 +340,23 @@ describe("FolderPickerPopover (per-column menu)", () => {
     expect(onClose).toHaveBeenCalledTimes(1)
   })
 
+  test("closes on a press and release that land on the backdrop and the menu", () => {
+    const { onClose } = renderPopover({
+      queuedFolders: [],
+    })
+
+    // The browser sends that click to the overlay, which holds both.
+    const overlay = screen
+      .getByRole("button", { name: "Close the menu" })
+      .closest("[data-viewer-overlay]")
+
+    expect(overlay).not.toBeNull()
+
+    fireEvent.click(overlay as Element)
+
+    expect(onClose).toHaveBeenCalledTimes(1)
+  })
+
   test("closes on Escape", () => {
     const { onClose } = renderPopover()
 

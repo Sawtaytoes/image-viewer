@@ -152,6 +152,38 @@ const FolderPickerPopover = ({
     }
   }, [onClose])
 
+  // A press and its release that land on different parts of the overlay (the
+  // backdrop and the menu's padding) make a `click` on the overlay itself, the
+  // nearest element holding both. That click closes the menu, as it did when
+  // the overlay carried the close handler. It is a pointer gesture only, so it
+  // is a plain listener: the keyboard closes the menu with Escape.
+  const overlayRef = useRef<HTMLDivElement>(null)
+
+  useEffect(() => {
+    const overlay = overlayRef.current
+
+    if (!overlay) {
+      return
+    }
+
+    const onOverlayClick = (
+      event: globalThis.MouseEvent,
+    ) => {
+      if (event.target === overlay) {
+        // Don't let the tap fall through to the column behind the backdrop.
+        event.stopPropagation()
+
+        onClose()
+      }
+    }
+
+    overlay.addEventListener("click", onOverlayClick)
+
+    return () => {
+      overlay.removeEventListener("click", onOverlayClick)
+    }
+  }, [onClose])
+
   // `click` throughout (not `pointerdown`): selecting a row closes the menu, so
   // firing on press would let the trailing tap events reach whatever ends up
   // under the finger after the menu unmounts.
@@ -257,6 +289,7 @@ const FolderPickerPopover = ({
     <div
       className="absolute inset-0 z-[1] flex animate-backdrop-in items-center justify-center bg-scrim"
       data-viewer-overlay
+      ref={overlayRef}
     >
       {/* The backdrop's tap target: a real `<button>` under the menu, filling
           the overlay, so a tap outside the menu closes it and a tap inside never
