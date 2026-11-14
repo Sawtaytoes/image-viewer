@@ -14,8 +14,17 @@ const pressPointer = (target: Element) => {
   )
 }
 
-// The blur runs in a microtask, after the focus event it answers.
-const settle = () => Promise.resolve()
+// The release runs in a timeout, after the event it answers.
+const settle = () =>
+  new Promise((resolve) => {
+    setTimeout(resolve)
+  })
+
+const releasePointer = (target: Element) => {
+  target.dispatchEvent(
+    new Event("pointerup", { bubbles: true }),
+  )
+}
 
 const createSurface = () => {
   const surface = document.createElement("button")
@@ -33,10 +42,26 @@ describe("tap surfaces", () => {
     document.body.replaceChildren()
   })
 
-  test("a surface a pointer focuses gives the focus up", async () => {
+  test("a surface a pointer press focuses keeps the focus until the press ends", async () => {
     const { surface } = createSurface()
 
     pressPointer(surface)
+    surface.focus()
+    await settle()
+
+    expect(document.activeElement).toBe(surface)
+
+    releasePointer(surface)
+    await settle()
+
+    expect(document.activeElement).toBe(document.body)
+  })
+
+  test("a surface focused after a pointer press ended gives the focus up", async () => {
+    const { surface } = createSurface()
+
+    pressPointer(surface)
+    releasePointer(surface)
     surface.focus()
     await settle()
 
@@ -47,6 +72,7 @@ describe("tap surfaces", () => {
     const { surface } = createSurface()
 
     pressPointer(document.body)
+    releasePointer(document.body)
     pressKey("Tab")
     surface.focus()
     await settle()
@@ -60,6 +86,7 @@ describe("tap surfaces", () => {
     pressKey("Tab")
     surface.focus()
     pressPointer(label)
+    releasePointer(label)
     await settle()
 
     expect(document.activeElement).toBe(document.body)
@@ -71,6 +98,7 @@ describe("tap surfaces", () => {
     document.body.append(button)
     pressPointer(button)
     button.focus()
+    releasePointer(button)
     await settle()
 
     expect(document.activeElement).toBe(button)

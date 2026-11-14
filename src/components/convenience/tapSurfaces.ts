@@ -6,9 +6,14 @@
 // and Enter and Space went only to the window-level shortcuts. A `<button>`
 // takes focus when it is pressed, and Enter or Space on a focused button
 // clicks it, so a tap would change what those keys do next. To keep that from
-// happening, a tap surface gives up focus as soon as a pointer gives it focus
-// (or presses it while it has focus), which leaves the page as the `<div>`
-// left it.
+// happening, a tap surface gives up focus when a pointer press on it ends, or
+// as soon as a pointer gives it focus after the press has ended (a touch tap
+// focuses on release). That leaves the page as the `<div>` left it.
+//
+// The release waits for the press to end. Blurring the button while the press
+// is still down (inside the `focusin` that the press causes) cancels a native
+// drag of the `<img>` inside it, and the release then becomes a click; a
+// thumbnail dragged on `master` must not open.
 //
 // So a tap surface that HAS focus was reached from the keyboard (Tab), or put
 // back by code after a key press. Enter and Space are meant for it then, and a
@@ -19,14 +24,21 @@ const tapSurfaceSelector = "[data-tap-surface]"
 
 let isPointerTheLastInput = false
 
+let isPointerPressed = false
+
 const findTapSurface = (target: EventTarget | null) =>
   target instanceof Element
     ? target.closest(tapSurfaceSelector)
     : null
 
-const releaseFocus = (surface: Element) => {
-  queueMicrotask(() => {
+// After the current event and its default action, so a `click` that the
+// release is about to fire still fires.
+const releaseFocusedTapSurface = () => {
+  setTimeout(() => {
+    const surface = findTapSurface(document.activeElement)
+
     if (
+      isPointerTheLastInput &&
       surface instanceof HTMLElement &&
       document.activeElement === surface
     ) {
@@ -46,25 +58,38 @@ const keepTapsFromFocusingTapSurfaces = () => {
 
   window.addEventListener(
     "pointerdown",
-    (event) => {
+    () => {
       isPointerTheLastInput = true
-
-      const surface = findTapSurface(event.target)
-
-      if (surface) {
-        releaseFocus(surface)
-      }
+      isPointerPressed = true
     },
     { capture: true },
   )
 
+  for (const pressEndType of [
+    "pointerup",
+    "pointercancel",
+    "dragend",
+  ]) {
+    window.addEventListener(
+      pressEndType,
+      () => {
+        isPointerPressed = false
+
+        releaseFocusedTapSurface()
+      },
+      { capture: true },
+    )
+  }
+
   window.addEventListener(
     "focusin",
     (event) => {
-      const surface = findTapSurface(event.target)
-
-      if (surface && isPointerTheLastInput) {
-        releaseFocus(surface)
+      if (
+        isPointerTheLastInput &&
+        !isPointerPressed &&
+        findTapSurface(event.target)
+      ) {
+        releaseFocusedTapSurface()
       }
     },
     { capture: true },

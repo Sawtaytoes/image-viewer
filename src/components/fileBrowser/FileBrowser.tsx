@@ -789,12 +789,17 @@ const FileBrowser = () => {
     <MultiSelectContext.Provider
       value={multiSelectProviderValue}
     >
+      {/* `inert` while the viewer covers this browser: nothing under the
+          overlay can take focus from Tab or reach a screen reader. The gallery
+          tiles are buttons, so without it Tab would walk into tiles nobody
+          can see, and Enter would open one. */}
       <div
         className={
           isFullScreen && isViewerOpen
             ? fullBleedFileBrowserClassName
             : insetFileBrowserClassName
         }
+        inert={isViewerOpen}
       >
         {!isViewerOpen && <DirectoryControls />}
 

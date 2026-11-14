@@ -64,7 +64,9 @@ button's defaults differ from a `<div>`'s.
   left focus on the body, and Enter and Space went only to the window shortcuts (the home
   gallery's Enter opens the keyboard selection, the viewer's Enter leaves). Each new button
   carries `data-tap-surface`, and `src/components/convenience/tapSurfaces.ts` blurs a tap
-  surface as soon as a pointer focuses or presses it. So after a tap, every key does what it did
+  surface when a pointer press on it ends, or when a pointer focuses it after the press (a touch
+  tap focuses on release). It waits for the press to end because blurring during the press
+  cancels a native drag of the thumbnail, and the release then opens the image. So after a tap, every key does what it did
   on `master`, in every mode (multi-select, search, the date view, the viewer). A tap surface
   that has focus was reached from the keyboard, so Enter and Space are meant for it: a shortcut
   that handles Enter stands aside when `isTapSurfaceEvent(event)` is true, and the button's own
@@ -72,6 +74,8 @@ button's defaults differ from a `<div>`'s.
   shortcut missed the branches that return early (multi-select) and missed Space, and
   `:focus-visible` cannot tell keyboard focus from a tap, because Chromium makes the focused
   element match it on any key press, before `keydown` listeners run.
+- The file browser is `inert` while the viewer covers it, so Tab cannot walk into tiles (or the
+  search box) that nobody can see.
 - The home gallery's image tile is named by its file name (`aria-label`), because `Image` draws
   its `<img>` with no `alt`.
 - A click from the keyboard has `detail` 0 and no pointer position. `getTapPoint` returns no point
