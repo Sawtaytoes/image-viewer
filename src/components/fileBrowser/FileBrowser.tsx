@@ -26,7 +26,7 @@ import type {
   ImageFile as ImageFileEntry,
 } from "../../types"
 import FullScreenContext from "../convenience/FullScreenContext"
-import isTapSurfaceEvent from "../convenience/isTapSurfaceEvent"
+import getTapSurfaceFocus from "../convenience/getTapSurfaceFocus"
 import useKeyboardControls from "../convenience/useKeyboardControls"
 import DeleteItemsContext from "../deleting/DeleteItemsContext"
 import CloseIcon from "../icons/CloseIcon"
@@ -673,9 +673,16 @@ const FileBrowser = () => {
     } else if (code === "Backspace" || code === "Escape") {
       navigateUpFolderTree()
     } else if (code === "Enter") {
-      // Enter opens the keyboard selection, and only that: a focused tile
-      // must not also open itself (see `isTapSurfaceEvent`).
-      if (isTapSurfaceEvent(event)) {
+      // A tile the user tabbed to answers Enter itself. A tile a tap left
+      // focused must not also open itself over the selection
+      // (see `getTapSurfaceFocus`).
+      const tapSurfaceFocus = getTapSurfaceFocus(event)
+
+      if (tapSurfaceFocus === "keyboard") {
+        return
+      }
+
+      if (tapSurfaceFocus === "pointer") {
         event.preventDefault()
       }
 

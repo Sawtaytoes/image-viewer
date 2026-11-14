@@ -40,9 +40,11 @@ const ImageFile = ({
   // A real `<button>`, so a tile is in the accessibility tree with a role and
   // Enter or Space on it does what a tap does. Tailwind's preflight strips the
   // button's own background, border and padding, so it paints as the `<div>`
-  // it replaced.
+  // it replaced. `Image` draws its `<img>` with no `alt`, so the file name is
+  // the button's accessible name.
   return (
     <button
+      aria-label={fileName}
       className="relative flex w-full cursor-pointer items-center justify-center pb-[100%]"
       data-tap-surface
       onClick={goToImage}

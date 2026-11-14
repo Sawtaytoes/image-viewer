@@ -45,15 +45,36 @@ const pressEnterOn = (element: Element) => {
 }
 
 describe("useViewerKeyboard", () => {
-  test("Enter on a focused tap surface leaves the viewer and cancels the surface's own click", () => {
+  test("Enter on a tap surface a tap focused leaves the viewer and cancels the surface's own click", () => {
     const { onClose } = setup()
     const surface = document.createElement("button")
 
     surface.setAttribute("data-tap-surface", "")
     document.body.append(surface)
+    surface.dispatchEvent(
+      new Event("pointerdown", { bubbles: true }),
+    )
+    surface.focus()
 
     expect(pressEnterOn(surface)).toBe(true)
     expect(onClose).toHaveBeenCalledTimes(1)
+
+    surface.remove()
+  })
+
+  test("Enter on a tap surface the keyboard focused is left to the surface", () => {
+    const { onClose } = setup()
+    const surface = document.createElement("button")
+
+    surface.setAttribute("data-tap-surface", "")
+    document.body.append(surface)
+    window.dispatchEvent(
+      new KeyboardEvent("keydown", { code: "Tab" }),
+    )
+    surface.focus()
+
+    expect(pressEnterOn(surface)).toBe(false)
+    expect(onClose).not.toHaveBeenCalled()
 
     surface.remove()
   })

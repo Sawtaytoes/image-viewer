@@ -1,6 +1,6 @@
 import { useContext, useEffect } from "react"
 
-import isTapSurfaceEvent from "../convenience/isTapSurfaceEvent"
+import getTapSurfaceFocus from "../convenience/getTapSurfaceFocus"
 import DeleteItemsContext from "../deleting/DeleteItemsContext"
 
 export interface UseViewerKeyboardOptions {
@@ -88,18 +88,26 @@ const useViewerKeyboard = ({
 
       const handler = keyConfigurations[event.code]
 
-      if (handler) {
-        // Enter leaves the viewer, and only that: a focused tap surface must
-        // not also click itself (see `isTapSurfaceEvent`).
-        if (
-          event.code === "Enter" &&
-          isTapSurfaceEvent(event)
-        ) {
-          event.preventDefault()
+      if (!handler) {
+        return
+      }
+
+      // A tap surface the user tabbed to answers Enter itself. One a tap left
+      // focused must not also click itself as Enter leaves the viewer
+      // (see `getTapSurfaceFocus`).
+      if (event.code === "Enter") {
+        const tapSurfaceFocus = getTapSurfaceFocus(event)
+
+        if (tapSurfaceFocus === "keyboard") {
+          return
         }
 
-        handler()
+        if (tapSurfaceFocus === "pointer") {
+          event.preventDefault()
+        }
       }
+
+      handler()
     }
 
     window.addEventListener("keydown", onKeyDown)
