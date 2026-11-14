@@ -93,9 +93,13 @@ button's defaults differ from a `<div>`'s.
   selects it.
 - The menu's backdrop is a `<button>` under the menu, with `tabIndex={-1}`, because Escape already
   closes the menu from the keyboard. A press still focuses it, so it carries `data-tap-surface`
-  too: a button that is not a tab stop is still a tap surface. A press and release that land on
-  the backdrop and the menu make a `click` on the overlay itself, which holds both, and a
-  listener on the overlay closes the menu for it, as the overlay's handler did on `master`.
+  too: a button that is not a tab stop is still a tap surface.
+- Where the handler moved from a wrapper `<div>` to a button inside it (the folder tab, the
+  menu's overlay), a mouse or pen press on one child and a release on another makes a `click`
+  on the wrapper itself, the nearest element that holds both. The `<div>` handled that click, so
+  `src/components/convenience/useOwnClick.ts` adds a plain listener on the wrapper that does the
+  same for a click whose target is the wrapper: the tab selects, and the overlay closes the menu.
+  It is a pointer gesture only; the keyboard reaches the same actions through the buttons.
 - Do not turn a rule off for a file or a folder. A per-line suppression is allowed only for a shape
   that something outside this repo fixes, with that contract in its reason.
 

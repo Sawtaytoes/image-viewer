@@ -1,6 +1,7 @@
 import type { MouseEvent } from "react"
-import { memo, useCallback } from "react"
+import { memo, useCallback, useRef } from "react"
 
+import useOwnClick from "../convenience/useOwnClick"
 import CloseIcon from "../icons/CloseIcon"
 
 // Split out of `FolderTabStrip.jsx`, which declared both components in one
@@ -72,11 +73,18 @@ const FolderTab = ({
     [folderId, onClose],
   )
 
+  // A press on the name and a release on the close button (or the reverse)
+  // clicks the tab itself, which selected it when the tab was one `<div>`.
+  const tabRef = useRef<HTMLDivElement>(null)
+
+  useOwnClick(tabRef, handleSelect)
+
   return (
     <div
       className={`${tabClassName} ${
         isActive ? activeTabClassName : inactiveTabClassName
       }`}
+      ref={tabRef}
     >
       <button
         aria-current={isActive ? "true" : undefined}

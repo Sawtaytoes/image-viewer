@@ -11,6 +11,7 @@ import {
 } from "react"
 
 import { isTargetRemoved } from "../../deleting/deleteItems"
+import useOwnClick from "../convenience/useOwnClick"
 import DeleteItemsContext from "../deleting/DeleteItemsContext"
 import CloseIcon from "../icons/CloseIcon"
 import DeleteForeverIcon from "../icons/DeleteForeverIcon"
@@ -152,37 +153,22 @@ const FolderPickerPopover = ({
     }
   }, [onClose])
 
-  // A press and its release that land on different parts of the overlay (the
-  // backdrop and the menu's padding) make a `click` on the overlay itself, the
-  // nearest element holding both. That click closes the menu, as it did when
-  // the overlay carried the close handler. It is a pointer gesture only, so it
-  // is a plain listener: the keyboard closes the menu with Escape.
+  // A press and its release that land on the backdrop and the menu make a
+  // `click` on the overlay itself, which held the close handler before the
+  // backdrop became a button (see `useOwnClick`).
   const overlayRef = useRef<HTMLDivElement>(null)
 
-  useEffect(() => {
-    const overlay = overlayRef.current
+  const onOverlayOwnClick = useCallback(
+    (event: globalThis.MouseEvent) => {
+      // Don't let the tap fall through to the column behind the backdrop.
+      event.stopPropagation()
 
-    if (!overlay) {
-      return
-    }
+      onClose()
+    },
+    [onClose],
+  )
 
-    const onOverlayClick = (
-      event: globalThis.MouseEvent,
-    ) => {
-      if (event.target === overlay) {
-        // Don't let the tap fall through to the column behind the backdrop.
-        event.stopPropagation()
-
-        onClose()
-      }
-    }
-
-    overlay.addEventListener("click", onOverlayClick)
-
-    return () => {
-      overlay.removeEventListener("click", onOverlayClick)
-    }
-  }, [onClose])
+  useOwnClick(overlayRef, onOverlayOwnClick)
 
   // `click` throughout (not `pointerdown`): selecting a row closes the menu, so
   // firing on press would let the trailing tap events reach whatever ends up

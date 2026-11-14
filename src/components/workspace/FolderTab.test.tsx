@@ -46,4 +46,21 @@ describe("FolderTab", () => {
     expect(onClose).toHaveBeenCalledWith("folder-1")
     expect(onSelect).not.toHaveBeenCalled()
   })
+
+  test("selects the folder on a click on the tab itself", () => {
+    const { onClose, onSelect } = renderTab()
+
+    // A press on the name and a release on the close button make this click.
+    const tab = screen.getByRole("button", {
+      name: "Holiday",
+    }).parentElement
+
+    expect(tab).not.toBeNull()
+
+    fireEvent.click(tab as Element)
+
+    expect(onSelect).toHaveBeenCalledTimes(1)
+    expect(onSelect).toHaveBeenCalledWith("folder-1")
+    expect(onClose).not.toHaveBeenCalled()
+  })
 })
