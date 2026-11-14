@@ -92,7 +92,8 @@ button's defaults differ from a `<div>`'s.
   Its select button's `::before` stretches over the whole tab, so a tap anywhere on the tab still
   selects it.
 - The menu's backdrop is a `<button>` under the menu, with `tabIndex={-1}`, because Escape already
-  closes the menu from the keyboard.
+  closes the menu from the keyboard. A press still focuses it, so it carries `data-tap-surface`
+  too: a button that is not a tab stop is still a tap surface.
 - Do not turn a rule off for a file or a folder. A per-line suppression is allowed only for a shape
   that something outside this repo fixes, with that contract in its reason.
 

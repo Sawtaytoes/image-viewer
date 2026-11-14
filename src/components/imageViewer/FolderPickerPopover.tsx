@@ -262,10 +262,13 @@ const FolderPickerPopover = ({
           the overlay, so a tap outside the menu closes it and a tap inside never
           reaches it. It is not a tab stop, because Escape already closes the
           menu from the keyboard (the `keydown` listener above). The menu after
-          it is `relative`, so it paints on top. */}
+          it is `relative`, so it paints on top. A press can still focus it, so
+          it is a tap surface: Enter and Space during or after a press do not
+          click it (see `tapSurfaces`). */}
       <button
         aria-label="Close the menu"
         className="absolute inset-0"
+        data-tap-surface
         onClick={onBackdropClick}
         tabIndex={-1}
         type="button"

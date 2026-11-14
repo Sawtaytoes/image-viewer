@@ -327,11 +327,15 @@ describe("FolderPickerPopover (per-column menu)", () => {
 
     expect(onClose).not.toHaveBeenCalled()
 
-    fireEvent.click(
-      screen.getByRole("button", {
-        name: "Close the menu",
-      }),
-    )
+    const backdrop = screen.getByRole("button", {
+      name: "Close the menu",
+    })
+
+    // A tap surface, so a key pressed while a pointer holds it does not
+    // click it.
+    expect(backdrop).toHaveAttribute("data-tap-surface")
+
+    fireEvent.click(backdrop)
 
     expect(onClose).toHaveBeenCalledTimes(1)
   })
