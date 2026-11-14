@@ -51,7 +51,9 @@ pnpm start               # dev (electron-forge start; Vite HMR)
 pnpm test                # vitest (watch)   |  pnpm test:run for one-shot
 pnpm test:e2e            # Playwright browser smoke, every route in four windows
 pnpm typecheck           # tsc --noEmit — covers all of src/ now, not just the configs
-pnpm lint                # biome check --write  +  eslint . --fix
+pnpm lint                # biome check --write  +  eslint . --fix; a warning fails both
+pnpm lint:biome          # check mode, as CI runs it (--error-on-warnings)
+pnpm lint:eslint         # check mode, as CI runs it (--max-warnings 0)
 pnpm build:renderer      # vite build of the renderer alone — the gate that can see Tailwind
 pnpm package             # build main/preload/renderer + package the app (no installer)
 pnpm make                # build + Windows Squirrel installer (and zip/deb/rpm)
