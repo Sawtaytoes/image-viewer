@@ -4,7 +4,6 @@ import {
   useEffect,
   useState,
 } from "react"
-import { from, type Subscription } from "rxjs"
 
 import type { DirectoryEntry, ImageFile } from "../../types"
 import SettingsContext from "../settings/SettingsContext"
@@ -15,16 +14,14 @@ import {
 import useDirectories from "./useDirectories"
 import useImageFiles from "./useImageFiles"
 
-// Consolidates the `readDirectory` subscription + derive logic that
-// `FileSystemProvider` and `Directory` each hand-rolled. Each caller owns its
-// own listing keyed by `folderPath`, so a pane can list its folder
-// independently of the single global current folder.
 const initialDirectoryContents: DirectoryEntry[] = []
+const initialAddedPaths: ReadonlySet<string> = new Set()
 
 export interface FolderListing {
   directories: ImageFile[]
   imageFiles: ImageFile[]
   isLoading: boolean
+  addedPaths: ReadonlySet<string>
   refresh: () => void
 }
 
@@ -32,129 +29,154 @@ const useFolderListing = (
   folderPath = "",
   {
     isWatchingForChanges = false,
-  }: {
-    // Re-read the folder when its entries change on disk. The galleries opt
-    // in; an open image pane does not, because a file landing earlier in the
-    // sort order would move the image the reader is looking at.
-    isWatchingForChanges?: boolean
-  } = {},
+  }: { isWatchingForChanges?: boolean } = {},
 ): FolderListing => {
   const { sortOrdersByFolder } = useContext(SettingsContext)
-
-  // Only the date-modified sort needs each entry's mtime, and fetching it costs
-  // a `stat` per file that blocks the whole listing (see `readDirectory` in the
-  // preload). Skip it for the default name sort so the listing loads instantly
-  // and images fill in afterward, the way it did before date sort existed.
   const hasModifiedTimeSort =
     getFolderSortOrder(sortOrdersByFolder, folderPath) ===
     sortOrders.modifiedDesc
-
-  const [directoryContents, setDirectoryContents] =
-    useState<DirectoryEntry[]>(initialDirectoryContents)
-
-  // Tracks whether the read for the *current* `folderPath` is still in flight.
-  // Without this the previous folder's contents linger on screen until the new
-  // read resolves — in a slow, non-virtualized pane gallery that stale window
-  // can last seconds and read as "stuck on the wrong folder".
+  const [revision, setRevision] = useState(0)
+  const refresh = useCallback(
+    () => setRevision((value) => value + 1),
+    [],
+  )
+  const [listing, setListing] = useState<{
+    path: string
+    contents: DirectoryEntry[]
+    addedPaths: ReadonlySet<string>
+    hasLoaded: boolean
+  }>({
+    path: folderPath,
+    contents: initialDirectoryContents,
+    addedPaths: initialAddedPaths,
+    hasLoaded: false,
+  })
   const [isLoading, setIsLoading] = useState(
     Boolean(folderPath),
   )
 
-  // The read itself, shared by the mount effect and `refresh()`. `refresh`
-  // re-reads the *same* folder after its contents change on disk (e.g. deleting
-  // an image from a pane) — `folderPath` alone wouldn't change, so the effect
-  // can't retrigger on its own. `from(promise)` completes after one emit, so a
-  // refresh's subscription self-disposes; the returned teardown is only used
-  // when the effect re-runs or unmounts.
-  const loadListing = useCallback(() => {
-    if (!folderPath) {
-      setDirectoryContents(initialDirectoryContents)
-      setIsLoading(false)
-
-      return undefined
-    }
-
-    // Drop the prior folder's listing immediately so navigation never paints
-    // stale tiles, and flag the new read as loading until it lands.
-    setDirectoryContents(initialDirectoryContents)
-    setIsLoading(true)
-
-    const subscription = from(
-      window.api.readDirectory(folderPath, {
-        withModifiedTime: hasModifiedTimeSort,
-      }),
-    ).subscribe({
-      next: (contents) => {
-        setDirectoryContents(contents)
-      },
-      complete: () => {
-        setIsLoading(false)
-      },
-      error: () => {
-        setIsLoading(false)
-      },
-    })
-
-    return () => {
-      subscription.unsubscribe()
-    }
-  }, [folderPath, hasModifiedTimeSort])
-
-  useEffect(() => loadListing(), [loadListing])
-
-  // A change on disk re-reads in place: the current tiles stay up until the
-  // new listing lands, rather than blanking to a spinner the way navigation
-  // does. A newer change supersedes a read still in flight.
+  // biome-ignore lint/correctness/useExhaustiveDependencies: revision explicitly requests a fresh read of the same folder.
   useEffect(() => {
-    if (!isWatchingForChanges || !folderPath) {
-      return undefined
-    }
+    let isCancelled = false
+    let isReading = false
+    let hasPendingRead = false
 
-    let subscription: Subscription | undefined
-
-    const stopWatching = window.api.watchDirectory(
-      folderPath,
-      () => {
-        subscription?.unsubscribe()
-
-        subscription = from(
-          window.api.readDirectory(folderPath, {
-            withModifiedTime: hasModifiedTimeSort,
-          }),
-        ).subscribe({
-          next: (contents) => {
-            setDirectoryContents(contents)
+    setListing((previous) =>
+      previous.path === folderPath
+        ? previous
+        : {
+            path: folderPath,
+            contents: initialDirectoryContents,
+            addedPaths: initialAddedPaths,
+            hasLoaded: false,
           },
-          error: () => undefined,
-        })
-      },
     )
 
+    // Serialize reads: a change during a slow read schedules one more read.
+    // Navigation cancels the old effect, so a late result cannot replace it.
+    const read = async () => {
+      if (isReading) {
+        hasPendingRead = true
+        return
+      }
+      if (!folderPath || isCancelled) return
+      isReading = true
+      try {
+        const contents = await window.api.readDirectory(
+          folderPath,
+          { withModifiedTime: hasModifiedTimeSort },
+        )
+        if (!isCancelled) {
+          setListing((previous) => {
+            if (
+              previous.path === folderPath &&
+              previous.hasLoaded &&
+              JSON.stringify(previous.contents) ===
+                JSON.stringify(contents)
+            )
+              return previous
+            const knownPaths = new Set(
+              previous.contents.map(
+                (entry) => entry.filePath,
+              ),
+            )
+            const addedPaths = new Set<string>()
+            for (const entry of contents) {
+              if (
+                previous.path === folderPath &&
+                previous.hasLoaded &&
+                (previous.addedPaths.has(entry.filePath) ||
+                  !knownPaths.has(entry.filePath))
+              )
+                addedPaths.add(entry.filePath)
+            }
+            return {
+              path: folderPath,
+              contents,
+              addedPaths,
+              hasLoaded: true,
+            }
+          })
+        }
+      } catch {
+        // Keep the last successful listing through a temporary disconnect.
+      } finally {
+        isReading = false
+        if (!isCancelled) {
+          setIsLoading(false)
+          if (hasPendingRead) {
+            hasPendingRead = false
+            void read()
+          }
+        }
+      }
+    }
+
+    setIsLoading(Boolean(folderPath))
+    // Subscribe before the first read so additions during startup are not lost.
+    const stopWatching =
+      isWatchingForChanges && folderPath
+        ? window.api.watchDirectory(
+            folderPath,
+            () => void read(),
+          )
+        : undefined
+    void read()
+    // fs.watch is advisory and can miss network-share changes or stop after a
+    // disconnect. A bounded reconciliation also covers those cases.
+    const timer =
+      isWatchingForChanges && folderPath
+        ? window.setInterval(() => {
+            if (!isReading) void read()
+          }, 3000)
+        : undefined
     return () => {
-      stopWatching()
-      subscription?.unsubscribe()
+      isCancelled = true
+      stopWatching?.()
+      window.clearInterval(timer)
     }
   }, [
     folderPath,
     hasModifiedTimeSort,
     isWatchingForChanges,
+    revision,
   ])
 
-  const directories = useDirectories(
-    directoryContents,
-    folderPath,
-  )
-
-  const imageFiles = useImageFiles(
-    directoryContents,
-    folderPath,
-  )
-
+  const contents =
+    listing.path === folderPath
+      ? listing.contents
+      : initialDirectoryContents
+  const directories = useDirectories(contents, folderPath)
+  const imageFiles = useImageFiles(contents, folderPath)
   return {
     directories,
     imageFiles,
     isLoading,
-    refresh: loadListing,
+    addedPaths:
+      listing.path === folderPath
+        ? listing.addedPaths
+        : initialAddedPaths,
+    refresh,
   }
 }
 

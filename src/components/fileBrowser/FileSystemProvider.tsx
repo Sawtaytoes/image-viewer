@@ -79,6 +79,7 @@ const FileSystemProvider = ({
   }, [filePath, isRootFilePath])
 
   const {
+    addedPaths,
     directories: listedDirectories,
     imageFiles,
     isLoading,
@@ -94,6 +95,7 @@ const FileSystemProvider = ({
   const filePathProviderValue =
     useMemo<FileSystemContextValue>(
       () => ({
+        addedPaths,
         directories,
         filePath,
         imageFiles,
@@ -103,6 +105,7 @@ const FileSystemProvider = ({
         setFilePath,
       }),
       [
+        addedPaths,
         directories,
         filePath,
         imageFiles,

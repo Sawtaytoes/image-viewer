@@ -14,11 +14,14 @@ const CURRENT_TILE_CLASSES =
 const TILE_CLASSES =
   "relative block w-full cursor-pointer pb-[100%]"
 
+import NewEntryIndicator from "../fileBrowser/NewEntryIndicator"
+
 interface PaneGalleryImageTileProps {
   fileName: string
   filePath: string
   // True for the tile matching the column's currently-loaded image.
   isCurrent?: boolean
+  isNew?: boolean
   onOpen: (filePath: string) => void
 }
 
@@ -28,6 +31,7 @@ const PaneGalleryImageTile = ({
   fileName,
   filePath,
   isCurrent = false,
+  isNew = false,
   onOpen,
 }: PaneGalleryImageTileProps) => {
   const onClick = useCallback(() => {
@@ -50,6 +54,7 @@ const PaneGalleryImageTile = ({
         fileName={fileName}
         filePath={filePath}
       />
+      {isNew && <NewEntryIndicator />}
     </button>
   )
 }

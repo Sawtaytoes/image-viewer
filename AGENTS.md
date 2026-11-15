@@ -119,7 +119,7 @@ read `process`. All of that goes through the preload bridge, exposed as **`windo
 | `platform` | `process.platform` (`"browser"` in the browser build) — the title bar reads it to clear macOS's left-side window buttons |
 | `statPath(p)` | `{ exists, isFile, isDirectory }` (sync) |
 | `readDirectory(dir)` | `Promise<[{ fileName, filePath, isDirectory, isFile }]>` |
-| `watchDirectory(dir, onChange)` | `fs.watch` on a folder's direct entries, settled per burst; returns an unsubscribe. The galleries re-read in place on a change (`useFolderListing(path, { isWatchingForChanges: true })`); an open image pane does not |
+| `watchDirectory(dir, onChange)` | `fs.watch` on a folder's direct entries, settled per burst; returns an unsubscribe. The galleries and open image panes reconcile in place (`useFolderListing(path, { isWatchingForChanges: true })`), with polling for missed events; panes preserve the current image path |
 | `readImageData(filePath, onProgress?, requestId?)` | `Promise<{ data: ArrayBuffer, mimeType }>` — image bytes for the renderer Blob |
 | `cancelReadImageData(requestId)` | stops that read because no view holds its image any more (its folder or pane closed; scrolling out of view does not cancel, per the 2026-06-04 decision); it rejects with an `AbortError`, and main drops a HEIC decode nobody else waits for |
 | `deleteFilePath({ filePath, isDirectory })` | `Promise<boolean>` — trash, then permanent-delete fallback |

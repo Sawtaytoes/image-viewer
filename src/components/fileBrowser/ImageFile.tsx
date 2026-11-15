@@ -8,6 +8,8 @@ import {
 import useKeyboardControls from "../convenience/useKeyboardControls"
 import Image from "../imageViewer/Image"
 import ImageViewerContext from "../imageViewer/ImageViewerContext"
+import FileSystemContext from "./FileSystemContext"
+import NewEntryIndicator from "./NewEntryIndicator"
 
 interface ImageFileProps {
   fileName: string
@@ -18,6 +20,8 @@ const ImageFile = ({
   fileName,
   filePath,
 }: ImageFileProps) => {
+  const { addedPaths } = useContext(FileSystemContext)
+
   const isCtrlKeyHeldRef = useRef(false)
 
   const { setImageFile } = useContext(ImageViewerContext)
@@ -57,6 +61,7 @@ const ImageFile = ({
           hasVisibilityDetection
         />
       </div>
+      {addedPaths?.has(filePath) && <NewEntryIndicator />}
     </button>
   )
 }

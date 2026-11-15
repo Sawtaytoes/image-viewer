@@ -16,6 +16,7 @@ import FolderPickerPopover from "./FolderPickerPopover"
 import ImageView from "./ImageView"
 import PaneGallery from "./PaneGallery"
 import type { TapPoint } from "./TapFeedback"
+import useLiveImageIndex from "./useLiveImageIndex"
 import usePaneNavigation from "./usePaneNavigation"
 import type { SpawnTapFeedback } from "./useTapFeedback"
 import useViewerKeyboard from "./useViewerKeyboard"
@@ -82,7 +83,12 @@ const Pane = ({
     ({ id }) => id === pane.folderId,
   )
 
-  const { imageFiles } = useFolderListing(folder?.path)
+  const { addedPaths, imageFiles } = useFolderListing(
+    folder?.path,
+    {
+      isWatchingForChanges: true,
+    },
+  )
 
   const setCurrentIndex = useCallback(
     (index: number) => {
@@ -91,10 +97,11 @@ const Pane = ({
     [pane.id, setPaneIndex],
   )
 
-  // Clamp against the listing in case the folder changed under a stale index.
-  const currentIndex = Math.min(
+  const currentIndex = useLiveImageIndex(
+    folder?.path,
+    imageFiles,
     pane.currentIndex,
-    Math.max(0, imageFiles.length - 1),
+    setCurrentIndex,
   )
 
   const {
@@ -218,6 +225,7 @@ const Pane = ({
     >
       {isGalleryOpen ? (
         <PaneGallery
+          addedPaths={addedPaths}
           currentImagePath={currentImage?.path ?? null}
           folderPath={galleryBrowsePath}
           onClose={closeGallery}

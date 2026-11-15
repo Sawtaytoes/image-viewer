@@ -176,3 +176,7 @@ to apply here); everything else is sourced from Image Viewer's own chats, commit
 
 - [2026-11-13 — HEIC decodes in a utility process, never in main](2026-11-13-heic-decodes-in-a-utility-process.md) ← **`heic-convert` runs in `heicDecodeWorker.ts`, a `utilityProcess`; main queues one decode at a time, shares duplicate requests, caches by path and modification time, and drops or stops a decode no window still waits for**
 - [2026-11-13 — Main and preload are TypeScript, so every file under `src/` is](2026-11-13-main-and-preload-are-typescript.md) ← **`main.ts` and `preload.ts` are type-checked, the bridge is typed as `Window["api"]` from `windowApi.d.ts`, and the file-system IPC handlers have unit tests**
+
+### 2026-11-14 — Live folders
+
+- [Open folders update in place](2026-11-14-open-folders-update-in-place.md).
