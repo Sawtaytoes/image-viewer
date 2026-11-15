@@ -1,3 +1,10 @@
+# [2.16.0](https://github.com/Sawtaytoes/image-viewer/compare/v2.15.2...v2.16.0) (2026-11-15)
+
+
+### Features
+
+* update open folders automatically and mark new entries ([#60](https://github.com/Sawtaytoes/image-viewer/issues/60)) ([5b15f84](https://github.com/Sawtaytoes/image-viewer/commit/5b15f84201c84f69b10ab2f407ae13c52be60548))
+
 ## [2.15.2](https://github.com/Sawtaytoes/image-viewer/compare/v2.15.1...v2.15.2) (2026-11-15)
 
 
