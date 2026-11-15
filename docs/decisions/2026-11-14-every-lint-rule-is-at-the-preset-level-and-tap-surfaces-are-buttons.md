@@ -89,17 +89,25 @@ button's defaults differ from a `<div>`'s.
   for it, so the center zone and the empty pane open the menu without a tap ripple, as the `Q`
   shortcut does.
 - The folder tab cannot be one button, because its close button cannot sit inside another button.
-  Its select button's `::before` stretches over the whole tab, so a tap anywhere on the tab still
-  selects it.
+  Its select button wraps the name and is the keyboard and screen-reader control. Pointers pass
+  through it (`pointer-events-none`), so every pointer click on the tab, except on the close button,
+  lands on the tab wrapper, as it did on the `<div>`.
 - The menu's backdrop is a `<button>` under the menu, with `tabIndex={-1}`, because Escape already
   closes the menu from the keyboard. A press still focuses it, so it carries `data-tap-surface`
   too: a button that is not a tab stop is still a tap surface.
 - Where the handler moved from a wrapper `<div>` to a button inside it (the folder tab, the
-  menu's overlay), a mouse or pen press on one child and a release on another makes a `click`
-  on the wrapper itself, the nearest element that holds both. The `<div>` handled that click, so
+  menu's overlay), some clicks still land on the wrapper itself: a tap that passes through the
+  tab's name, and a mouse or pen press on one child with a release on another (the click goes to
+  the nearest element that holds both). The `<div>` handled those clicks, so
   `src/components/convenience/useOwnClick.ts` adds a plain listener on the wrapper that does the
   same for a click whose target is the wrapper: the tab selects, and the overlay closes the menu.
-  It is a pointer gesture only; the keyboard reaches the same actions through the buttons.
+  It is a pointer path only; the keyboard reaches the same actions through the buttons.
+- Keep the set of elements a touch can land on the same as on `master`. Chromium moves a touch
+  onto the nearest element in the touch area that has a click listener or is a control, passing
+  over one that holds another. React gave each clickable `<div>` a native `onclick`, so the
+  wrapper's own listener stands in for it, and the tab's select button lets pointers pass
+  through so that it does not compete with the close button. A touch beside the close button
+  closes the folder, as it did on `master`.
 - Do not turn a rule off for a file or a folder. A per-line suppression is allowed only for a shape
   that something outside this repo fixes, with that contract in its reason.
 

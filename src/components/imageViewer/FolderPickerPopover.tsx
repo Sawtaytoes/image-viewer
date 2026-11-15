@@ -153,9 +153,9 @@ const FolderPickerPopover = ({
     }
   }, [onClose])
 
-  // A press and its release that land on the backdrop and the menu make a
-  // `click` on the overlay itself, which held the close handler before the
-  // backdrop became a button (see `useOwnClick`).
+  // A mouse or pen press and its release that land on the backdrop and the
+  // menu make a `click` on the overlay itself, which held the close handler
+  // before the backdrop became a button (see `useOwnClick`).
   const overlayRef = useRef<HTMLDivElement>(null)
 
   const onOverlayOwnClick = useCallback(

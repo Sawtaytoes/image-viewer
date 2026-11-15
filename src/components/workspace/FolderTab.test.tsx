@@ -50,7 +50,9 @@ describe("FolderTab", () => {
   test("selects the folder on a click on the tab itself", () => {
     const { onClose, onSelect } = renderTab()
 
-    // A press on the name and a release on the close button make this click.
+    // Pointers pass through the name button, so a tap on the name, on the
+    // padding, or a press across the name and the close button makes this
+    // click.
     const tab = screen.getByRole("button", {
       name: "Holiday",
     }).parentElement

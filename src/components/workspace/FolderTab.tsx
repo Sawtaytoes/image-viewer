@@ -17,7 +17,7 @@ import CloseIcon from "../icons/CloseIcon"
 // order in the `class` attribute — so "base colour plus an active override"
 // would be a coin flip.
 const tabClassName =
-  "relative inline-flex flex-none cursor-pointer items-center gap-1.5 rounded-[6px] py-2 pr-2 pl-[14px] text-lg font-light select-none"
+  "inline-flex flex-none cursor-pointer items-center gap-1.5 rounded-[6px] py-2 pr-2 pl-[14px] text-lg font-light select-none"
 
 // `#3d9be0` — the old selection blue — is the accent intent now, and the hue
 // changes with it
@@ -33,17 +33,23 @@ const inactiveTabClassName =
 const tabNameClassName =
   "block max-w-[200px] overflow-hidden text-ellipsis"
 
-// The tab's select control is a real `<button>`, so Enter or Space on it
-// selects the tab. It wraps only the name, because the close `<button>` beside
-// it cannot sit inside another button. Its `::before` stretches over the whole
-// tab, so a tap on the tab's padding still selects, as it did when the tab was
-// one clickable `<div>`; the close button is `relative` and comes later, so it
-// paints above that layer and keeps its own taps.
+// The tab's select control is a real `<button>`, so Tab reaches it and Enter or
+// Space on it selects the tab. It wraps only the name, because the close
+// `<button>` beside it cannot sit inside another button.
+//
+// Pointers pass through it (`pointer-events-none`), so a tap or click anywhere
+// on the tab but the close button lands on the tab itself, and `useOwnClick`
+// selects it, as the tab's `<div>` did. That keeps touch the same as well:
+// Chromium moves a touch onto the nearest element in the touch area that has a
+// click listener or is a control, passing over one that holds another. On
+// `master` the tab held only the close button, so a touch beside it closed the
+// folder. A select button that pointers could hit would compete with the close
+// button for that touch.
 const selectButtonClassName =
-  "cursor-pointer text-left before:absolute before:inset-0 before:rounded-[6px]"
+  "pointer-events-none text-left"
 
 const closeButtonClassName =
-  "relative inline-flex h-[30px] w-[30px] cursor-pointer items-center justify-center rounded-full border-0 bg-transparent p-0 text-inherit hover:bg-intent-neutral-surface-hover"
+  "inline-flex h-[30px] w-[30px] cursor-pointer items-center justify-center rounded-full border-0 bg-transparent p-0 text-inherit hover:bg-intent-neutral-surface-hover"
 
 interface FolderTabProps {
   folderId: string
@@ -73,8 +79,9 @@ const FolderTab = ({
     [folderId, onClose],
   )
 
-  // A press on the name and a release on the close button (or the reverse)
-  // clicks the tab itself, which selected it when the tab was one `<div>`.
+  // A pointer click anywhere on the tab, except on the close button, targets
+  // the tab itself (see `selectButtonClassName`). The tab's `<div>` selected it
+  // for that click, and this does the same.
   const tabRef = useRef<HTMLDivElement>(null)
 
   useOwnClick(tabRef, handleSelect)
