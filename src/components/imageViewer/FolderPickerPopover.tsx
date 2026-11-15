@@ -11,6 +11,7 @@ import {
 } from "react"
 
 import { isTargetRemoved } from "../../deleting/deleteItems"
+import useOwnClick from "../convenience/useOwnClick"
 import DeleteItemsContext from "../deleting/DeleteItemsContext"
 import CloseIcon from "../icons/CloseIcon"
 import DeleteForeverIcon from "../icons/DeleteForeverIcon"
@@ -152,19 +153,34 @@ const FolderPickerPopover = ({
     }
   }, [onClose])
 
+  // A mouse or pen press and its release that land on the backdrop and the
+  // menu make a `click` on the overlay itself, which held the close handler
+  // before the backdrop became a button (see `useOwnClick`).
+  const overlayRef = useRef<HTMLDivElement>(null)
+
+  const onOverlayOwnClick = useCallback(
+    (event: globalThis.MouseEvent) => {
+      // Don't let the tap fall through to the column behind the backdrop.
+      event.stopPropagation()
+
+      onClose()
+    },
+    [onClose],
+  )
+
+  useOwnClick(overlayRef, onOverlayOwnClick)
+
   // `click` throughout (not `pointerdown`): selecting a row closes the menu, so
   // firing on press would let the trailing tap events reach whatever ends up
   // under the finger after the menu unmounts.
   const onBackdropClick = useCallback<
-    MouseEventHandler<HTMLDivElement>
+    MouseEventHandler<HTMLButtonElement>
   >(
     (event) => {
       // Don't let the tap fall through to the column behind the backdrop.
       event.stopPropagation()
 
-      if (event.target === event.currentTarget) {
-        onClose()
-      }
+      onClose()
     },
     [onClose],
   )
@@ -259,8 +275,24 @@ const FolderPickerPopover = ({
     <div
       className="absolute inset-0 z-[1] flex animate-backdrop-in items-center justify-center bg-scrim"
       data-viewer-overlay
-      onClick={onBackdropClick}
+      ref={overlayRef}
     >
+      {/* The backdrop's tap target: a real `<button>` under the menu, filling
+          the overlay, so a tap outside the menu closes it and a tap inside never
+          reaches it. It is not a tab stop, because Escape already closes the
+          menu from the keyboard (the `keydown` listener above). The menu after
+          it is `relative`, so it paints on top. A press can still focus it, so
+          it is a tap surface: Enter and Space during or after a press do not
+          click it (see `tapSurfaces`). */}
+      <button
+        aria-label="Close the menu"
+        className="absolute inset-0"
+        data-tap-surface
+        onClick={onBackdropClick}
+        tabIndex={-1}
+        type="button"
+      />
+
       {/* Sized generously: this is the primary touch target in multi-view, so it
           gets a real minimum width and large rows rather than shrinking to its
           content. Icons are forced larger here (the shared SvgIcon is a fixed

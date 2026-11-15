@@ -26,6 +26,7 @@ import type {
   ImageFile as ImageFileEntry,
 } from "../../types"
 import FullScreenContext from "../convenience/FullScreenContext"
+import isTapSurfaceEvent from "../convenience/tapSurfaces"
 import useKeyboardControls from "../convenience/useKeyboardControls"
 import DeleteItemsContext from "../deleting/DeleteItemsContext"
 import CloseIcon from "../icons/CloseIcon"
@@ -672,6 +673,11 @@ const FileBrowser = () => {
     } else if (code === "Backspace" || code === "Escape") {
       navigateUpFolderTree()
     } else if (code === "Enter") {
+      // A tile that Tab reached answers Enter itself (see `tapSurfaces`).
+      if (isTapSurfaceEvent(event)) {
+        return
+      }
+
       const numberOfDirectories = directories.length
 
       if (isShiftKeyHeld) {
@@ -782,12 +788,17 @@ const FileBrowser = () => {
     <MultiSelectContext.Provider
       value={multiSelectProviderValue}
     >
+      {/* `inert` while the viewer covers this browser: nothing under the
+          overlay can take focus from Tab or reach a screen reader. The gallery
+          tiles are buttons, so without it Tab would walk into tiles nobody
+          can see, and Enter would open one. */}
       <div
         className={
           isFullScreen && isViewerOpen
             ? fullBleedFileBrowserClassName
             : insetFileBrowserClassName
         }
+        inert={isViewerOpen}
       >
         {!isViewerOpen && <DirectoryControls />}
 

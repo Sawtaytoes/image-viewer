@@ -1,6 +1,7 @@
 import type { MouseEvent } from "react"
-import { memo, useCallback } from "react"
+import { memo, useCallback, useRef } from "react"
 
+import useOwnClick from "../convenience/useOwnClick"
 import CloseIcon from "../icons/CloseIcon"
 
 // Split out of `FolderTabStrip.jsx`, which declared both components in one
@@ -30,7 +31,22 @@ const inactiveTabClassName =
   "bg-intent-neutral-solid text-content-primary"
 
 const tabNameClassName =
-  "max-w-[200px] overflow-hidden text-ellipsis"
+  "block max-w-[200px] overflow-hidden text-ellipsis"
+
+// The tab's select control is a real `<button>`, so Tab reaches it and Enter or
+// Space on it selects the tab. It wraps only the name, because the close
+// `<button>` beside it cannot sit inside another button.
+//
+// Pointers pass through it (`pointer-events-none`), so a tap or click anywhere
+// on the tab but the close button lands on the tab itself, and `useOwnClick`
+// selects it, as the tab's `<div>` did. That keeps touch the same as well:
+// Chromium moves a touch onto the nearest element in the touch area that has a
+// click listener or is a control, passing over one that holds another. On
+// `master` the tab held only the close button, so a touch beside it closed the
+// folder. A select button that pointers could hit would compete with the close
+// button for that touch.
+const selectButtonClassName =
+  "pointer-events-none text-left"
 
 const closeButtonClassName =
   "inline-flex h-[30px] w-[30px] cursor-pointer items-center justify-center rounded-full border-0 bg-transparent p-0 text-inherit hover:bg-intent-neutral-surface-hover"
@@ -63,14 +79,29 @@ const FolderTab = ({
     [folderId, onClose],
   )
 
+  // A pointer click anywhere on the tab, except on the close button, targets
+  // the tab itself (see `selectButtonClassName`). The tab's `<div>` selected it
+  // for that click, and this does the same.
+  const tabRef = useRef<HTMLDivElement>(null)
+
+  useOwnClick(tabRef, handleSelect)
+
   return (
     <div
       className={`${tabClassName} ${
         isActive ? activeTabClassName : inactiveTabClassName
       }`}
-      onClick={handleSelect}
+      ref={tabRef}
     >
-      <span className={tabNameClassName}>{name}</span>
+      <button
+        aria-current={isActive ? "true" : undefined}
+        className={selectButtonClassName}
+        data-tap-surface
+        onClick={handleSelect}
+        type="button"
+      >
+        <span className={tabNameClassName}>{name}</span>
+      </button>
 
       <button
         aria-label={`Close ${name}`}

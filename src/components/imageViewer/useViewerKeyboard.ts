@@ -1,5 +1,6 @@
 import { useContext, useEffect } from "react"
 
+import isTapSurfaceEvent from "../convenience/tapSurfaces"
 import DeleteItemsContext from "../deleting/DeleteItemsContext"
 
 export interface UseViewerKeyboardOptions {
@@ -87,9 +88,20 @@ const useViewerKeyboard = ({
 
       const handler = keyConfigurations[event.code]
 
-      if (handler) {
-        handler()
+      if (!handler) {
+        return
       }
+
+      // A tap surface that Tab reached answers Enter itself instead of
+      // leaving the viewer (see `tapSurfaces`).
+      if (
+        event.code === "Enter" &&
+        isTapSurfaceEvent(event)
+      ) {
+        return
+      }
+
+      handler()
     }
 
     window.addEventListener("keydown", onKeyDown)

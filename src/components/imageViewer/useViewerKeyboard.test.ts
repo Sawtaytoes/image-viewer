@@ -29,7 +29,47 @@ const setup = (
   return handlers
 }
 
+// Enter pressed while focus is on `element`: the event starts there and
+// bubbles to the window, as a real key press does. Returns whether a listener
+// cancelled it, which is what stops a focused button from clicking itself.
+const pressEnterOn = (element: Element) => {
+  const event = new KeyboardEvent("keydown", {
+    bubbles: true,
+    cancelable: true,
+    code: "Enter",
+  })
+
+  element.dispatchEvent(event)
+
+  return event.defaultPrevented
+}
+
 describe("useViewerKeyboard", () => {
+  test("Enter on a focused tap surface is left to the surface", () => {
+    const { onClose } = setup()
+    const surface = document.createElement("button")
+
+    surface.setAttribute("data-tap-surface", "")
+    document.body.append(surface)
+
+    expect(pressEnterOn(surface)).toBe(false)
+    expect(onClose).not.toHaveBeenCalled()
+
+    surface.remove()
+  })
+
+  test("Enter on any other button leaves the viewer and lets that button click, as before", () => {
+    const { onClose } = setup()
+    const button = document.createElement("button")
+
+    document.body.append(button)
+
+    expect(pressEnterOn(button)).toBe(false)
+    expect(onClose).toHaveBeenCalledTimes(1)
+
+    button.remove()
+  })
+
   test("fires onDelete when [Delete] is pressed while enabled", () => {
     const { onDelete } = setup()
 

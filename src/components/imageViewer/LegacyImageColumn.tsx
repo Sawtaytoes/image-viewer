@@ -91,6 +91,7 @@ const LegacyImageColumn = ({
       {imageFileName !== undefined &&
         imageFilePath !== undefined && (
           <ImageView
+            centerTapLabel="Close the image"
             goToNextImage={goToNextImage}
             goToPreviousImage={goToPreviousImage}
             imageFileName={imageFileName}

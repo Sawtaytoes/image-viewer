@@ -209,7 +209,10 @@ is locked: generics and correct DOM types, **not** `as` / `any` / `unknown`.
   `eslint.config.mjs`. Adopting them here would make this the only app in the fleet that
   does, and would silently swap this repo's `lineWidth: 60` and its `useKeyWithClickEvents`
   / `noStaticElementInteractions` exemptions — which exist because this is a
-  touch-first app whose surfaces are deliberately not buttons.
+  touch-first app whose surfaces are deliberately not buttons. (Superseded: `biome.json`
+  extends `@charcuterie/biome-config` now, and on 2026-11-14 those exemptions were removed and
+  the surfaces became `<button>`s —
+  [decision](decisions/2026-11-14-every-lint-rule-is-at-the-preset-level-and-tap-surfaces-are-buttons.md).)
 - **Comments in `biome.json`.** Biome reads `.json` strictly: a `//` comment there does not
   error, it makes the **whole config silently fall back to defaults** — which reformats the repo
   with tabs and semicolons and re-enables the rules `biome.json` turns off. That happened once

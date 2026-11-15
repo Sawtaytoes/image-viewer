@@ -316,6 +316,47 @@ describe("FolderPickerPopover (per-column menu)", () => {
     ).not.toBeInTheDocument()
   })
 
+  test("closes on a tap on the backdrop, and not on a tap inside the menu", () => {
+    const { onClose } = renderPopover({
+      queuedFolders: [],
+    })
+
+    fireEvent.click(
+      screen.getByText("No folders queued yet."),
+    )
+
+    expect(onClose).not.toHaveBeenCalled()
+
+    const backdrop = screen.getByRole("button", {
+      name: "Close the menu",
+    })
+
+    // A tap surface, so a key pressed while a pointer holds it does not
+    // click it.
+    expect(backdrop).toHaveAttribute("data-tap-surface")
+
+    fireEvent.click(backdrop)
+
+    expect(onClose).toHaveBeenCalledTimes(1)
+  })
+
+  test("closes on a press and release that land on the backdrop and the menu", () => {
+    const { onClose } = renderPopover({
+      queuedFolders: [],
+    })
+
+    // The browser sends that click to the overlay, which holds both.
+    const overlay = screen
+      .getByRole("button", { name: "Close the menu" })
+      .closest("[data-viewer-overlay]")
+
+    expect(overlay).not.toBeNull()
+
+    fireEvent.click(overlay as Element)
+
+    expect(onClose).toHaveBeenCalledTimes(1)
+  })
+
   test("closes on Escape", () => {
     const { onClose } = renderPopover()
 

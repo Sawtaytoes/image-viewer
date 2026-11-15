@@ -22,8 +22,13 @@ import useInView from "./useInView"
 // The background is deliberately NOT part of this string: the selected variant
 // sets its own, and two `bg-*` utilities on one element resolve by stylesheet
 // order rather than by the order they appear here.
+//
+// A real `<button>`, so a tile is in the accessibility tree with a role and
+// Enter or Space on it does what a tap does. `block` and `text-left` undo the
+// two things a `<button>` does differently from the `<div>` it replaced
+// (inline-block, centered text); Tailwind's preflight resets the rest.
 const tileClassName =
-  "relative w-full cursor-pointer touch-pan-y pb-[100%] font-light text-content-primary"
+  "relative block w-full cursor-pointer touch-pan-y pb-[100%] text-left font-light text-content-primary"
 
 const unselectedTileClassName = `${tileClassName} bg-surface-raised`
 
@@ -39,7 +44,7 @@ const Directory = ({
   directoryPath,
 }: DirectoryProps) => {
   const isCtrlKeyHeldRef = useRef(false)
-  const tileRef = useRef<HTMLDivElement>(null)
+  const tileRef = useRef<HTMLButtonElement>(null)
   // A completed hold is still followed by a `click`; swallow that one click so
   // it doesn't immediately toggle the selection back off.
   const hasSuppressedClickRef = useRef(false)
@@ -157,14 +162,19 @@ const Directory = ({
   })
 
   return (
-    <div
+    <button
+      aria-pressed={
+        isMultiSelectMode ? isSelected : undefined
+      }
       className={
         isSelected
           ? selectedTileClassName
           : unselectedTileClassName
       }
+      data-tap-surface
       onClick={onClick}
       ref={tileRef}
+      type="button"
     >
       <div className="absolute inset-0 flex flex-col px-[10px] py-1.5">
         <div className="break-words pb-1.5">
@@ -200,7 +210,7 @@ const Directory = ({
           ✓
         </div>
       )}
-    </div>
+    </button>
   )
 }
 

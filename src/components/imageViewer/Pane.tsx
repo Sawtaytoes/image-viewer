@@ -226,6 +226,7 @@ const Pane = ({
       ) : folder ? (
         currentImage && (
           <ImageView
+            centerTapLabel="Open this column's menu"
             goToNextImage={goToNextImage}
             goToPreviousImage={goToPreviousImage}
             imageFileName={currentImage.name}

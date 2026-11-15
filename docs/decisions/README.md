@@ -1,5 +1,6 @@
 # docs/decisions — the locked-decisions paper trail
 
+- [2026-11-14 — Every lint rule is at the preset's level, and a tap surface is a real button](2026-11-14-every-lint-rule-is-at-the-preset-level-and-tap-surfaces-are-buttons.md)
 - [2026-11-13 — Delete shows what it removes, with progress and a Stop button](2026-11-13-delete-shows-what-it-removes-with-progress-and-a-stop-button.md)
 - [2026-10-17 — The app icon is the red photo stack](2026-10-17-the-app-icon-is-the-red-photo-stack.md)
 - [2026-10-14 — Linux and macOS builds ship, and the Mac build is unsigned](2026-10-14-linux-and-macos-builds-ship-and-the-mac-build-is-unsigned.md)

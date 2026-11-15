@@ -16,16 +16,5 @@
       "!index.html",
       "!index.browser.html"
     ]
-  },
-  "linter": {
-    "rules": {
-      "a11y": {
-        "useKeyWithClickEvents": "off",
-        "noStaticElementInteractions": "off"
-      },
-      "performance": {
-        "noAccumulatingSpread": "off"
-      }
-    }
   }
 }

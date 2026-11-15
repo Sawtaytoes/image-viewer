@@ -8,8 +8,11 @@ import PaneThumbnail from "./PaneThumbnail"
 const CURRENT_TILE_CLASSES =
   "shadow-[inset_0_0_0_3px_var(--color-intent-accent-solid)]"
 
+// A real `<button>`, so a tile is in the accessibility tree with a role and
+// Enter or Space on it does what a tap does. `block` undoes the button's
+// inline-block; Tailwind's preflight resets the rest.
 const TILE_CLASSES =
-  "relative w-full cursor-pointer pb-[100%]"
+  "relative block w-full cursor-pointer pb-[100%]"
 
 interface PaneGalleryImageTileProps {
   fileName: string
@@ -32,19 +35,22 @@ const PaneGalleryImageTile = ({
   }, [filePath, onOpen])
 
   return (
-    <div
+    <button
+      aria-current={isCurrent ? "true" : undefined}
       className={
         isCurrent
           ? `${TILE_CLASSES} ${CURRENT_TILE_CLASSES}`
           : TILE_CLASSES
       }
+      data-tap-surface
       onClick={onClick}
+      type="button"
     >
       <PaneThumbnail
         fileName={fileName}
         filePath={filePath}
       />
-    </div>
+    </button>
   )
 }
 

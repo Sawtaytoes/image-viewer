@@ -83,10 +83,10 @@ from the original `TASKS.md` or the kickoff conversation is lost.
   cap cached image memory to a % of machine RAM; debounced cache eviction by last-viewed time.
 - Second thread for image loading + predictive prefetch.
 
-### Accessibility (deferred from the upgrade)
-- The touch-first UI uses clickable `<div>`s everywhere; the Biome a11y rules
-  `useKeyWithClickEvents` and `noStaticElementInteractions` are currently **off**. Give interactive
-  elements proper roles/`tabIndex`/keyboard handlers (or use real `<button>`s) and re-enable the rules.
+### Accessibility (deferred from the upgrade) — done 2026-11-14
+- The clickable `<div>`s are real `<button>`s, and the Biome a11y rules
+  `useKeyWithClickEvents` and `noStaticElementInteractions` are back **on**
+  ([decision](decisions/2026-11-14-every-lint-rule-is-at-the-preset-level-and-tap-surfaces-are-buttons.md)).
 
 ### Tooling / infra (optional, later)
 - ESM-everywhere (`"type": "module"`) to fully match mux-magic; deeper Biome/ESLint rule tuning.

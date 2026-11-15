@@ -200,7 +200,15 @@ The short version:
 - **Formatting/linting:** Biome is primary (`biome.json`); a minimal ESLint flat config
   (`eslint.config.mjs`) adds five rules Biome cannot express, all scoped to `.ts`/`.tsx`:
   `id-length` (min 2 — no `(e) =>`), the `is`/`has` boolean-name rule, `react/no-multi-comp`
-  (one component per file), the react-hooks pair, and the two picker rules above. The rest of
+  (one component per file), the react-hooks pair (both at `error`), and the two picker rules
+  above. **Neither config lowers a rule from its preset**; a finding is fixed in the code
+  ([decision](docs/decisions/2026-11-14-every-lint-rule-is-at-the-preset-level-and-tap-surfaces-are-buttons.md)).
+  Anything a user taps is a real `<button>` carrying `data-tap-surface`. A tap surface gives
+  up focus when a pointer press on it ends, so after a tap Enter and Space go to the window
+  shortcuts as they did when it was a `<div>`. Until then, its own click on Enter and Space is
+  cancelled. One that Tab focused, and no pointer has pressed since, was reached from the
+  keyboard, and a shortcut that handles Enter stands aside for it
+  (`src/components/convenience/tapSurfaces.ts`). The rest of
   `@charcuterie/eslint-config`'s component-choice block (`no-raw-button`, `no-raw-anchor`,
   `no-clickable-non-interactive`) is **not** on yet — the tab strip and gallery tiles would go
   red. Run `pnpm lint` before committing.
