@@ -1,3 +1,10 @@
+## [2.15.2](https://github.com/Sawtaytoes/image-viewer/compare/v2.15.1...v2.15.2) (2026-11-15)
+
+
+### Bug Fixes
+
+* **a11y:** make every tap surface a real button, and return the lint rules to the preset ([#59](https://github.com/Sawtaytoes/image-viewer/issues/59)) ([1415c2d](https://github.com/Sawtaytoes/image-viewer/commit/1415c2d32265c7400139df6e94cac67a867e9f9f))
+
 ## [2.15.1](https://github.com/Sawtaytoes/image-viewer/compare/v2.15.0...v2.15.1) (2026-11-13)
 
 
