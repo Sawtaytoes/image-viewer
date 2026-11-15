@@ -1,6 +1,4 @@
-import { useContext, useEffect, useState } from "react"
-import { from } from "rxjs"
-import { filter, map, toArray } from "rxjs/operators"
+import { useContext, useMemo } from "react"
 
 import type { DirectoryEntry, ImageFile } from "../../types"
 import SettingsContext from "../settings/SettingsContext"
@@ -28,8 +26,6 @@ const validImageExtensions = [
   ".webp",
 ]
 
-const initialImageFiles: ImageFile[] = []
-
 const useImageFiles = (
   directoryContents: readonly DirectoryEntry[],
   folderPath = "",
@@ -41,40 +37,29 @@ const useImageFiles = (
     folderPath,
   )
 
-  const [imageFiles, setImageFiles] = useState<ImageFile[]>(
-    initialImageFiles,
+  // Derive synchronously so a folder change never exposes the previous
+  // folder's files for one render (which could overwrite a saved pane index).
+  return useMemo(
+    () =>
+      sortDirectoryEntries(
+        directoryContents
+          .filter((entry) => entry.isFile)
+          .filter((entry) =>
+            validImageExtensions.includes(
+              window.api.path
+                .extname(entry.fileName)
+                .toLowerCase(),
+            ),
+          )
+          .map(({ fileName, filePath, modifiedTime }) => ({
+            modifiedTime,
+            name: fileName,
+            path: filePath,
+          })),
+        sortOrder,
+      ),
+    [directoryContents, sortOrder],
   )
-
-  useEffect(() => {
-    const subscription = from(directoryContents)
-      .pipe(
-        filter(({ isFile }) => isFile),
-        filter(({ fileName }) =>
-          validImageExtensions.includes(
-            window.api.path.extname(fileName).toLowerCase(),
-          ),
-        ),
-        map(({ fileName, filePath, modifiedTime }) => ({
-          modifiedTime,
-          name: fileName,
-          path: filePath,
-        })),
-        toArray(),
-        map((unsortedImageFiles) =>
-          sortDirectoryEntries(
-            unsortedImageFiles,
-            sortOrder,
-          ),
-        ),
-      )
-      .subscribe(setImageFiles)
-
-    return () => {
-      subscription.unsubscribe()
-    }
-  }, [directoryContents, sortOrder])
-
-  return imageFiles
 }
 
 export default useImageFiles

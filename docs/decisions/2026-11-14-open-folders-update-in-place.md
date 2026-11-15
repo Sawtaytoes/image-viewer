@@ -24,6 +24,10 @@ navigation, and preserve the last successful listing through temporary read erro
 
 ## Context
 
+Folders can receive new files while a gallery or image pane remains open.
+
+## Why
+
 New files should appear without refreshing the app or leaving and reopening the
 folder. An insertion must not change the image being read.
 

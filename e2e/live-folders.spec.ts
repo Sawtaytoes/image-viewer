@@ -12,6 +12,19 @@ test("an open gallery reconciles new images in sorted position with a New marker
       exact: true,
     }),
   ).toBeVisible()
+  await expect
+    .poll(() =>
+      page
+        .locator("img")
+        .first()
+        .evaluate(
+          (image) =>
+            image instanceof HTMLImageElement &&
+            image.complete &&
+            image.naturalWidth > 0,
+        ),
+    )
+    .toBe(true)
   await page.screenshot({
     path: `__screenshots__/live-before-${testInfo.project.name}.png`,
   })
