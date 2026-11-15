@@ -1,7 +1,10 @@
 import {
+  act,
   fireEvent,
   render,
+  renderHook,
   screen,
+  waitFor,
 } from "@testing-library/react"
 import { Observable } from "rxjs"
 import {
@@ -11,8 +14,8 @@ import {
   test,
   vi,
 } from "vitest"
-
 import type { DirectoryEntry } from "../../types"
+import useFolderListing from "../fileBrowser/useFolderListing"
 import type { ImageLoaderContextValue } from "../imageLoader/ImageLoaderContext"
 import ImageLoaderContext from "../imageLoader/ImageLoaderContext"
 import type {
@@ -23,6 +26,7 @@ import WorkspaceContext, {
   defaultWorkspaceContextValue,
 } from "../workspace/WorkspaceContext"
 import PaneGallery from "./PaneGallery"
+import useLiveImageIndex from "./useLiveImageIndex"
 
 // The setup stub's `getDriveRoots` is empty, so stand in a single drive for
 // the all-drives root the gallery climbs to (see the drive-root climb test).
@@ -255,4 +259,105 @@ describe("PaneGallery (in-pane gallery)", () => {
 
     expect(onClose).toHaveBeenCalled()
   })
+})
+
+test("gallery selection uses the pane's live snapshot while a change read is delayed", async () => {
+  const originalRead = window.api.readDirectory
+  const originalWatch = window.api.watchDirectory
+  const oldEntries = catsListing.filter(
+    (entry) => entry.isFile,
+  )
+  const newEntry: DirectoryEntry = {
+    fileName: "cat-03.bmp",
+    filePath: "/cats/cat-03.bmp",
+    isDirectory: false,
+    isFile: true,
+    modifiedTime: 0,
+  }
+  let resolveRead:
+    | ((entries: DirectoryEntry[]) => void)
+    | undefined
+  let notify: (() => void) | undefined
+  const read = vi
+    .fn<Window["api"]["readDirectory"]>()
+    .mockResolvedValueOnce(oldEntries)
+    .mockImplementationOnce(
+      () =>
+        new Promise((resolve) => {
+          resolveRead = resolve
+        }),
+    )
+  window.api.readDirectory = read
+  window.api.watchDirectory = (_path, onChange) => {
+    notify = onChange
+    return () => {}
+  }
+  try {
+    const hook = renderHook(
+      ({ index }) => {
+        const listing = useFolderListing(FOLDER_PATH, {
+          isWatchingForChanges: true,
+        })
+        const currentIndex = useLiveImageIndex(
+          FOLDER_PATH,
+          listing.imageFiles,
+          index,
+          vi.fn(),
+        )
+        return { listing, currentIndex }
+      },
+      { initialProps: { index: 0 } },
+    )
+    await waitFor(() =>
+      expect(
+        hook.result.current.listing.imageFiles,
+      ).toHaveLength(2),
+    )
+    const onOpenImage = vi.fn(
+      (_folder: string, index: number) =>
+        hook.rerender({ index }),
+    )
+    const gallery = (
+      listing: typeof hook.result.current.listing,
+    ) => (
+      <ImageLoaderContext.Provider value={imageLoaderValue}>
+        <PaneGallery
+          folderPath={FOLDER_PATH}
+          folderListing={listing}
+          onClose={vi.fn()}
+          onOpenImage={onOpenImage}
+        />
+      </ImageLoaderContext.Provider>
+    )
+    const view = render(
+      gallery(hook.result.current.listing),
+    )
+    expect(read).toHaveBeenCalledTimes(1)
+    act(() => {
+      notify?.()
+    })
+    expect(read).toHaveBeenCalledTimes(2)
+    expect(
+      screen.queryByAltText("cat-03.bmp"),
+    ).not.toBeInTheDocument()
+    await act(async () => {
+      resolveRead?.([...oldEntries, newEntry])
+    })
+    view.rerender(gallery(hook.result.current.listing))
+    fireEvent.click(
+      await screen.findByAltText("cat-03.bmp"),
+    )
+    expect(onOpenImage).toHaveBeenCalledWith(FOLDER_PATH, 2)
+    expect(
+      hook.result.current.listing.imageFiles[
+        hook.result.current.currentIndex
+      ]?.path,
+    ).toBe(newEntry.filePath)
+    expect(read).toHaveBeenCalledTimes(2)
+    view.unmount()
+    hook.unmount()
+  } finally {
+    window.api.readDirectory = originalRead
+    window.api.watchDirectory = originalWatch
+  }
 })

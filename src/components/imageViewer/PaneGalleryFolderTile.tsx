@@ -32,9 +32,12 @@ const UNSELECTED_TILE_CLASSES = `${TILE_CLASSES} bg-surface-raised`
 
 const SELECTED_TILE_CLASSES = `${TILE_CLASSES} bg-intent-accent-solid outline-4 -outline-offset-4 outline-intent-accent-content`
 
+import NewEntryIndicator from "../fileBrowser/NewEntryIndicator"
+
 interface PaneGalleryFolderTileProps {
   directoryName: string
   directoryPath: string
+  isNew?: boolean
   onOpen: (directoryPath: string) => void
 }
 
@@ -44,6 +47,7 @@ interface PaneGalleryFolderTileProps {
 const PaneGalleryFolderTile = ({
   directoryName,
   directoryPath,
+  isNew = false,
   onOpen,
 }: PaneGalleryFolderTileProps) => {
   const tileRef = useRef<HTMLButtonElement>(null)
@@ -181,6 +185,7 @@ const PaneGalleryFolderTile = ({
           ✓
         </div>
       )}
+      {isNew && <NewEntryIndicator />}
     </button>
   )
 }

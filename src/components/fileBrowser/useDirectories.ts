@@ -1,6 +1,4 @@
-import { useContext, useEffect, useState } from "react"
-import { from } from "rxjs"
-import { filter, map, toArray } from "rxjs/operators"
+import { useContext, useMemo } from "react"
 
 import type { DirectoryEntry, ImageFile } from "../../types"
 import SettingsContext from "../settings/SettingsContext"
@@ -17,8 +15,6 @@ const systemDirectories = [
   "windows",
 ]
 
-const initialDirectories: ImageFile[] = []
-
 const useDirectories = (
   directoryContents: readonly DirectoryEntry[],
   folderPath = "",
@@ -30,41 +26,28 @@ const useDirectories = (
     folderPath,
   )
 
-  const [directories, setDirectories] = useState<
-    ImageFile[]
-  >(initialDirectories)
-
-  useEffect(() => {
-    const subscriber = from(directoryContents)
-      .pipe(
-        filter(({ isDirectory }) => isDirectory),
-        filter(
-          ({ fileName }) =>
-            !systemDirectories.includes(
-              fileName.toLowerCase(),
-            ),
-        ),
-        map(({ fileName, filePath, modifiedTime }) => ({
-          modifiedTime,
-          name: fileName,
-          path: filePath,
-        })),
-        toArray(),
-        map((unsortedDirectories) =>
-          sortDirectoryEntries(
-            unsortedDirectories,
-            sortOrder,
-          ),
-        ),
-      )
-      .subscribe(setDirectories)
-
-    return () => {
-      subscriber.unsubscribe()
-    }
-  }, [directoryContents, sortOrder])
-
-  return directories
+  // Derive synchronously so a folder change never exposes the previous
+  // folder's files for one render (which could overwrite a saved pane index).
+  return useMemo(
+    () =>
+      sortDirectoryEntries(
+        directoryContents
+          .filter((entry) => entry.isDirectory)
+          .filter(
+            (entry) =>
+              !systemDirectories.includes(
+                entry.fileName.toLowerCase(),
+              ),
+          )
+          .map(({ fileName, filePath, modifiedTime }) => ({
+            modifiedTime,
+            name: fileName,
+            path: filePath,
+          })),
+        sortOrder,
+      ),
+    [directoryContents, sortOrder],
+  )
 }
 
 export default useDirectories

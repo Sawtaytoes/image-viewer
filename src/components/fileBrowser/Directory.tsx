@@ -34,6 +34,8 @@ const unselectedTileClassName = `${tileClassName} bg-surface-raised`
 
 const selectedTileClassName = `${tileClassName} bg-intent-accent-solid outline-4 -outline-offset-4 outline-intent-accent-content`
 
+import NewEntryIndicator from "./NewEntryIndicator"
+
 interface DirectoryProps {
   directoryName: string
   directoryPath: string
@@ -49,7 +51,9 @@ const Directory = ({
   // it doesn't immediately toggle the selection back off.
   const hasSuppressedClickRef = useRef(false)
 
-  const { setFilePath } = useContext(FileSystemContext)
+  const { addedPaths, setFilePath } = useContext(
+    FileSystemContext,
+  )
 
   const {
     enterMultiSelect,
@@ -209,6 +213,9 @@ const Directory = ({
         <div className="absolute top-2 right-2 flex h-[26px] w-[26px] items-center justify-center rounded-full bg-intent-accent-content text-lg font-semibold text-intent-accent-surface">
           ✓
         </div>
+      )}
+      {addedPaths?.has(directoryPath) && (
+        <NewEntryIndicator />
       )}
     </button>
   )

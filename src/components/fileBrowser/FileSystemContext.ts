@@ -7,6 +7,7 @@ import type { ImageFile } from "../../types"
 // otherwise; both use the `ImageFile` shape because a folder tile needs exactly
 // the same name/path/mtime a file tile does.
 export interface FileSystemContextValue {
+  addedPaths?: ReadonlySet<string>
   directories: ImageFile[]
   filePath: string
   imageFiles: ImageFile[]
