@@ -83,12 +83,11 @@ const Pane = ({
     ({ id }) => id === pane.folderId,
   )
 
-  const { addedPaths, imageFiles } = useFolderListing(
-    folder?.path,
-    {
-      isWatchingForChanges: true,
-    },
-  )
+  const folderListing = useFolderListing(folder?.path, {
+    isWatchingForChanges: true,
+  })
+
+  const { imageFiles } = folderListing
 
   const setCurrentIndex = useCallback(
     (index: number) => {
@@ -225,7 +224,11 @@ const Pane = ({
     >
       {isGalleryOpen ? (
         <PaneGallery
-          addedPaths={addedPaths}
+          folderListing={
+            folder?.path === galleryBrowsePath
+              ? folderListing
+              : undefined
+          }
           currentImagePath={currentImage?.path ?? null}
           folderPath={galleryBrowsePath}
           onClose={closeGallery}

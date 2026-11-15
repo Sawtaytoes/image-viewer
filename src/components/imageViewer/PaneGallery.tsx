@@ -22,7 +22,9 @@ import type { MultiSelectContextValue } from "../fileBrowser/MultiSelectContext"
 import MultiSelectContext from "../fileBrowser/MultiSelectContext"
 import SortOrderPicker from "../fileBrowser/SortOrderPicker"
 import sortDirectoryEntries from "../fileBrowser/sortDirectoryEntries"
-import useFolderListing from "../fileBrowser/useFolderListing"
+import useFolderListing, {
+  type FolderListing,
+} from "../fileBrowser/useFolderListing"
 import ArrowUpwardIcon from "../icons/ArrowUpwardIcon"
 import CloseIcon from "../icons/CloseIcon"
 import PlayArrowIcon from "../icons/PlayArrowIcon"
@@ -91,7 +93,7 @@ const initialSelectedFolderPaths = new Set<string>()
 const NO_IMAGE_FILES: ImageFile[] = []
 
 interface PaneGalleryProps {
-  addedPaths?: ReadonlySet<string>
+  folderListing?: FolderListing
   // Path of the image the owning column is currently showing, so the tile for
   // it can be outlined while browsing the folder it lives in. Null when the
   // column has no image loaded.
@@ -111,7 +113,7 @@ interface PaneGalleryProps {
 // overlay. Browse folders (tap to drill in, up-button to climb), tap an image
 // to jump the column to it, or long-press folders to queue several at once.
 const PaneGallery = ({
-  addedPaths,
+  folderListing,
   currentImagePath,
   folderPath,
   onClose,
@@ -153,14 +155,23 @@ const PaneGallery = ({
   // drive it opened in.
   const isDrivesRoot = browsePath === ""
 
-  const listing = useFolderListing(browsePath, {
-    isWatchingForChanges: true,
-  })
+  // The visible tiles and the pane's selected index must refer to the same
+  // snapshot. A separate read could show a new tile before the pane has it.
+  const hasSharedListing =
+    Boolean(folderListing) && browsePath === folderPath
+  const ownListing = useFolderListing(
+    hasSharedListing ? "" : browsePath,
+    {
+      isWatchingForChanges: true,
+    },
+  )
+  const listing =
+    hasSharedListing && folderListing
+      ? folderListing
+      : ownListing
 
   const isNewEntry = (path: string) =>
-    listing.addedPaths.has(path) ||
-    (browsePath === folderPath &&
-      Boolean(addedPaths?.has(path)))
+    listing.addedPaths.has(path)
 
   // At the all-drives root there is no folder to read — surface the connected
   // drives as tiles (exactly as `FileSystemProvider` does). Everywhere else, the
